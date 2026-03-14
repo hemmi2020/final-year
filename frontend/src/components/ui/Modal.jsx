@@ -124,14 +124,14 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center p-4 animate-in fade-in duration-300"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
       onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
         className={cn(
-          "relative bg-white rounded-lg shadow-xl max-h-[90vh] overflow-auto animate-in zoom-in-95 duration-300",
+          "relative w-full bg-white rounded-lg shadow-xl max-h-[90vh] overflow-auto animate-in zoom-in-95 duration-300",
           sizes[size],
           className,
         )}
@@ -169,7 +169,7 @@ export default function Modal({
         )}
 
         {/* Body */}
-        <div className="p-4">{children}</div>
+        <div>{children}</div>
 
         {/* Footer */}
         {footer && (
