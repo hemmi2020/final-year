@@ -124,14 +124,14 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-300"
+      className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center overflow-y-auto p-4 py-8"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
       onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
         className={cn(
-          "relative w-full bg-white rounded-lg shadow-xl max-h-[90vh] overflow-auto animate-in zoom-in-95 duration-300",
+          "relative w-full bg-white rounded-lg shadow-xl my-auto",
           sizes[size],
           className,
         )}

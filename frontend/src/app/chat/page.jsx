@@ -4,7 +4,17 @@ import ChatInterface from "@/components/chat/ChatInterface";
 
 export default function ChatPage() {
   return (
-    <div className="fixed inset-0 top-16 z-10 bg-neutral-50">
+    <div
+      style={{
+        position: "fixed",
+        top: "64px",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 20,
+        backgroundColor: "#f9fafb",
+      }}
+    >
       <ChatInterface />
     </div>
   );
