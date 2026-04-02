@@ -220,9 +220,8 @@
 
   /* Focus Styles */
   *:focus-visible {
-    outline: none;
-    ring: 2px solid rgb(var(--color-primary-500));
-    ring-offset: 2px;
+    outline: 2px solid rgb(var(--color-primary-500));
+    outline-offset: 2px;
   }
 
   /* Typography Styles */
