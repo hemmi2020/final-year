@@ -140,7 +140,7 @@ export default function ChatInterface() {
               <div
                 className={`rounded-2xl px-4 py-2.5 ${
                   msg.role === "user"
-                    ? "bg-primary-600 text-white rounded-tr-sm"
+                    ? "bg-neutral-900 text-white rounded-tr-sm"
                     : msg.role === "system"
                       ? "bg-accent-50 text-accent-900 border border-accent-200 rounded-tl-sm"
                       : "bg-white text-neutral-800 border border-neutral-200 shadow-sm rounded-tl-sm"
