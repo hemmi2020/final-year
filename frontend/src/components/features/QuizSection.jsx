@@ -9,7 +9,13 @@ export default function QuizSection() {
   const router = useRouter();
 
   return (
-    <section className="py-20 bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-700 relative overflow-hidden">
+    <section
+      className="py-20 relative overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(135deg, #2563eb 0%, #1d4ed8 40%, #0d9488 100%)",
+      }}
+    >
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-10 w-40 h-40 border border-white rounded-full" />
@@ -35,15 +41,14 @@ export default function QuizSection() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button
-              variant="primary"
-              size="lg"
+            <button
               onClick={() => router.push("/quiz")}
-              className="bg-white text-primary-700 hover:bg-white/90 px-8 py-4 text-base shadow-lg"
+              style={{ backgroundColor: "#ffffff", color: "#1d4ed8" }}
+              className="inline-flex items-center justify-center font-medium rounded-lg px-8 py-4 text-base shadow-lg hover:opacity-90 transition-opacity"
             >
               Take the Quiz
               <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            </button>
             <p className="text-sm text-white/60">No account needed to start</p>
           </div>
 
