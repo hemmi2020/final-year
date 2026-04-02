@@ -17,7 +17,7 @@ export default function QuizSection() {
       }}
     >
       {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute top-10 left-10 w-40 h-40 border border-white rounded-full" />
         <div className="absolute bottom-10 right-10 w-60 h-60 border border-white rounded-full" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 border border-white rounded-full" />
