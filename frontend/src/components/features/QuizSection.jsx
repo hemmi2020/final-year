@@ -1,44 +1,72 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Sparkles, ArrowRight } from "lucide-react";
 import Container from "@/components/layout/Container";
 import Button from "@/components/ui/Button";
 
-/**
- * Quiz section component
- */
 export default function QuizSection() {
-  const travelStyles = [
-    { emoji: "🏖️", label: "Relaxation" },
-    { emoji: "🏔️", label: "Adventure" },
-    { emoji: "🏛️", label: "Culture" },
-    { emoji: "🍽️", label: "Culinary" },
-  ];
+  const router = useRouter();
 
   return (
-    <section className="py-16 md:py-24 bg-primary-50">
-      <Container>
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-neutral-900">
-            Find Your Travel Style
-          </h2>
-          <p className="text-lg text-neutral-600 mb-8">
-            Take our quick 5-minute quiz to discover destinations and
-            experiences perfectly matched to your preferences
-          </p>
+    <section className="py-20 bg-gradient-to-br from-primary-600 via-primary-700 to-secondary-700 relative overflow-hidden">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-10 left-10 w-40 h-40 border border-white rounded-full" />
+        <div className="absolute bottom-10 right-10 w-60 h-60 border border-white rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 border border-white rounded-full" />
+      </div>
 
-          {/* Travel style icons */}
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-8">
-            {travelStyles.map((style) => (
-              <div key={style.label} className="text-center">
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-2 shadow-md text-3xl">
-                  {style.emoji}
-                </div>
-                <span className="text-sm text-neutral-600">{style.label}</span>
-              </div>
-            ))}
+      <Container className="relative z-10">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full mb-6">
+            <Sparkles className="w-4 h-4 text-accent-400" />
+            <span className="text-sm font-medium text-white">
+              5 Quick Questions
+            </span>
           </div>
 
-          <Button variant="primary" size="lg">
-            Start the Quiz
-          </Button>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-6">
+            What's Your Travel Style?
+          </h2>
+          <p className="text-lg text-white/80 mb-10 max-w-xl mx-auto">
+            Take our 1-minute quiz and let AI personalize every recommendation —
+            from restaurants to attractions to weather preferences
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              variant="primary"
+              size="lg"
+              onClick={() => router.push("/quiz")}
+              className="bg-white text-primary-700 hover:bg-white/90 px-8 py-4 text-base shadow-lg"
+            >
+              Take the Quiz
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+            <p className="text-sm text-white/60">No account needed to start</p>
+          </div>
+
+          {/* Preview tags */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-10">
+            {[
+              "Solo",
+              "Family",
+              "Halal",
+              "Budget",
+              "Adventure",
+              "Culture",
+              "Luxury",
+              "Vegan",
+            ].map((tag) => (
+              <span
+                key={tag}
+                className="px-3 py-1 text-xs font-medium text-white/70 bg-white/10 rounded-full border border-white/10"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       </Container>
     </section>
