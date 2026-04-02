@@ -177,49 +177,95 @@ export default function QuizPage() {
         </h1>
 
         {/* Options */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+            gap: "12px",
+            marginBottom: "32px",
+          }}
+        >
           {current.options.map((opt) => (
             <button
               key={opt.value}
+              type="button"
               onClick={() => handleSelect(opt.value)}
-              className={`p-4 rounded-xl border-2 transition-all text-left ${
-                isSelected(opt.value)
-                  ? "border-primary-500 bg-primary-50 ring-1 ring-primary-200"
-                  : "border-neutral-200 bg-white hover:border-neutral-300"
-              }`}
+              style={{
+                padding: "16px",
+                borderRadius: "12px",
+                border: isSelected(opt.value)
+                  ? "2px solid #3b82f6"
+                  : "2px solid #e5e7eb",
+                backgroundColor: isSelected(opt.value) ? "#eff6ff" : "#ffffff",
+                textAlign: "left",
+                cursor: "pointer",
+                position: "relative",
+                zIndex: 10,
+              }}
             >
-              <span className="text-2xl">{opt.emoji}</span>
-              <p className="font-medium text-neutral-900 mt-2">{opt.label}</p>
+              <span style={{ fontSize: "24px", display: "block" }}>
+                {opt.emoji}
+              </span>
+              <p
+                style={{ fontWeight: 600, color: "#111827", marginTop: "8px" }}
+              >
+                {opt.label}
+              </p>
             </button>
           ))}
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-between">
-          <Button
-            variant="ghost"
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <button
+            type="button"
             onClick={() => setStep(step - 1)}
             disabled={step === 0}
+            style={{
+              padding: "8px 16px",
+              color: step === 0 ? "#9ca3af" : "#3b82f6",
+              background: "none",
+              border: "none",
+              cursor: step === 0 ? "default" : "pointer",
+              fontWeight: 500,
+            }}
           >
-            <ChevronLeft className="w-4 h-4 mr-1" /> Back
-          </Button>
+            ← Back
+          </button>
           {isLast ? (
-            <Button
-              variant="primary"
+            <button
+              type="button"
               onClick={handleFinish}
-              loading={saving}
-              disabled={!canNext}
+              disabled={!canNext || saving}
+              style={{
+                padding: "10px 24px",
+                backgroundColor: "#3b82f6",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
             >
-              <Sparkles className="w-4 h-4 mr-1" /> Save Preferences
-            </Button>
+              {saving ? "Saving..." : "✨ Save Preferences"}
+            </button>
           ) : (
-            <Button
-              variant="primary"
+            <button
+              type="button"
               onClick={() => setStep(step + 1)}
               disabled={!canNext}
+              style={{
+                padding: "10px 24px",
+                backgroundColor: canNext ? "#3b82f6" : "#9ca3af",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: canNext ? "pointer" : "default",
+                fontWeight: 600,
+              }}
             >
-              Next <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
+              Next →
+            </button>
           )}
         </div>
       </div>
