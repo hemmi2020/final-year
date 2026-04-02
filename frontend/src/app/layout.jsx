@@ -14,8 +14,12 @@ export const metadata = {
   title: "TravelAI - AI-Powered Travel Planning",
   description:
     "Discover your perfect journey with AI-powered travel planning tailored to your unique style and preferences.",
-  viewport: "width=device-width, initial-scale=1",
   keywords: ["travel", "AI", "trip planning", "destinations", "itinerary"],
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }) {

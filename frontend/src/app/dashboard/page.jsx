@@ -19,17 +19,27 @@ import Button from "@/components/ui/Button";
 import Card, { CardBody } from "@/components/ui/Card";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
+import { tripsAPI } from "@/lib/api";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true);
+      return;
     }
+    // Fetch real trips from API
+    tripsAPI
+      .getAll()
+      .then(({ data }) => setTrips(data.data || []))
+      .catch(() => setTrips([]))
+      .finally(() => setLoading(false));
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
@@ -56,35 +66,33 @@ export default function DashboardPage() {
   }
 
   const stats = [
-    { label: "Trips Planned", value: "12", icon: MapPin, color: "primary" },
-    { label: "Countries Visited", value: "8", icon: Globe, color: "secondary" },
-    { label: "Saved Places", value: "45", icon: Heart, color: "accent" },
     {
-      label: "Chat Sessions",
-      value: "28",
-      icon: MessageSquare,
+      label: "Trips Planned",
+      value: String(trips.length),
+      icon: MapPin,
+      color: "primary",
+    },
+    {
+      label: "Completed",
+      value: String(trips.filter((t) => t.status === "completed").length),
+      icon: Globe,
+      color: "secondary",
+    },
+    {
+      label: "AI Generated",
+      value: String(trips.filter((t) => t.aiGenerated).length),
+      icon: Heart,
+      color: "accent",
+    },
+    {
+      label: "Active",
+      value: String(trips.filter((t) => t.status === "active").length),
+      icon: TrendingUp,
       color: "success",
     },
   ];
 
-  const recentTrips = [
-    {
-      id: 1,
-      destination: "Paris, France",
-      dates: "Mar 15 - Mar 22, 2026",
-      status: "Upcoming",
-      image:
-        "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80",
-    },
-    {
-      id: 2,
-      destination: "Tokyo, Japan",
-      dates: "Feb 10 - Feb 18, 2026",
-      status: "Completed",
-      image:
-        "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&q=80",
-    },
-  ];
+  const recentTrips = trips.slice(0, 3);
 
   return (
     <Container className="py-8">
@@ -146,49 +154,74 @@ export default function DashboardPage() {
           </div>
 
           <div className="space-y-4">
-            {recentTrips.map((trip) => (
-              <Card
-                key={trip.id}
-                hoverable
-                padding="none"
-                className="overflow-hidden"
-              >
-                <div className="flex">
-                  <div className="w-32 h-32 relative flex-shrink-0">
-                    <img
-                      src={trip.image}
-                      alt={trip.destination}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <CardBody className="flex-1">
+            {loading ? (
+              <p className="text-neutral-500 text-center py-8">
+                Loading trips...
+              </p>
+            ) : recentTrips.length === 0 ? (
+              <Card padding="lg">
+                <CardBody className="text-center py-8">
+                  <MapPin className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+                  <p className="text-neutral-600 mb-4">
+                    No trips yet. Start planning your first adventure!
+                  </p>
+                  <Button
+                    variant="primary"
+                    onClick={() => router.push("/chat")}
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> Plan a Trip with AI
+                  </Button>
+                </CardBody>
+              </Card>
+            ) : (
+              recentTrips.map((trip) => (
+                <Card
+                  key={trip._id}
+                  hoverable
+                  padding="none"
+                  className="overflow-hidden"
+                >
+                  <CardBody>
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-neutral-900 mb-1">
-                          {trip.destination}
+                          {trip.title}
                         </h3>
                         <div className="flex items-center text-sm text-neutral-600 mb-2">
-                          <Calendar className="w-4 h-4 mr-1" />
-                          {trip.dates}
+                          <MapPin className="w-4 h-4 mr-1" />
+                          {trip.destination}
                         </div>
-                        <span
-                          className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                            trip.status === "Upcoming"
-                              ? "bg-primary-100 text-primary-700"
-                              : "bg-neutral-100 text-neutral-700"
-                          }`}
-                        >
-                          {trip.status}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                              trip.status === "active"
+                                ? "bg-success-100 text-success-700"
+                                : trip.status === "planned"
+                                  ? "bg-primary-100 text-primary-700"
+                                  : "bg-neutral-100 text-neutral-700"
+                            }`}
+                          >
+                            {trip.status}
+                          </span>
+                          {trip.aiGenerated && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-accent-100 text-accent-700">
+                              AI Generated
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/trips/${trip._id}`)}
+                      >
                         View Details
                       </Button>
                     </div>
                   </CardBody>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))
+            )}
           </div>
         </div>
 

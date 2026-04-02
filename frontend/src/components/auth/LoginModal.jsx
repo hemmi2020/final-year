@@ -6,6 +6,7 @@ import { Mail, Lock, LogIn, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import { useAuthStore } from "@/store/authStore";
+import { authAPI } from "@/lib/api";
 
 export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
   const router = useRouter();
@@ -19,22 +20,19 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
     setIsLoading(true);
     setError("");
 
-    // Simulate API call - replace with actual API
-    setTimeout(() => {
-      setUser(
-        {
-          id: 1,
-          name: formData.email.split("@")[0],
-          email: formData.email,
-          role: "user",
-        },
-        "fake-token-" + Date.now(),
-      );
-      setIsLoading(false);
+    try {
+      const { data } = await authAPI.login(formData);
+      setUser(data.data.user, data.data.token);
       onClose();
-      // Optionally redirect to dashboard
-      // router.push('/dashboard');
-    }, 1000);
+    } catch (err) {
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.errors?.[0] ||
+          "Login failed. Please try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

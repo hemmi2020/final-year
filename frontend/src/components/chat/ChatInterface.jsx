@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
+import { chatAPI } from "@/lib/api";
 
 export default function ChatInterface() {
   const router = useRouter();
@@ -46,17 +47,25 @@ export default function ChatInterface() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      const { data } = await chatAPI.send(input);
       const aiMessage = {
         id: Date.now() + 1,
         role: "assistant",
-        content: `Great choice! I can help you plan an amazing trip. Here's what I suggest:\n\n✈️ Best time to visit\n🏨 Accommodation options\n🍽️ Local cuisine recommendations\n📍 Must-see attractions\n\nWould you like me to create a detailed itinerary for you?`,
+        content: data.data.message,
         actions: ["save", "book"],
       };
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (err) {
+      const errorMessage = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: "Sorry, I encountered an error. Please try again.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const handleAction = (action) => {

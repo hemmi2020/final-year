@@ -1,40 +1,66 @@
 import { create } from 'zustand';
+import { tripsAPI } from '@/lib/api';
 
 /**
- * Trip management store
- * Handles current trip, saved trips, and trip planning state
+ * Trip store — manages trip state with real API calls
  */
 export const useTripStore = create((set, get) => ({
+    trips: [],
     currentTrip: null,
-    savedTrips: [],
-    isGenerating: false,
+    loading: false,
+    error: null,
 
-    // Set current trip being planned
-    setCurrentTrip: (trip) => set({ currentTrip: trip }),
+    fetchTrips: async () => {
+        set({ loading: true, error: null });
+        try {
+            const { data } = await tripsAPI.getAll();
+            set({ trips: data.data || [], loading: false });
+        } catch (err) {
+            set({ error: err.response?.data?.error || 'Failed to fetch trips', loading: false });
+        }
+    },
 
-    // Add trip to saved trips
-    addTrip: (trip) => set((state) => ({
-        savedTrips: [...state.savedTrips, trip]
-    })),
+    fetchTrip: async (id) => {
+        set({ loading: true, error: null });
+        try {
+            const { data } = await tripsAPI.getById(id);
+            set({ currentTrip: data.data, loading: false });
+        } catch (err) {
+            set({ error: err.response?.data?.error || 'Trip not found', loading: false });
+        }
+    },
 
-    // Update existing trip
-    updateTrip: (tripId, updates) => set((state) => ({
-        savedTrips: state.savedTrips.map((trip) =>
-            trip.id === tripId ? { ...trip, ...updates } : trip
-        )
-    })),
+    createTrip: async (tripData) => {
+        try {
+            const { data } = await tripsAPI.create(tripData);
+            set((state) => ({ trips: [data.data, ...state.trips] }));
+            return data.data;
+        } catch (err) {
+            set({ error: err.response?.data?.error || 'Failed to create trip' });
+            return null;
+        }
+    },
 
-    // Delete trip
-    deleteTrip: (tripId) => set((state) => ({
-        savedTrips: state.savedTrips.filter((trip) => trip.id !== tripId)
-    })),
+    deleteTrip: async (id) => {
+        try {
+            await tripsAPI.delete(id);
+            set((state) => ({ trips: state.trips.filter((t) => t._id !== id) }));
+        } catch (err) {
+            set({ error: err.response?.data?.error || 'Failed to delete trip' });
+        }
+    },
 
-    // Set all saved trips
-    setSavedTrips: (trips) => set({ savedTrips: trips }),
+    generateItinerary: async (preferences) => {
+        set({ loading: true, error: null });
+        try {
+            const { data } = await tripsAPI.generate(preferences);
+            set((state) => ({ trips: [data.data.trip, ...state.trips], loading: false }));
+            return data.data;
+        } catch (err) {
+            set({ error: err.response?.data?.error || 'Failed to generate itinerary', loading: false });
+            return null;
+        }
+    },
 
-    // Set generating state
-    setGenerating: (isGenerating) => set({ isGenerating }),
-
-    // Clear current trip
-    clearCurrentTrip: () => set({ currentTrip: null }),
+    clearError: () => set({ error: null }),
 }));

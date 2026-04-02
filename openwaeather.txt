@@ -1,0 +1,4740 @@
+One Call API 3.0
+
+Product concept
+Get essential weather data, short-term and long-term forecasts and aggregated weather data is easy with our OpenWeather One Call API 3.0.
+
+One Call API 3.0 contains 5 endpoints and provides access to various data:
+
+Current weather and forecasts: and government weather alerts
+1-minute forecast for 1 hour
+hourly forecast for 48 hours
+daily forecast for 8 days
+Weather data for any timestamp for 47+ years historical archive and 4 days ahead forecast
+Daily aggregation of weather data for 47+ years archive and 1.5 years ahead forecast
+Weather overview with a human-readable weather summary for today and tomorrow's forecast, utilizing OpenWeather AI technologies
+AI Weather Assistant for retrieving weather data and weather-related advice in a human-readable and friendly format.
+One Call API 3.0 is based on the proprietary OpenWeather Model and is updated every 10 minutes. Thus, in order to receive the most accurate and up-to-date weather data, we recommend you request One Call API 3.0 every 10 minutes.
+
+Please note, that One Call API 3.0 is included in the "One Call by Call" subscription only. This separate subscription includes 1,000 calls/day for free and allows you to pay only for the number of API calls made to this product. Please note, that you do not need to subscribe to any other OpenWeather subscription plans to get access to the One Call API 3.0. Please find more details on the pricing page and FAQ or ask Ulla, OpenWeather AI assistant.
+
+How to start
+
+01 icon
+Sign up
+Sign up to OpenWeather service in case you haven't got your OpenWeather API key yet.
+
+02 icon
+Follow the pricing page
+Follow the pricing page to learn details about the price.
+
+One Call API 3.0 is included in the separate subscription only and allows you to pay only for the number of API calls made to this product. Please find more details on the pricing page.
+
+03 icon
+2000 API calls per day
+Once you subscribe to One call API 3.0, 2000 API calls per day to this product are set up by default. If you want to change this limit, please go to the "Billing plans" tab in your Personal account to update standard settings. You can find more information on the FAQ or ask Ulla, OpenWeather AI assistant.
+
+04 icon
+Desired type of data
+Select the desired type of data (Current and forecasts weather data, Weather data for timestamp, Daily aggregation, Weather overview, AI Weather Assistant) and make an API call according to relevant tech documentation section, remembering to add your key to each call.
+
+Current and forecasts weather data
+
+To get access to current weather, minute forecast for 1 hour, hourly forecast for 48 hours, daily forecast for 8 days and government weather alerts, please use this section of the documentation.
+
+If you are interested in other functionality on One Call API 3.0, please check Product concept to follow the right section.
+
+How to make an API call
+API call
+https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude={part}&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude, decimal (-90; 90). If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+lon
+
+required
+
+Longitude, decimal (-180; 180). If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+exclude
+
+optional
+
+By using this parameter you can exclude some parts of the weather data from the API response. It should be a comma-delimited list (without spaces). Available values: current minutely hourly daily alerts
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use the lang parameter to get the output in your language. Learn more
+
+Example of API call
+Before making an API call, please note, that One Call 3.0 is included in the "One Call by Call" subscription only. Learn more
+
+If you you want to exclude some parts of the weather data from the API response please add exclude parameter to the API call like in the example below:
+
+Example of API call
+https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&exclude=hourly,daily&appid={API key}
+Copy Icon
+If you do not need to exclude any of the weather data from the API response please use API call like in the example below:
+
+Example of API call
+https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&appid={API key}
+Copy Icon
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Fields in API response
+If you do not see some of the parameters in your API response it means that these weather phenomena are just not happened for the time of measurement for the city or location chosen. Only really measured or calculated data is displayed in API response.
+
+lat Latitude of the location, decimal (−90; 90)
+lon Longitude of the location, decimal (-180; 180)
+timezone Timezone name for the requested location
+timezone_offset Shift in seconds from UTC
+current Current weather data API response
+current.dt Current time, Unix, UTC
+current.sunrise Sunrise time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+current.sunset Sunset time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+current.temp Temperature. Units - default: kelvin, metric: Celsius, imperial: Fahrenheit. How to change units used
+current.feels_like Temperature. This temperature parameter accounts for the human perception of weather. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit.
+current.pressure Atmospheric pressure on the sea level, hPa
+current.humidity Humidity, %
+current.dew_point Atmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit
+current.clouds Cloudiness, %
+current.uvi Current UV index.
+current.visibility Average visibility, metres. The maximum value of the visibility is 10 km
+current.wind_speed Wind speed. Wind speed. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+current.wind_gust (where available) Wind gust. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+current.wind_deg Wind direction, degrees (meteorological)
+current.rain
+current.rain.1h (where available) Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+current.snow
+current.snow.1h (where available) Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+current.weather
+current.weather.id Weather condition id
+current.weather.main Group of weather parameters (Rain, Snow etc.)
+current.weather.description Weather condition within the group (full list of weather conditions). Get the output in your language
+current.weather.icon Weather icon id. How to get icons
+minutely Minute forecast weather data API response
+minutely.dt Time of the forecasted data, unix, UTC
+minutely.precipitation Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+hourly Hourly forecast weather data API response
+hourly.dt Time of the forecasted data, Unix, UTC
+hourly.temp Temperature. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit. How to change units used
+hourly.feels_like Temperature. This accounts for the human perception of weather. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit.
+hourly.pressure Atmospheric pressure on the sea level, hPa
+hourly.humidity Humidity, %
+hourly.dew_point Atmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit.
+hourly.uvi UV index
+hourly.clouds Cloudiness, %
+hourly.visibility Average visibility, metres. The maximum value of the visibility is 10 km
+hourly.wind_speed Wind speed. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour.How to change units used
+hourly.wind_gust (where available) Wind gust. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+hourly.wind_deg Wind direction, degrees (meteorological)
+hourly.pop Probability of precipitation. The values of the parameter vary between 0 and 1, where 0 is equal to 0%, 1 is equal to 100%
+hourly.rain
+hourly.rain.1h (where available) Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+hourly.snow
+hourly.snow.1h (where available) Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+hourly.weather
+hourly.weather.id Weather condition id
+hourly.weather.main Group of weather parameters (Rain, Snow etc.)
+hourly.weather.description Weather condition within the group (full list of weather conditions). Get the output in your language
+hourly.weather.icon Weather icon id. How to get icons
+daily Daily forecast weather data API response
+daily.dt Time of the forecasted data, Unix, UTC
+daily.sunrise Sunrise time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+daily.sunset Sunset time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+daily.moonrise The time of when the moon rises for this day, Unix, UTC
+daily.moonset The time of when the moon sets for this day, Unix, UTC
+daily.moon_phase Moon phase. 0 and 1 are 'new moon', 0.25 is 'first quarter moon', 0.5 is 'full moon' and 0.75 is 'last quarter moon'. The periods in between are called 'waxing crescent', 'waxing gibbous', 'waning gibbous', and 'waning crescent', respectively. Moon phase calculation algorithm: if the moon phase values between the start of the day and the end of the day have a round value (0, 0.25, 0.5, 0.75, 1.0), then this round value is taken, otherwise the average of moon phases for the start of the day and the end of the day is taken
+summaryHuman-readable description of the weather conditions for the day
+daily.temp Units – default: kelvin, metric: Celsius, imperial: Fahrenheit. How to change units used
+daily.temp.morn Morning temperature.
+daily.temp.day Day temperature.
+daily.temp.eve Evening temperature.
+daily.temp.night Night temperature.
+daily.temp.min Min daily temperature.
+daily.temp.max Max daily temperature.
+daily.feels_like This accounts for the human perception of weather. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit. How to change units used
+daily.feels_like.morn Morning temperature.
+daily.feels_like.day Day temperature.
+daily.feels_like.eve Evening temperature.
+daily.feels_like.night Night temperature.
+daily.pressure Atmospheric pressure on the sea level, hPa
+daily.humidity Humidity, %
+daily.dew_point Atmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit.
+daily.wind_speed Wind speed. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+daily.wind_gust (where available) Wind gust. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+daily.wind_deg Wind direction, degrees (meteorological)
+daily.clouds Cloudiness, %
+daily.uvi The maximum value of UV index for the day
+daily.pop Probability of precipitation. The values of the parameter vary between 0 and 1, where 0 is equal to 0%, 1 is equal to 100%
+daily.rain (where available) Precipitation volume, mm. Please note that only mm as units of measurement are available for this parameter
+daily.snow (where available) Snow volume, mm. Please note that only mm as units of measurement are available for this parameter
+daily.weather
+daily.weather.id Weather condition id
+daily.weather.main Group of weather parameters (Rain, Snow etc.)
+daily.weather.description Weather condition within the group (full list of weather conditions). Get the output in your language
+daily.weather.icon Weather icon id. How to get icons
+alerts National weather alerts data from major national weather warning systems
+alerts.sender_name Name of the alert source. Please read here the full list of alert sources
+alerts.event Alert event name
+alerts.start Date and time of the start of the alert, Unix, UTC
+alerts.end Date and time of the end of the alert, Unix, UTC
+alerts.description Description of the alert
+alerts.tags Type of severe weather
+National weather alerts are provided in English by default. Please note that some agencies provide the alert’s description only in a local language.
+
+How to get government weather alerts only for location
+To get access to government weather alerts relevant to a selected location only, please use this section of the documentation. If you are interested in other functionality on One Call API 3.0, please check Product concept to follow the right section.
+
+How to make an API call
+API call
+https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&exclude=current,minutely,hourly,daily&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude, decimal (-90; 90). If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+lon
+
+required
+
+Longitude, decimal (-180; 180). If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+exclude
+
+optional
+
+This parameter is pre-filled to keep only the alerts section for the selected location and exclude other parts of the API response. If you need the complete API response or other weather data components, please return to section How to make an API call
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use the lang parameter to get the output in your language. Learn more
+
+Example of API call
+Before making an API call, please note, that One Call 3.0 is included in the "One Call by Call" subscription only. Learn more
+
+Example of API call
+https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&exclude=current,minutely,hourly,daily&appid={API key}
+Copy Icon
+Example of API response
+{
+  "lat":33.44,
+  "lon":-94.04,
+  "timezone":"America/Chicago",
+  "timezone_offset":-18000,
+  "alerts": [
+    {
+      "sender_name": "NWS Philadelphia - Mount Holly (New Jersey, Delaware, Southeastern Pennsylvania)",
+      "event": "Small Craft Advisory",
+      "start": 1684952747,
+      "end": 1684988747,
+      "description": "...SMALL CRAFT ADVISORY REMAINS IN EFFECT FROM 5 PM     THIS\nAFTERNOON TO 3 AM EST FRIDAY...\n* WHAT...North winds 15 to 20 kt with gusts up to 25 kt and seas\n3 to 5 ft expected.\n* WHERE...Coastal waters from Little Egg Inlet to Great Egg\nInlet NJ out 20 nm, Coastal waters from Great Egg Inlet to\nCape May NJ out 20 nm and Coastal waters from Manasquan Inlet\nto Little Egg Inlet NJ out 20 nm.\n* WHEN...From 5 PM this afternoon to 3 AM EST Friday.\n* IMPACTS...Conditions will be hazardous to small craft.",
+      "tags": [        ]
+    },
+  ...
+  ]
+}
+Toggle
+Copy Icon
+If you do not see some of the parameters in your API response it means that these weather phenomena are just not happened for the time of measurement for the city or location chosen. Only really measured or calculated data is displayed in API response
+
+Fields in API response
+lat Latitude of the location, decimal (−90; 90)
+lon Longitude of the location, decimal (-180; 180)
+timezone Timezone name for the requested location
+timezone_offset Shift in seconds from UTC
+alerts National weather alerts data from major national weather warning systems
+alerts.sender_name Name of the alert source. Please read here the full list of alert sources
+alerts.event Alert event name
+alerts.start Date and time of the start of the alert, Unix, UTC
+alerts.end Date and time of the end of the alert, Unix, UTC
+alerts.description Description of the alert
+alerts.tags Type of severe weather
+National weather alerts are provided in English by default. Please note that some agencies provide the alert’s description only in a local language.
+
+Weather data for timestamp
+
+To learn about how get access to weather data for any timestamp from 1st January 1979 till 4 days ahead forecast, please use this section of the documentation.
+
+If you are interested in other functionality on One Call API 3.0, please check Product concept to follow the right section.
+
+How to make an API call
+API call
+https://api.openweathermap.org/data/3.0/onecall/timemachine?lat={lat}&lon={lon}&dt={time}&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude, decimal (-90; 90). If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+lon
+
+required
+
+Longitude, decimal (-180; 180). If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+dt
+
+required
+
+Timestamp (Unix time, UTC time zone), e.g. dt=1586468027. Data is available from January 1st, 1979 till 4 days ahead
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use the lang parameter to get the output in your language. Learn more
+
+Please note that the one API response contains weather data for only one specified timestamp.
+
+Before making an API call, please note, that One Call 3.0 is included in the "One Call by Call" subscription only. Learn more
+
+Example of API call
+https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=39.099724&lon=-94.578331&dt=1643803200&appid={API key}
+Copy Icon
+Example of API response
+{
+  "lat": 52.2297,
+  "lon": 21.0122,
+  "timezone": "Europe/Warsaw",
+  "timezone_offset": 3600,
+  "data": [
+    {
+      "dt": 1645888976,
+      "sunrise": 1645853361,
+      "sunset": 1645891727,
+      "temp": 279.13,
+      "feels_like": 276.44,
+      "pressure": 1029,
+      "humidity": 64,
+      "dew_point": 272.88,
+      "uvi": 0.06,
+      "clouds": 0,
+      "visibility": 10000,
+      "wind_speed": 3.6,
+      "wind_deg": 340,
+      "weather": [
+        {
+          "id": 800,
+          "main": "Clear",
+          "description": "clear sky",
+          "icon": "01d"
+        }
+      ]
+    }
+  ]
+}
+Toggle
+Copy Icon
+Fields in API response
+If you do not see some of the parameters in your API response it means that these weather phenomena are just not happened for the time of measurement for the city or location chosen. Only really measured or calculated data is displayed in API response.
+
+lat Latitude of the location, decimal (−90; 90)
+lon Longitude of the location, decimal (-180; 180)
+timezone Timezone name for the requested location
+timezone_offset Shift in seconds from UTC
+data
+data.dt Requested time, Unix, UTC
+data.sunrise Sunrise time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+data.sunset Sunset time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+data.temp Temperature. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit. How to change units used
+data.feels_like Temperature. This accounts for the human perception of weather. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit.
+data.pressure Atmospheric pressure on the sea level, hPa
+data.humidity Humidity, %
+data.dew_point Atmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form. Units – default: kelvin, metric: Celsius, imperial: Fahrenheit.
+data.clouds Cloudiness, %
+data.uvi UV index. Please pay attention that historical UV index data available only for 5 days back. If you would like to get historical UVI index data starting from 20th September 2020 please contact us
+data.visibility Average visibility, metres. The maximum value of the visibility is 10 km
+data.wind_speed Wind speed. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+data.wind_gust (where available) Wind gust. Wind speed. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+data.wind_deg Wind direction, degrees (meteorological)
+data.weather
+data.weather.id Weather condition id
+data.weather.main Group of weather parameters (Rain, Snow etc.)
+data.weather.description Weather condition within the group (full list of weather conditions). Get the output in your language
+data.weather.icon Weather icon id. How to get icons
+data.rain (where available)
+1h Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+data.snow(where available)
+1h Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+Daily Aggregation
+
+To learn about how get access to aggregated weather data for a particular date from 2nd January 1979 till long-term forecast for 1,5 years ahead, please use this section of the documentation.
+
+If you are interested in other functionality on One Call API 3.0, please check Product concept to follow the right section.
+
+How to make an API call
+API call
+https://api.openweathermap.org/data/3.0/onecall/day_summary?lat={lat}&lon={lon}&date={date}&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude, decimal (-90; 90)
+
+lon
+
+required
+
+Longitude, decimal (-180; 180)
+
+date
+
+required
+
+Date in the `YYYY-MM-DD` format for which data is requested. Date is available for 447+ years archive (starting from 1979-01-02) up to the 1,5 years ahead forecast to the current date
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use the lang parameter to get the output in your language. Learn more
+
+If the service detected timezone for your location incorrectly you can specify correct timezone manually by adding tz parameter in the ±XX:XX format to API call.
+
+API call
+
+https://api.openweathermap.org/data/3.0/onecall/day_summary?lat={lat}&lon={lon}&date={date}&tz={tz}&appid={API key}
+
+Example of API call
+
+https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=60.45&lon=-38.67&date=2023-03-30&tz=+03:00&appid={API key}
+
+Please pay attention that in case timezone is specified time of afternoon, night, evening, morning temperatures, pressure, humidity will be returned in accordance with this specified timezone.
+
+Example of API call
+Before making an API call, please note, that One Call 3.0 is included in the "One Call by Call" subscription only. Learn more
+
+Example of API call
+https://api.openweathermap.org/data/3.0/onecall/day_summary?lat=39.099724&lon=-94.578331&date=2020-03-04&appid={API key}
+Copy Icon
+Example of API response
+{
+   "lat":33,
+   "lon":35,
+   "tz":"+02:00",
+   "date":"2020-03-04",
+   "units":"standard",
+   "cloud_cover":{
+      "afternoon":0
+   },
+   "humidity":{
+      "afternoon":33
+   },
+   "precipitation":{
+      "total":0
+   },
+   "temperature":{
+      "min":286.48,
+      "max":299.24,
+      "afternoon":296.15,
+      "night":289.56,
+      "evening":295.93,
+      "morning":287.59
+   },
+   "pressure":{
+      "afternoon":1015
+   },
+   "wind":{
+      "max":{
+         "speed":8.7,
+         "direction":120
+      }
+   }
+}
+Toggle
+Copy Icon
+Fields in API response
+lat Latitude of the location, decimal (−90; 90)
+lon Longitude of the location, decimal (-180; 180)
+tz Timezone in the ±XX:XX format
+date Date specified in the API request in the `YYYY-MM-DD` format (from 1979-01-02 up to the 1,5 years ahead forecast)
+units Units of measurement specified in the request. Learn more
+cloud_cover Cloud related information
+afternoon Cloud cover at 12:00 for the date specified in the request, %
+humidity Humidity related information
+afternoon Relative humidity at 12:00 for the date specified in the request, %
+precipitation Precipitation related information
+total Total amount of liquid water equivalent of precipitation for the date specified in the request, mm
+pressure Atmospheric pressure related information
+afternoon Atmospheric pressure at 12:00 for the date specified in the request, hPa
+temperature Temperature related information
+min Minimum temperature for the date specified in the request. Units - default: kelvin, metric: Celsius, imperial: Fahrenheit.How to change units used
+max Maximum temperature for the date specified in the request. Units - default: kelvin, metric: Celsius, imperial: Fahrenheit.How to change units used
+afternoon Temperature at 12:00 for the date specified in the request. Units - default: kelvin, metric: Celsius, imperial: Fahrenheit.How to change units used
+night Temperature at 00:00 for the date specified in the request. Units - default: kelvin, metric: Celsius, imperial: Fahrenheit.How to change units used
+evening Temperature at 18:00 for the date specified in the request. Units - default: kelvin, metric: Celsius, imperial: Fahrenheit.How to change units used
+morning Temperature at 06:00 for the date specified in the request. Units - default: kelvin, metric: Celsius, imperial: Fahrenheit.How to change units used
+wind Wind speed related information
+max Maximum wind speed related information
+speed Maximum wind speed for the date specified in the request. Units – default: metre/sec, metric: metre/sec, imperial: miles/hour. How to change units used
+direction Wind cardinal direction relevant to the maximum wind speed, degrees (meteorological)
+Weather overview
+
+This section describes how to get weather overview with a human-readable weather summary for today and tomorrow's forecast, utilizing OpenWeather AI technologies.
+
+If you are interested in other functionality on One Call API 3.0, please check Product concept to follow the right section.
+
+How to make an API call
+API call
+https://api.openweathermap.org/data/3.0/onecall/overview?lat={lat}&lon={lon}&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude, decimal (-90; 90)
+
+lon
+
+required
+
+Longitude, decimal (-180; 180)
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+date
+
+optional
+
+The date the user wants to get a weather summary in the YYYY-MM-DD format. Data is available for today and tomorrow. If not specified, the current date will be used by default. Please note that the date is determined by the timezone relevant to the coordinates specified in the API request
+
+units
+
+optional
+
+Units of measurement. Standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+Example of API call
+https://api.openweathermap.org/data/3.0/onecall/overview?lon=-11.8092&lat=51.509865&appid={API key}
+Copy Icon
+Example of API response
+{
+   "lat": 51.509865,
+   "lon": -0.118092,
+   "tz": "+01:00",
+   "date": "2024-05-13",
+   "units": "metric",
+   "weather_overview": "The current weather is overcast with a 
+temperature of 16°C and a feels-like temperature of 16°C. 
+The wind speed is 4 meter/sec with gusts up to 6 meter/sec 
+coming from the west-southwest direction. 
+The air pressure is at 1007 hPa with a humidity level of 79%. 
+The dew point is at 12°C and the visibility is 10000 meters. 
+The UV index is at 4, indicating moderate risk from the 
+sun's UV rays. 
+The sky is covered with overcast clouds, and there is 
+no precipitation expected at the moment. 
+Overall, it is a moderately cool and cloudy day 
+with light to moderate winds from the west-southwest."
+}
+Toggle
+Copy Icon
+Fields in API response
+lat Latitude of the location, decimal (−90; 90)
+lon Longitude of the location, decimal (-180; 180)
+tzTimezone in the ±XX:XX format
+date Date for which summary is generated in the format YYYY-MM-DD
+units Units of measurement specified in the request
+weather_overviewAI generated weather overview for the requested date
+AI Weather Assistant
+
+To learn how to access weather and weather-related advice in a human-readable format, please use this section of the documentation.
+
+If you are interested in other functionality in One Call API 3.0, please refer to the Product concept to follow the appropriate section.
+
+The AI Weather Assistant is available via API, allowing you to integrate it directly into your applications and workflows. For your convenience, you can also explore the service in a chatbot-like format using the web interface to familiarize yourself with the service's functionality, test various use cases, and understand how the AI Weather Assistant responds to different queries before implementing it in your projects.
+
+Please note that all interactions with the AI Assistant endpoint are free of charge. However, the AI Weather Assistant retrieves weather information for requested locations from the Current & Forecast endpoint of the One Call API 3.0, and these requests are counting toward your One Call API 3.0 usage statistics.
+
+At the moment, the AI Weather Assistant considers current weather, minutely forecast, hourly forecast and daily forecast for the next 7 days for any location around the globe. The product offers global coverage and accepts cities, provinces or countries as valid locations. The AI weather assistant will remember the location you are inquiring about and use it for all future inquiries until a new location is specified.
+
+Questions examples:
+
+What's the weather in London like?
+Is it a good idea to go for a swim?
+Will it rain tomorrow in Paris?
+What should my 8-year-old child wear?
+Where is it better to go on holiday next weekend: in London or Paris?
+The AI Weather Assistant understands over 50 languages, including English, French, Italian, German, Chinese, Arabic and Hindi.
+
+The AI Weather Assistant is a work in progress. Its knowledge of the world and weather is being continuously enhanced.
+
+How to make a call with web interface
+Here you will find how to explore the service in a chatbot-like format with the web interface to familiarize yourself with the service's functionality, test various use cases, and understand how the AI Weather Assistant responds to different queries before implementing it in your projects.
+
+The address of the web page with the web interface is:
+
+How to make a call with web interface
+https://openweathermap.org/weather-assistant?apikey={API key}
+Copy Icon
+Ensure that you use your valid OpenWeather API key in place of api key.
+
+Parameters
+
+api_key
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+Upon successful validation of the API key, you will be directed to the default chat page. This page serves as the primary interface for interacting with the AI Weather Assistant, allowing to initiate conversations and request weather information seamlessly.
+
+wa docs1
+Enter your prompt to communicate with the AI Weather Assistant. The AI Weather Assistant will remember the location you are inquiring about and will use it for all future inquiries until a new location is specified. The topic can include queries about the weather or activities based on weather data.
+
+wa-docs2
+How to make a call with API Endpoints
+
+Step 1: Session start
+This HTTP method is used to start a session and ask questions about the weather and weather related advice.To interact with the AI Weather Assistant, please enter your prompt following the guidelines outlined below.
+
+In case of successful creation, the method returns an HTTP code 200.
+
+Method: POST
+
+Header: Content-Type: application/json
+
+X-Api-Key: [your OpenWeather API key]
+
+URL
+https://api.openweathermap.org/assistant/session
+Copy Icon
+Example of the request body
+                          
+        json = {
+          "prompt": "What’s weather like in London?",
+        } 
+                       
+Copy Icon
+Parameters
+
+prompt
+
+required
+
+Query about the weather or activities based on weather data the user is asking for. If a location is not provided in the request, the AI Weather Assistant will ask to specify the location.
+
+Example of the API response
+{
+          "answer": "Hello! Right now in London, it's quite 
+          cloudy with overcast skies. The temperature is 
+          around 9.5°C, but it feels a little cooler at 9.2°C. 
+          The humidity is at 91%, so it might feel a bit damp. 
+          Winds are light at 1.54 m/s coming from the southwest. 
+          With these conditions, it's a cozy day to perhaps enjoy 
+          indoor activities or a calm walk with a warm jacket. 
+          If you're heading out, there's no rain reported 
+          at the moment, but it's a good idea to keep an umbrella
+          handy just in case. Stay cozy and enjoy your day in London!",
+          "data": {
+              "London": {
+                  "Current UTC Time": "15 January 2025, 14:25",
+                  "Current Week Day UTC": "Wednesday",
+                  "clouds": 100,
+                  "dew_point": 281.26,
+                  "dt": 1736951146,
+                  "feels_like": 282.19,
+                  "humidity": 91,
+                  "pressure": 1034,
+                  "sunrise": 1736927957,
+                  "sunset": 1736958011,
+                  "temp": 282.65,
+                  "uvi": 0.43,
+                  "visibility": 10000,
+                  "weather": [
+                      {
+                          "description": "overcast clouds",
+                          "icon": "04d",
+                          "id": 804,
+                          "main": "Clouds"
+                      }
+                  ],
+                  "wind_deg": 240,
+                  "wind_speed": 1.54
+              }
+          },
+          "session_id": "d47d2211-f1cf-409c-8297-617d74945571"
+        }
+                      
+Toggle
+Copy Icon
+Fields in API response
+answer LLM-generated answer to the prompt
+data Data that was used as the data source for generating the 'answer' part. Please note that only sections relevant to the time period mentioned in the "prompt" are included in the API response. If the user doesn’t mention a location or continues to inquire about the same location, the 'data' field will remain empty. The “data” field will contain new weather data automatically upon receiving a query related to a different location or forecast type.
+loc1Location 1 name from inquiry
+current UTC Time Current time, UTC
+current Week Day UTCDay of the week, UTC
+latLatitude of the location, decimal (−90; 90)
+lonLongitude of the location, decimal (-180; 180)
+timezone Timezone name for the requested location
+timezone_offsetShift in seconds from UTC
+currentCurrent weather data API response
+current.dtCurrent time, Unix, UTC
+current.sunriseSunrise time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+current.sunsetSunset time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+current.tempTemperature, kelvin
+current.feels_likeTemperature. This temperature parameter accounts for the human perception of weather, kelvin.
+current.pressureAtmospheric pressure on the sea level, hPa
+current.humidityHumidity, %
+current.dew_pointAtmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form. Units: kelvin
+current.cloudsCloudiness, %
+current.uviCurrent UV index
+current.visibilityAverage visibility, metres. The maximum value of the visibility is 10 km
+current.wind_speed Wind speed. Wind speed. Units: metre/sec
+current.wind_gust(where available) Wind gust, metre/sec
+current.wind_degWind direction, degrees (meteorological)
+current.wind_speed Wind speed. Wind speed. Units: metre/sec
+current.rain
+current.rain.1h(where available) Precipitation, mm/h
+current.snow
+current.snow.1h(where available)Precipitation, mm/h
+current.weather
+current.weather.idWeather condition id
+current.weather.mainGroup of weather parameters (Rain, Snow etc.)
+current.weather.description Weather condition within the group (full list of weather conditions)
+current.weather.icon Weather icon id. How to get icons
+minutelyMinute forecast weather data API response
+minutely.dtTime of the forecasted data, unix, UTC
+minutely.precipitationPrecipitation, mm/h.
+hourly Hourly forecast weather data API response
+hourly.dtTime of the forecasted data, Unix, UTC
+hourly.tempTemperature, kelvin
+hourly.feels_likeTemperature. This accounts for the human perception of weather, kelvin
+hourly.pressure Atmospheric pressure on the sea level, hPa
+hourly.humidityHumidity, %
+hourly.dew_pointAtmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form, kelvin
+hourly.uviUV index
+hourly.cloudsCloudiness, %
+hourly.visibilityAverage visibility, metres. The maximum value of the visibility is 10 km
+hourly.wind_speed
+Wind speed, metre/sec
+hourly.wind_gust(where available)Wind gust, metre/sec
+hourly.wind_degWind direction, degrees (meteorological)
+hourly.pop Probability of precipitation. The values of the parameter vary between 0 and 1, where 0 is equal to 0%, 1 is equal to 100%
+hourly.rain
+hourly.rain.1h (where available) Precipitation, mm/h
+hourly.snow
+hourly.snow.1h(where available)Precipitation, mm/h
+hourly.weather
+current.weather.idWeather condition id
+current.weather.mainGroup of weather parameters (Rain, Snow etc.)
+current.weather.description Weather condition within the group (full list of weather conditions)
+current.weather.icon Weather icon id. How to get icons
+dailyDaily forecast weather data API response
+daily.dtTime of the forecasted data, Unix, UTC
+daily.sunriseSSunrise time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+daily.sunsetSunset time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+daily.moonriseThe time of when the moon rises for this day, Unix, UTC
+daily.moonsetThe time of when the moon sets for this day, Unix, UTC
+daily.moon_phaseMoon phase. 0 and 1 are 'new moon', 0.25 is 'first quarter moon', 0.5 is 'full moon' and 0.75 is 'last quarter moon'. The periods in between are called 'waxing crescent', 'waxing gibbous', 'waning gibbous', and 'waning crescent', respectively. Moon phase calculation algorithm: if the moon phase values between the start of the day and the end of the day have a round value (0, 0.25, 0.5, 0.75, 1.0), then this round value is taken, otherwise the average of moon phases for the start of the day and the end of the day is taken
+summaryHuman-readable description of the weather conditions for the day
+Daily.tempkelvin
+daily.temp.morn Morning temperature
+daily.temp.day Day temperature
+daily.temp.eve Evening temperature
+daily.temp.night Night temperature
+daily.temp.min Min daily temperature
+daily.temp.max Max daily temperature
+daily.feels_likeThis accounts for the human perception of weather, kelvin
+daily.feels_like.morn Morning temperature
+daily.feels_like.day Day temperature
+daily.feels_like.eve Evening temperature
+daily.feels_like.night Night temperature
+daily.pressureAtmospheric pressure on the sea level, hPa
+daily.humidityHumidity, %
+daily.dew_pointAtmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form, kelvin
+daily.wind_speedWind speed, metre/sec
+daily.wind_gust(where available) Wind gust, metre/sec
+daily.wind_degWind direction, degrees (meteorological)
+daily.clouds Cloudiness, %
+daily.uviThe maximum value of UV index for the day
+daily.popProbability of precipitation. The values of the parameter vary between 0 and 1, where 0 is equal to 0%, 1 is equal to 100%
+daily.rain(where available)Precipitation volume, mm
+daily.snow(where available)Snow volume, mm
+daily.weather
+daily.weather.idWeather condition id
+daily.weather.mainGroup of weather parameters (Rain, Snow etc.)
+daily.weather.description Weather condition within the group (full list of weather conditions)
+daily.weather.icon Weather icon id. How to get icons
+alertsNational weather alerts data from major national weather warning systems
+alerts.sender_nameName of the alert source. Please read here the full list of alert sources
+alerts.eventAlert event name
+alerts.startDate and time of the start of the alert, Unix, UTC
+alerts.endDate and time of the end of the alert, Unix, UTC
+alerts.descriptionDescription of the alert
+alerts.tags Type of severe weather
+session_idid of a conversation session
+To continue the session, please see Step 2. If you want the chatbot to disregard previous messages, return to Step 1 and begin a new session.
+
+Step 2: Resume a session
+This HTTP method is used to resume a conversation session with the chatbot. The AI Weather Assistant will remember the previous messages and retain the location you specify. It will use the location for all following inquiries until a new location is provided.
+
+In case of successful creation, the method returns an HTTP code 200.
+
+Method: POST
+
+Header: Content-Type: application/json
+
+X-Api-Key: [your OpenWeather API key]
+
+URL
+https://api.openweathermap.org/assistant/session/{session_id}
+Copy Icon
+Example of the request body
+                            
+          json = {
+            "prompt": "Do I need a hat?",
+          } 
+                         
+Copy Icon
+Parameters
+
+prompt
+
+required
+
+Query about the weather or activities based on weather data the user is asking for. If a location is not provided in the initial request, the AI Weather Assistant will ask to specify the location.
+
+Example of the API response
+                        
+        {'answer': "Given the mild temperature of around 9.76°C 
+        in London and the gentle north wind at 2.68 m/s, 
+        wearing a hat could be a good idea, especially if you 
+        tend to feel a bit chilly or if you're 
+        sensitive to cooler weather. 
+        Plus, a hat can add a nice style touch to your outfit! 
+        Stay cozy and enjoy your day, whatever you choose! 😊",
+        'data': {},
+        'session_id': 'xxxxxxxxx'}
+                 
+Toggle
+Copy Icon
+Fields in API response
+answer LLM-generated answer to the prompt
+data Data that was used as the data source for generating the 'answer' part. Please note that only sections relevant to the time period mentioned in the "prompt" are included in the API response. If the user doesn’t mention a location or continues to inquire about the same location, the 'data' field will remain empty. The “data” field will contain new weather data automatically upon receiving a query related to a different location or forecast type.
+loc1Location 1 name from inquiry
+current UTC Time Current time, UTC
+current Week Day UTCDay of the week, UTC
+latLatitude of the location, decimal (−90; 90)
+lonLongitude of the location, decimal (-180; 180)
+timezone Timezone name for the requested location
+timezone_offsetShift in seconds from UTC
+currentCurrent weather data API response
+current.dtCurrent time, Unix, UTC
+current.sunriseSunrise time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+current.sunsetSunset time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+current.tempTemperature, kelvin
+current.feels_likeTemperature. This temperature parameter accounts for the human perception of weather, kelvin.
+current.pressureAtmospheric pressure on the sea level, hPa
+current.humidityHumidity, %
+current.dew_pointAtmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form. Units: kelvin
+current.cloudsCloudiness, %
+current.uviCurrent UV index
+current.visibilityAverage visibility, metres. The maximum value of the visibility is 10 km
+current.wind_speed Wind speed. Wind speed. Units: metre/sec
+current.wind_gust(where available) Wind gust, metre/sec
+current.wind_degWind direction, degrees (meteorological)
+current.wind_speed Wind speed. Wind speed. Units: metre/sec
+current.rain
+current.rain.1h(where available) Precipitation, mm/h
+current.snow
+current.snow.1h(where available)Precipitation, mm/h
+current.weather
+current.weather.idWeather condition id
+current.weather.mainGroup of weather parameters (Rain, Snow etc.)
+current.weather.description Weather condition within the group (full list of weather conditions)
+current.weather.icon Weather icon id. How to get icons
+minutelyMinute forecast weather data API response
+minutely.dtTime of the forecasted data, unix, UTC
+minutely.precipitationPrecipitation, mm/h.
+hourly Hourly forecast weather data API response
+hourly.dtTime of the forecasted data, Unix, UTC
+hourly.tempTemperature, kelvin
+hourly.feels_likeTemperature. This accounts for the human perception of weather, kelvin
+hourly.pressure Atmospheric pressure on the sea level, hPa
+hourly.humidityHumidity, %
+hourly.dew_pointAtmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form, kelvin
+hourly.uviUV index
+hourly.cloudsCloudiness, %
+hourly.visibilityAverage visibility, metres. The maximum value of the visibility is 10 km
+hourly.wind_speed
+Wind speed, metre/sec
+hourly.wind_gust(where available)Wind gust, metre/sec
+hourly.wind_degWind direction, degrees (meteorological)
+hourly.pop Probability of precipitation. The values of the parameter vary between 0 and 1, where 0 is equal to 0%, 1 is equal to 100%
+hourly.rain
+hourly.rain.1h (where available) Precipitation, mm/h
+hourly.snow
+hourly.snow.1h(where available)Precipitation, mm/h
+hourly.weather
+current.weather.idWeather condition id
+current.weather.mainGroup of weather parameters (Rain, Snow etc.)
+current.weather.description Weather condition within the group (full list of weather conditions)
+current.weather.icon Weather icon id. How to get icons
+dailyDaily forecast weather data API response
+daily.dtTime of the forecasted data, Unix, UTC
+daily.sunriseSSunrise time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+daily.sunsetSunset time, Unix, UTC. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+daily.moonriseThe time of when the moon rises for this day, Unix, UTC
+daily.moonsetThe time of when the moon sets for this day, Unix, UTC
+daily.moon_phaseMoon phase. 0 and 1 are 'new moon', 0.25 is 'first quarter moon', 0.5 is 'full moon' and 0.75 is 'last quarter moon'. The periods in between are called 'waxing crescent', 'waxing gibbous', 'waning gibbous', and 'waning crescent', respectively. Moon phase calculation algorithm: if the moon phase values between the start of the day and the end of the day have a round value (0, 0.25, 0.5, 0.75, 1.0), then this round value is taken, otherwise the average of moon phases for the start of the day and the end of the day is taken
+summaryHuman-readable description of the weather conditions for the day
+Daily.tempkelvin
+daily.temp.morn Morning temperature
+daily.temp.day Day temperature
+daily.temp.eve Evening temperature
+daily.temp.night Night temperature
+daily.temp.min Min daily temperature
+daily.temp.max Max daily temperature
+daily.feels_likeThis accounts for the human perception of weather, kelvin
+daily.feels_like.morn Morning temperature
+daily.feels_like.day Day temperature
+daily.feels_like.eve Evening temperature
+daily.feels_like.night Night temperature
+daily.pressureAtmospheric pressure on the sea level, hPa
+daily.humidityHumidity, %
+daily.dew_pointAtmospheric temperature (varying according to pressure and humidity) below which water droplets begin to condense and dew can form, kelvin
+daily.wind_speedWind speed, metre/sec
+daily.wind_gust(where available) Wind gust, metre/sec
+daily.wind_degWind direction, degrees (meteorological)
+daily.clouds Cloudiness, %
+daily.uviThe maximum value of UV index for the day
+daily.popProbability of precipitation. The values of the parameter vary between 0 and 1, where 0 is equal to 0%, 1 is equal to 100%
+daily.rain(where available)Precipitation volume, mm
+daily.snow(where available)Snow volume, mm
+daily.weather
+daily.weather.idWeather condition id
+daily.weather.mainGroup of weather parameters (Rain, Snow etc.)
+daily.weather.description Weather condition within the group (full list of weather conditions)
+daily.weather.icon Weather icon id. How to get icons
+alertsNational weather alerts data from major national weather warning systems
+alerts.sender_nameName of the alert source. Please read here the full list of alert sources
+alerts.eventAlert event name
+alerts.startDate and time of the start of the alert, Unix, UTC
+alerts.endDate and time of the end of the alert, Unix, UTC
+alerts.descriptionDescription of the alert
+alerts.tags Type of severe weather
+session_idid of a conversation session
+Other features
+
+List of weather condition codes
+List of weather condition codes with icons (range of thunderstorm, drizzle, rain, snow, clouds, atmosphere etc.)
+
+Units of measurement
+standard, metric and imperial units are available.
+
+List of all API parameters with available units.
+
+API call
+https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&units={units}
+Copy Icon
+Parameters
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default.
+
+Temperature is available in Fahrenheit, Celsius and Kelvin units.
+
+Wind speed is available in miles/hour and meter/sec.
+
+For temperature in Fahrenheit and wind speed in miles/hour, use units=imperial
+For temperature in Celsius and wind speed in meter/sec, use units=metric
+Temperature in Kelvin and wind speed in meter/sec is used by default, so there is no need to use the units parameter in the API call if you want this
+Examples of API calls
+Standard (default)
+api.openweathermap.org/data/3.0/onecall?lat=30.489772&lon=-99.771335
+Copy Icon
+Metric
+api.openweathermap.org/data/3.0/onecall?lat=30.489772&lon=-99.771335&units=metric
+Copy Icon
+Imperial
+api.openweathermap.org/data/3.0/onecall?lat=30.489772&lon=-99.771335&units=imperial
+Copy Icon
+Multilingual support
+You can use lang parameter to get the output in your language.
+
+The contents of the description field will be translated.
+
+API call
+https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&lang={lang}
+Copy Icon
+Parameters
+
+lang
+
+optional
+
+You can use the lang parameter to get the output in your language.
+
+Example of API call
+Before making an API call, please note, that One Call 3.0 is included in the "One Call by Call" subscription only. Learn more
+
+https://api.openweathermap.org/data/3.0/onecall?lat=30.489772&lon=-99.771335&lang=zh_cn
+Copy Icon
+We support the following languages. To select one, you can use the corresponding language code:
+
+sq Albanian
+af Afrikaans
+ar Arabic
+az Azerbaijani
+eu Basque
+be Belarusian
+bg Bulgarian
+ca Catalan
+zh_cn Chinese Simplified
+zh_tw Chinese Traditional
+hr Croatian
+cz Czech
+da Danish
+nl Dutch
+en English
+fi Finnish
+fr French
+gl Galician
+de German
+el Greek
+he Hebrew
+hi Hindi
+hu Hungarian
+is Icelandic
+id Indonesian
+it Italian
+ja Japanese
+kr Korean
+ku Kurmanji (Kurdish)
+la Latvian
+lt Lithuanian
+mk Macedonian
+no Norwegian
+fa Persian (Farsi)
+pl Polish
+pt Portuguese
+pt_br Português Brasil
+ro Romanian
+ru Russian
+sr Serbian
+sk Slovak
+sl Slovenian
+sp, es Spanish
+sv, se Swedish
+th Thai
+tr Turkish
+ua, uk Ukrainian
+vi Vietnamese
+zu Zulu
+List of national weather alerts sources
+Country
+
+Agency
+
+Albania
+
+Institute of GeoSciences, Energy, Water and Environment of Albania
+
+Algeria
+
+National Meteorological Office
+
+Argentina
+
+National Weather Service of Argentina
+
+Australia
+
+Australian Bureau of Meteorology
+
+Austria
+
+Bahrain
+
+Bahrain Meteorological Directorate
+
+Barbados
+
+Barbados Meteorological Service
+
+Belarus
+
+State institution "Republican center for hydrometeorology, control of radioactive contamination and environmental monitoring" (Belhydromet)
+
+Belgium
+
+Royal Meteorological Institute
+
+Belize
+
+National Meteorological Service of Belize
+
+Benin
+
+National Meteorological Agency (METEO-BENIN)
+
+Bosnia and Herzegovina
+
+Botswana
+
+Botswana Meteorological Services
+
+Brazil
+
+National Meteorological Institute - INMET
+
+Bulgaria
+
+National Institute of Meteorology and Hydrology - Plovdiv branch
+
+Cameroon
+
+Cameroon National Meteorological Service
+
+Canada
+
+Chile
+
+Meteorological Directorate of Chile
+
+Congo
+
+National Civil Aviation Agency (ANAC Congo)
+
+Costa Rica
+
+National Meteorological Institute of Costa Rica
+
+Croatia
+
+State Hydrometeorological Institute (DHMZ)
+
+Curacao and Sint Maarten
+
+Meteorological Department Curacao
+
+Cyprus
+
+Republic of Cyprus - Department of Meteorology
+
+Czech Republic
+
+Czech Hydrometeorological Institute
+
+Denmark
+
+Danish Meteorological Institute
+
+Ecuador
+
+Ecuadoran Institute for Meteorology and Hydrology (INAMHI)
+
+Egypt
+
+Egyptian Meteorological Authority
+
+Estonia
+
+Estonian Environment Agency
+
+Eswatini
+
+Eswatini Meteorological Service
+
+Finland
+
+Finnish Meteorological Institute
+
+France
+
+Meteo-France
+
+Gabon
+
+General Directorate of Meteorology of Gabon
+
+Germany
+
+German Meteorological Office
+
+Ghana
+
+Ghana Meteorological Agency
+
+Greece
+
+Hellenic National Meteorological Service
+
+Guinea
+
+National Meteorological Agency of Guinea
+
+Guyana
+
+Hydrometeorological Service of Guyana
+
+Hong Kong China
+
+Hong Kong Observatory
+
+Hungary
+
+Hungarian Meteorological Service
+
+Iceland
+
+Icelandic Meteorological Office
+
+India
+
+India Meteorological Department
+
+Indonesia
+
+Ireland
+
+Met Eireann - Irish Meteorological Service
+
+Israel
+
+Israel Meteorological Service
+
+Italy
+
+Italian Air Force National Meteorological Service
+
+Ivory Coast
+
+Airport, aeronautical and meteorological operating and development company (SODEXAM)
+
+Jamaica
+
+Meteorological Service of Jamaica
+
+Japan
+
+Japan Meteorological Business Support Center
+
+Jordan
+
+Jordanian Meteorological Department
+
+Kazakhstan
+
+National Hydrometeorological Service of the Republic of Kazakhstan (Kazhydromet)
+
+Kenya
+
+Kenya Meteorological Department
+
+Kuwait
+
+Kuwait Meteorological Department
+
+Latvia
+
+Latvian Environment, Geology and Meteorology Center
+
+Lesotho
+
+Lesotho Meteorological Services
+
+Libya
+
+Libyan National Meteorological Center
+
+Lithuania
+
+Lithuanian Hydrometeorological Service under the Ministry of Environment of the Republic of Lithuania (LHMS)
+
+Luxembourg
+
+Luxembourg Airport Administration
+
+Macao China
+
+Macao Meteorological and Geophysical Bureau
+
+Madagascar
+
+METEO Madagascar
+
+Malawi
+
+Malawi Department of Climate Change and Meteorological Services
+
+Maldives
+
+Maldives Meteorological Service
+
+Mauritania
+
+National Meteorological Office of Mauritania
+
+Mauritius
+
+Mauritius Meteorological Services
+
+Mexico
+
+CONAGUA - National Meteorological Service of Mexico
+
+Moldova
+
+State Hydrometeorological Service of Moldova
+
+Mongolia
+
+National Agency Meteorology and the Environmental Monitoring of Mongolia
+
+Mozambique
+
+National Institute of Meteorology of Mozambique
+
+Myanmar
+
+Myanmar Department of Meteorology and Hydrology
+
+Netherlands
+
+Royal Netherlands Meteorological Institute (KNMI)
+
+New Zealand
+
+New Zealand
+
+New Zealand Emergency Mobile Alert
+
+Niger
+
+National Meteorological Directorate of Niger
+
+Nigeria
+
+Nigerian Meteorological Agency (NiMet)
+
+North Macedonia
+
+National Hydrometeorological Service - Republic of Macedonia
+
+Norway
+
+Paraguay
+
+Directorate of Meteorology and Hydrology
+
+Philippines
+
+Philippine Atmospheric Geophysical and Astronomical Services Administration
+
+Poland
+
+Institute of Meteorology and Water Management (IMGW-PIB)
+
+Portugal
+
+Portuguese Institute of Sea and Atmosphere, I.P.
+
+Qatar
+
+Qatar Meteorology Department
+
+Republic of Korea
+
+Korea Meteorological Administration, Weather Information
+
+Romania
+
+National Meteorological Administration
+
+Russia
+
+Hydrometcenter of Russia
+
+Saudi Arabia
+
+National Center for Meteorology - Kingdom of Saudi Arabia
+
+Serbia
+
+Republic Hydrometeorological Service of Serbia
+
+Seychelles
+
+Seychelles Meteorological Authority
+
+Singapore
+
+Meteorological Service Singapore
+
+Slovakia
+
+Slovak Hydrometeorological Institute
+
+Slovenia
+
+National Meteorological Service of Slovenia
+
+Solomon Islands
+
+Solomon Islands Meteorological Services
+
+South Africa
+
+South African Weather Service (SAWS)
+
+Spain
+
+State Meteorological Agency (AEMET)
+
+Sudan
+
+Sudan Meteorological Authority
+
+Sweden
+
+Swedish Meteorological and Hydrological Institute
+
+Switzerland
+
+MeteoSwiss
+
+Tanzania
+
+Tanzania Meteorological Authority
+
+Thailand
+
+Thai Meteorological Department
+
+Timor-Leste
+
+National Directorate of Meteorology and Geophysics of Timor-Leste
+
+Trinidad and Tobago
+
+Trinidad and Tobago Meteorological Service
+
+Ukraine
+
+Ukrainian Hydrometeorological Center
+
+United Arab Emirates (UAE)
+
+National Center of Meteorology (NCM), United Arab Emirates
+
+United Kingdom of Great Britain and Northern Ireland
+
+UK Met Office
+
+Uruguay
+
+Uruguayan Institute of Meteorology
+
+USA
+
+Uzbekistan
+
+Uzhydromet
+
+Yemen
+
+Yemeni Civil Aviation and Meteorology Authority (CAMA)
+
+Zambia
+
+Meteorological Department Zambia
+
+Zimbabwe
+
+Meteorological Services Department
+
+Please note that some agencies from the list may cease to provide us the weather alert information. In case you don’t receive alerts from any agency, please contact us. We constantly work on our product’s improvement and keep expanding the list of partner agencies.
+
+Call back function for JavaScript code
+To use JavaScript code you can transfer callback functionName to JSONP callback.
+
+API call example
+test({
+  "lat": 40.12,
+  "lon": -96.66,
+  "timezone": "America/Chicago",
+  "timezone_offset": -18000,
+  "current": {
+    "dt": 1595243443,
+    "sunrise": 1595243663,
+    "sunset": 1595296278,
+    "temp": 293.28,
+    "feels_like": 293.82,
+    "pressure": 1016,
+    "humidity": 100,
+    "dew_point": 293.28,
+    "uvi": 10.64,
+    "clouds": 90,
+    "visibility": 10000,
+    "wind_speed": 4.6,
+    "wind_deg": 310,
+    "weather": [
+      {
+        "id": 501,
+        "main": "Rain",
+        "description": "moderate rain",
+        "icon": "10n"
+      },
+      {
+        "id": 201,
+        "main": "Thunderstorm",
+        "description": "thunderstorm with rain",
+        "icon": "11n"
+      }
+    ],
+    "rain": {
+      "1h": 2.93
+    }
+  },
+  "minutely": [
+    {
+      "dt": 1595243460,
+      "precipitation": 2.928
+    },
+    ...
+  },
+    "hourly": [
+    {
+      "dt": 1595242800,
+      "temp": 293.28,
+      "feels_like": 293.82,
+      "pressure": 1016,
+      "humidity": 100,
+      "dew_point": 293.28,
+      "clouds": 90,
+      "visibility": 10000,
+      "wind_speed": 4.6,
+      "wind_deg": 123,
+      "weather": [
+        {
+          "id": 501,
+          "main": "Rain",
+          "description": "moderate rain",
+          "icon": "10n"
+        }
+      ],
+      "pop": 0.99,
+      "rain": {
+        "1h": 2.46
+      }
+    },
+    ...
+  }
+"daily": [
+    {
+      "dt": 1595268000,
+      "sunrise": 1595243663,
+      "sunset": 1595296278,
+      "temp": {
+        "day": 298.82,
+        "min": 293.25,
+        "max": 301.9,
+        "night": 293.25,
+        "eve": 299.72,
+        "morn": 293.48
+      },
+      "feels_like": {
+        "day": 300.06,
+        "night": 292.46,
+        "eve": 300.87,
+        "morn": 293.75
+      },
+      "pressure": 1014,
+      "humidity": 82,
+      "dew_point": 295.52,
+      "wind_speed": 5.22,
+      "wind_deg": 146,
+      "weather": [
+        {
+          "id": 502,
+          "main": "Rain",
+          "description": "heavy intensity rain",
+          "icon": "10d"
+        }
+      ],
+      "clouds": 97,
+      "pop": 1,
+      "rain": 12.57,
+      "uvi": 10.64
+    },
+    ...
+    },
+"alerts": [
+    {
+      "sender_name": "NWS Tulsa (Eastern Oklahoma)",
+      "event": "Heat Advisory",
+      "start": 1597341600,
+      "end": 1597366800,
+      "description": "...HEAT ADVISORY REMAINS IN EFFECT FROM 1 PM THIS AFTERNOON TO\n8 PM CDT THIS EVENING...\n* WHAT...Heat index values of 105 to 109 degrees expected.\n* WHERE...Creek, Okfuskee, Okmulgee, McIntosh, Pittsburg,\nLatimer, Pushmataha, and Choctaw Counties.\n* WHEN...From 1 PM to 8 PM CDT Thursday.\n* IMPACTS...The combination of hot temperatures and high\nhumidity will combine to create a dangerous situation in which\nheat illnesses are possible."
+    },
+    ...
+  ]
+  })
+Toggle
+Copy Icon
+API errors
+
+Structure of API errors
+In case of incorrected API call you will receive API error response. Error response payload returned for all types of errors with the structure below.
+
+Example of error response
+{
+    "cod":400,
+    "message":"Invalid date format",
+    "parameters": [
+        "date"
+    ]
+}
+Toggle
+Copy Icon
+Fields in error response
+cod Code of error
+message Description of error
+parameters(optional) List of request parameters names that are related to this particular error
+Errors list
+Please find more detailed information about some popular errors below.
+
+API calls return an error 400
+
+Close FAQ
+Error 400 - Bad Request. You can get 400 error if either some mandatory parameters in the request are missing or some of request parameters have incorrect format or values out of allowed range. List of all parameters names that are missing or incorrect will be returned in `parameters`attribute of the `ErrorResponse` object.
+
+API calls return an error 401
+
+Close FAQ
+Error 401 - Unauthorized. You can get 401 error if API token did not providen in the request or in case API token provided in the request does not grant access to this API. You must add API token with granted access to the product to the request before returning it.
+
+API calls return an error 404
+
+Close FAQ
+Error 404 - Not Found. You can get 404 error if data with requested parameters (lat, lon, date etc) does not exist in service database. You must not retry the same request.
+
+API calls return an error 429
+
+Close FAQ
+Error 429 - Too Many Requests. You can get 429 error if key quota of requests for provided API to this API was exceeded. You may retry request after some time or after extending your key quota.
+
+API calls return errors '5xx'
+
+Close FAQ
+Errors 5xx - Unexpected Error. You can get '5xx' error in case of other internal errors. Error Response code will be `5xx`. Please contact us and enclose an example of your API request that receives this error into your email to let us analyze it and find a solution for you promptly. You may retry the request which led to this error.
+
+Current weather data
+
+Product concept
+Access current weather data for any location on Earth! We collect and process weather data from different sources such as global and local weather models, satellites, radars and a vast network of weather stations. Data is available in JSON, XML, or HTML format.
+
+Call current weather data
+
+How to make an API call
+https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude. If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+lon
+
+required
+
+Longitude. If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+mode
+
+optional
+
+Response format. Possible values are xml and html. If you don't use the mode parameter format is JSON by default. Learn more
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use this parameter to get the output in your language. Learn more
+
+Please use Geocoder API if you need automatic convert city names and zip-codes to geo coordinates and the other way around.
+
+Please note that built-in geocoder has been deprecated. Although it is still available for use, bug fixing and updates are no longer available for this functionality.
+
+Examples of API calls
+https://api.openweathermap.org/data/2.5/weather?lat=44.34&lon=10.99&appid={API key}
+Copy Icon
+{
+  "coord": {
+    "lon": 10.99,
+    "lat": 44.34
+  },
+  "weather": [
+    {
+      "id": 501,
+      "main": "Rain",
+      "description": "moderate rain",
+      "icon": "10d"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 298.48,
+    "feels_like": 298.74,
+    "temp_min": 297.56,
+    "temp_max": 300.05,
+    "pressure": 1015,
+    "humidity": 64,
+    "sea_level": 1015,
+    "grnd_level": 933
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 0.62,
+    "deg": 349,
+    "gust": 1.18
+  },
+  "rain": {
+    "1h": 3.16
+  },
+  "clouds": {
+    "all": 100
+  },
+  "dt": 1661870592,
+  "sys": {
+    "type": 2,
+    "id": 2075663,
+    "country": "IT",
+    "sunrise": 1661834187,
+    "sunset": 1661882248
+  },
+  "timezone": 7200,
+  "id": 3163858,
+  "name": "Zocca",
+  "cod": 200
+}
+Toggle
+Copy Icon
+API response
+
+If you do not see some of the parameters in your API response it means that these weather phenomena are just not happened for the time of measurement for the city or location chosen. Only really measured or calculated data is displayed in API response.
+
+JSON
+{
+   "coord": {
+      "lon": 7.367,
+      "lat": 45.133
+   },
+   "weather": [
+      {
+         "id": 501,
+         "main": "Rain",
+         "description": "moderate rain",
+         "icon": "10d"
+      }
+   ],
+   "base": "stations",
+   "main": {
+      "temp": 284.2,
+      "feels_like": 282.93,
+      "temp_min": 283.06,
+      "temp_max": 286.82,
+      "pressure": 1021,
+      "humidity": 60,
+      "sea_level": 1021,
+      "grnd_level": 910
+   },
+   "visibility": 10000,
+   "wind": {
+      "speed": 4.09,
+      "deg": 121,
+      "gust": 3.47
+   },
+   "rain": {
+      "1h": 2.73
+   },
+   "clouds": {
+      "all": 83
+   },
+   "dt": 1726660758,
+   "sys": {
+      "type": 1,
+      "id": 6736,
+      "country": "IT",
+      "sunrise": 1726636384,
+      "sunset": 1726680975
+   },
+   "timezone": 7200,
+   "id": 3165523,
+   "name": "Province of Turin",
+   "cod": 200
+}
+Toggle
+Copy Icon
+JSON format API response fields
+coord
+coord.lon Longitude of the location
+coord.lat Latitude of the location
+weather (more info Weather condition codes)
+weather.id Weather condition id
+weather.main Group of weather parameters (Rain, Snow, Clouds etc.)
+weather.description Weather condition within the group. Please find more here. You can get the output in your language. Learn more
+weather.icon Weather icon id
+base Internal parameter
+main
+main.temp Temperature. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit
+main.feels_like Temperature. This temperature parameter accounts for the human perception of weather. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit
+main.pressure Atmospheric pressure on the sea level, hPa
+main.humidity Humidity, %
+main.temp_min Minimum temperature at the moment. This is minimal currently observed temperature (within large megalopolises and urban areas). Please find more info here. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit
+main.temp_max Maximum temperature at the moment. This is maximal currently observed temperature (within large megalopolises and urban areas). Please find more info here. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit
+main.sea_level Atmospheric pressure on the sea level, hPa
+main.grnd_level Atmospheric pressure on the ground level, hPa
+visibility Visibility, meter. The maximum value of the visibility is 10 km
+wind
+wind.speed Wind speed. Unit Default: meter/sec, Metric: meter/sec, Imperial: miles/hour
+wind.deg Wind direction, degrees (meteorological)
+wind.gust Wind gust. Unit Default: meter/sec, Metric: meter/sec, Imperial: miles/hour
+clouds
+clouds.all Cloudiness, %
+rain
+1h(where available)Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+snow
+1h(where available) Precipitation, mm/h. Please note that only mm/h as units of measurement are available for this parameter
+dt Time of data calculation, unix, UTC
+sys
+sys.type Internal parameter
+sys.id Internal parameter
+sys.message Internal parameter
+sys.country Country code (GB, JP etc.)
+sys.sunrise Sunrise time, unix, UTC
+sys.sunset Sunset time, unix, UTC
+timezone Shift in seconds from UTC
+id City ID. Please note that built-in geocoder functionality has been deprecated. Learn more here
+name City name. Please note that built-in geocoder functionality has been deprecated. Learn more here
+cod Internal parameter
+XML
+
+Example of API response
+<current>
+    <city id="3163858" name="Zocca">
+    <coord lon="10.99" lat="44.34"/>
+    <country>IT</country>
+    <timezone>7200</timezone>
+    <sun rise="2022-08-30T04:36:27" set="2022-08-30T17:57:28"/>
+    </city>
+    <temperature value="298.48" min="297.56" max="300.05" unit="kelvin"/>
+    <feels_like value="298.74" unit="kelvin"/>
+    <humidity value="64" unit="%"/>
+    <pressure value="1015" unit="hPa"/>
+    <wind>
+    <speed value="0.62" unit="m/s" name="Calm"/>
+    <gusts value="1.18"/>
+    <direction value="349" code="N" name="North"/>
+    </wind>
+    <clouds value="100" name="overcast clouds"/>
+    <visibility value="10000"/>
+    <precipitation value="3.37" mode="rain" unit="1h"/>
+    <weather number="501" value="moderate rain" icon="10d"/>
+    <lastupdate value="2022-08-30T14:45:57"/>
+</current>
+Toggle
+Copy Icon
+XML format API response fields
+city
+city.id City ID. Please note that built-in geocoder functionality has been deprecated. Learn more here
+city.name City name. Please note that built-in geocoder functionality has been deprecated. Learn more here
+city.coord
+city.coord.lonGeo location, longitude
+city.coord.lat Geo location, latitude
+city.country Country code (GB, JP etc.). Please note that built-in geocoder functionality has been deprecated. Learn more here
+timezoneShift in seconds from UTC
+city.sun
+city.sun.rise Sunrise time
+city.sun.set Sunset time
+temperature
+temperature.value Temperature
+temperature.min Minimum temperature at the moment of calculation. This is minimal currently observed temperature (within large megalopolises and urban areas), use this parameter optionally. Please find more info here
+temperature.max Maximum temperature at the moment of calculation. This is maximal currently observed temperature (within large megalopolises and urban areas), use this parameter optionally. Please find more info here
+temperature.unit Unit of measurements. Possible value is Celsius, Kelvin, Fahrenheit
+feels_like
+feels_like.value Temperature. This temperature parameter accounts for the human perception of weather
+feels_like.unit Unit of measurements. Possible value is Celsius, Kelvin, Fahrenheit. Unit Default: Kelvin
+humidity
+humidity.value Humidity value
+humidity.unit Humidity units, %
+pressure
+pressure.value Pressure value
+pressure.unit Pressure units, hPa
+wind
+wind.speed
+wind.speed.value Wind speed
+wind.speed.unit Wind speed units, m/s
+wind.speed.name Type of the wind
+wind.direction
+wind.direction.value Wind direction, degrees (meteorological)
+wind.direction.code Code of the wind direction. Possible value is WSW, N, S etc.
+wind.direction.name Full name of the wind direction
+clouds
+clouds.value Cloudiness
+clouds.name Name of the cloudiness
+visibility
+visibility.value Visibility, meter. The maximum value of the visibility is 10 km
+precipitation
+precipitation.value Precipitation, mm. Please note that only mm as units of measurement are available for this parameter.
+precipitation.mode Possible values are 'no", name of weather phenomena as 'rain', 'snow'
+weather
+weather.number Weather condition id
+weather.value Weather condition name
+weather.icon Weather icon id
+lastupdate
+lastupdate.value Last time when data was updated
+
+We provide a broad variety of products such as One Call API 3.0, Solar Irradiance & Energy Prediction service, Road Risk API, Air Pollution API and solutions for advanced weather parameters like solar irradiance data, UVI, dew point, government weather alerts, etc. Please review our product list page and find more info in the product documentation and pricing pages.
+
+List of weather condition codes
+
+List of weather condition codes with icons (range of thunderstorm, drizzle, rain, snow, clouds, atmosphere etc.)
+
+Min/max temperature in current weather API and forecast API
+
+Please do not confuse min/max parameters in our weather APIs.
+
+In Current weather API, Hourly forecast API and 5 day / 3 hour forecast API - temp_min and temp_max are optional parameters mean min / max temperature in the city at the current moment just for your reference. For large cities and megalopolises geographically expanded it might be applicable. In most cases both temp_min and temp_max parameters have the same volume as 'temp'. Please use temp_min and temp_max parameters in current weather API optionally.
+In 16 Day forecast - min and max mean maximum and minimum temperature in the day.
+Example of current weather API response
+"main":{
+     "temp":306.15, //current temperature
+     "pressure":1013,
+     "humidity":44,
+     "temp_min":306.15, //min current temperature in the city
+     "temp_max":306.15 //max current temperature in the city
+   }
+Toggle
+Copy Icon
+Example of daily forecast weather API response
+"dt":1406080800,
+  "temp":{
+        "day":297.77,  //daily averaged temperature
+        "min":293.52, //daily min temperature
+        "max":297.77, //daily max temperature
+        "night":293.52, //night temperature
+        "eve":297.77, //evening temperature
+        "morn":297.77}, //morning temperature
+Toggle
+Copy Icon
+Bulk downloading
+
+We provide number of bulk files with current weather and forecasts. The service allows you to regularly download current weather and forecast data in JSON format. There is no need to call an API to do this.
+
+More information is on the Bulk page.
+
+Examples of bulk files
+http://bulk.openweathermap.org/sample/
+
+Other features
+
+Geocoding API
+Requesting API calls by geographical coordinates is the most accurate way to specify any location. If you need to convert city names and zip-codes to geo coordinates and the other way around automatically, please use our Geocoding API.
+
+Built-in geocoding
+Please use Geocoder API if you need automatic convert city names and zip-codes to geo coordinates and the other way around.
+
+Please note that API requests by city name, zip-codes and city id have been deprecated. Although they are still available for use, bug fixing and updates are no longer available for this functionality.
+
+Built-in API request by city name
+You can call by city name or city name, state code and country code. Please note that searching by states available only for the USA locations.
+
+API call
+https://api.openweathermap.org/data/2.5/weather?q={city name}&appid={API key}
+Copy Icon
+API call
+https://api.openweathermap.org/data/2.5/weather?q={city name},{country code}&appid={API key}
+Copy Icon
+API call
+https://api.openweathermap.org/data/2.5/weather?q={city name},{state code},{country code}&appid={API key}
+Copy Icon
+Parameters
+
+q
+
+required
+
+City name, state code and country code divided by comma, Please refer to ISO 3166 for the state codes or country codes. You can specify the parameter not only in English. In this case, the API response should be returned in the same language as the language of requested location name if the location is in our predefined list of more than 200,000 locations.
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+mode
+
+optional
+
+Response format. Possible values are xml and html. If you don't use the mode parameter format is JSON by default. Learn more
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use this parameter to get the output in your language. Learn more
+
+Examples of API calls:
+{
+     "coord": {
+       "lon": -0.13,
+       "lat": 51.51
+     },
+     "weather": [
+       {
+         "id": 300,
+         "main": "Drizzle",
+         "description": "light intensity drizzle",
+         "icon": "09d"
+       }
+     ],
+     "base": "stations",
+     "main": {
+       "temp": 280.32,
+       "pressure": 1012,
+       "humidity": 81,
+       "temp_min": 279.15,
+       "temp_max": 281.15
+     },
+     "visibility": 10000,
+     "wind": {
+       "speed": 4.1,
+       "deg": 80
+     },
+     "clouds": {
+       "all": 90
+     },
+     "dt": 1485789600,
+     "sys": {
+       "type": 1,
+       "id": 5091,
+       "message": 0.0103,
+       "country": "GB",
+       "sunrise": 1485762037,
+       "sunset": 1485794875
+     },
+     "id": 2643743,
+     "name": "London",
+     "cod": 200
+     }
+Toggle
+Copy Icon
+Example of API response
+{
+     "coord": {
+       "lon": -0.13,
+       "lat": 51.51
+     },
+     "weather": [
+       {
+         "id": 300,
+         "main": "Drizzle",
+         "description": "light intensity drizzle",
+         "icon": "09d"
+       }
+     ],
+     "base": "stations",
+     "main": {
+       "temp": 280.32,
+       "pressure": 1012,
+       "humidity": 81,
+       "temp_min": 279.15,
+       "temp_max": 281.15
+     },
+     "visibility": 10000,
+     "wind": {
+       "speed": 4.1,
+       "deg": 80
+     },
+     "clouds": {
+       "all": 90
+     },
+     "dt": 1485789600,
+     "sys": {
+       "type": 1,
+       "id": 5091,
+       "message": 0.0103,
+       "country": "GB",
+       "sunrise": 1485762037,
+       "sunset": 1485794875
+     },
+     "id": 2643743,
+     "name": "London",
+     "cod": 200
+     }
+Toggle
+Copy Icon
+There is a possibility to receive a central district of the city/town with its own parameters (geographic coordinates/id/name) in API response. Example
+
+Built-in API request by city ID
+You can make an API call by city ID. List of city ID 'city.list.json.gz' can be downloaded here.
+
+We recommend to call API by city ID to get unambiguous result for your city.
+
+API call
+https://api.openweathermap.org/data/2.5/weather?id={city id}&appid={API key}
+Copy Icon
+Parameters
+
+id
+
+required
+
+City ID. List of city ID 'city.list.json.gz' can be downloaded here.
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+mode
+
+optional
+
+Response format. Possible values are xml and html. If you don't use the mode parameter format is JSON by default. Learn more
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use this parameter to get the output in your language. Learn more
+
+Examples of API calls
+{
+     "coord": {
+       "lon": 145.77,
+       "lat": -16.92
+     },
+     "weather": [
+       {
+         "id": 802,
+         "main": "Clouds",
+         "description": "scattered clouds",
+         "icon": "03n"
+       }
+     ],
+     "base": "stations",
+     "main": {
+       "temp": 300.15,
+       "pressure": 1007,
+       "humidity": 74,
+       "temp_min": 300.15,
+       "temp_max": 300.15
+     },
+     "visibility": 10000,
+     "wind": {
+       "speed": 3.6,
+       "deg": 160
+     },
+     "clouds": {
+       "all": 40
+     },
+     "dt": 1485790200,
+     "sys": {
+       "type": 1,
+       "id": 8166,
+       "message": 0.2064,
+       "country": "AU",
+       "sunrise": 1485720272,
+       "sunset": 1485766550
+     },
+     "id": 2172797,
+     "name": "Cairns",
+     "cod": 200
+     }
+Toggle
+Copy Icon
+Built-in API request by ZIP code
+Please note if country is not specified then the search works for USA as a default.
+
+API call
+https://api.openweathermap.org/data/2.5/weather?zip={zip code},{country code}&appid={API key}
+Copy Icon
+Parameters
+
+zip
+
+required
+
+Zip code
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+mode
+
+optional
+
+Response format. Possible values are xml and html. If you don't use the mode parameter format is JSON by default. Learn more
+
+units
+
+optional
+
+Units of measurement. standard, metric and imperial units are available. If you do not use the units parameter, standard units will be applied by default. Learn more
+
+lang
+
+optional
+
+You can use this parameter to get the output in your language. Learn more
+
+Examples of API calls
+{
+     "coord": {"lon": -122.08,"lat": 37.39},
+     "weather": [
+       {
+         "id": 800,
+         "main": "Clear",
+         "description": "clear sky",
+         "icon": "01d"
+       }
+     ],
+     "base": "stations",
+     "main": {
+       "temp": 282.55,
+       "feels_like": 281.86,
+       "temp_min": 280.37,
+       "temp_max": 284.26,
+       "pressure": 1023,
+       "humidity": 100
+     },
+     "visibility": 10000,
+     "wind": {
+       "speed": 1.5,
+       "deg": 350
+     },
+     "clouds": {
+       "all": 1
+     },
+     "dt": 1560350645,
+     "sys": {
+       "type": 1,
+       "id": 5122,
+       "message": 0.0139,
+       "country": "US",
+       "sunrise": 1560343627,
+       "sunset": 1560396563
+     },
+     "timezone": -25200,
+     "id": 420006353,
+     "name": "Mountain View",
+     "cod": 200
+     }
+Toggle
+Copy Icon
+Format
+
+Response format. JSON format is used by default. To get data in XML format just set up mode = xml.
+
+Parameters
+
+mode
+
+optional
+
+Response format. Possible values are xml and html. If you don't use the mode parameter format is JSON by default.
+
+JSON
+
+Example of API calls
+{
+   "coord":{
+      "lon":-0.13,
+      "lat":51.51
+   },
+   "weather":[
+      {
+         "id":300,
+         "main":"Drizzle",
+         "description":"light intensity drizzle",
+         "icon":"09d"
+      }
+   ],
+   "base":"stations",
+   "main":{
+      "temp":280.32,
+      "pressure":1012,
+      "humidity":81,
+      "temp_min":279.15,
+      "temp_max":281.15
+   },
+   "visibility":10000,
+   "wind":{
+      "speed":4.1,
+      "deg":80
+   },
+   "clouds":{
+      "all":90
+   },
+   "dt":1485789600,
+   "sys":{
+      "type":1,
+      "id":5091,
+      "message":0.0103,
+      "country":"GB",
+      "sunrise":1485762037,
+      "sunset":1485794875
+   },
+   "id":2643743,
+   "name":"London",
+   "cod":200
+  }
+Toggle
+Copy Icon
+XML
+
+Example of API response
+<weatherdata>
+   <location>
+      <name>London</name>
+      <type />
+      <country>GB</country>
+      <timezone />
+      <location altitude="0" latitude="51.5085" longitude="-0.1258" geobase="geonames" geobaseid="2643743" />
+   </location>
+   <credit />
+   <meta>
+      <lastupdate />
+      <calctime>0.0117</calctime>
+      <nextupdate />
+   </meta>
+   <sun rise="2017-01-30T07:40:34" set="2017-01-30T16:47:56" />
+   <forecast>
+      <time day="2017-01-30">
+         <symbol number="500" name="light rain" var="10d" />
+         <precipitation value="1.64" type="rain" />
+         <windDirection deg="85" code="E" name="East" />
+         <windSpeed mps="1.97" name="Light breeze" />
+         <temperature day="7" min="4.34" max="7" night="4.91" eve="5.05" morn="7" />
+         <pressure unit="hPa" value="1016.99" />
+         <humidity value="100" unit="%" />
+         <clouds value="few clouds" all="12" unit="%" />
+      </time>
+      <time day="2017-01-31">
+         <symbol number="501" name="moderate rain" var="10d" />
+         <precipitation value="9.42" type="rain" />
+         <windDirection deg="140" code="SE" name="SouthEast" />
+         <windSpeed mps="3.37" name="" />
+         <temperature day="9.66" min="6.16" max="11.51" night="10.63" eve="10.85" morn="6.16" />
+         <pressure unit="hPa" value="1018.15" />
+         <humidity value="100" unit="%" />
+         <clouds value="overcast clouds" all="92" unit="%" />
+      </time>
+      <time day="2017-02-01">
+         <symbol number="501" name="moderate rain" var="10d" />
+         <precipitation value="9.11" type="rain" />
+         <windDirection deg="197" code="SSW" name="South-southwest" />
+         <windSpeed mps="5.01" name="Gentle Breeze" />
+         <temperature day="9.81" min="9.64" max="10.23" night="10.08" eve="9.81" morn="10.03" />
+         <pressure unit="hPa" value="1011.7" />
+         <humidity value="99" unit="%" />
+         <clouds value="scattered clouds" all="44" unit="%" />
+      </time>
+      <time day="2017-02-02">
+         <symbol number="501" name="moderate rain" var="10d" />
+         <precipitation value="3.98" type="rain" />
+         <windDirection deg="184" code="S" name="South" />
+         <windSpeed mps="8.42" name="Fresh Breeze" />
+         <temperature day="11.44" min="8.86" max="11.53" night="8.86" eve="10.99" morn="10.05" />
+         <pressure unit="hPa" value="999.34" />
+         <humidity value="96" unit="%" />
+         <clouds value="overcast clouds" all="92" unit="%" />
+      </time>
+      <time day="2017-02-03">
+         <symbol number="500" name="light rain" var="10d" />
+         <precipitation value="1.65" type="rain" />
+         <windDirection deg="213" code="SSW" name="South-southwest" />
+         <windSpeed mps="8.51" name="Fresh Breeze" />
+         <temperature day="10.66" min="8.63" max="10.66" night="8.63" eve="9.14" morn="10.18" />
+         <pressure unit="hPa" value="1010.98" />
+         <humidity value="0" unit="%" />
+         <clouds value="scattered clouds" all="48" unit="%" />
+      </time>
+      <time day="2017-02-04">
+         <symbol number="501" name="moderate rain" var="10d" />
+         <precipitation value="7.25" type="rain" />
+         <windDirection deg="172" code="S" name="South" />
+         <windSpeed mps="10.39" name="Fresh Breeze" />
+         <temperature day="8.68" min="7.07" max="10.4" night="8.48" eve="10.4" morn="7.07" />
+         <pressure unit="hPa" value="1001.13" />
+         <humidity value="0" unit="%" />
+         <clouds value="overcast clouds" all="96" unit="%" />
+      </time>
+      <time day="2017-02-05">
+         <symbol number="501" name="moderate rain" var="10d" />
+         <precipitation value="4.24" type="rain" />
+         <windDirection deg="274" code="W" name="West" />
+         <windSpeed mps="6.21" name="Moderate breeze" />
+         <temperature day="8.5" min="4.86" max="8.5" night="4.86" eve="6.25" morn="8.26" />
+         <pressure unit="hPa" value="995.24" />
+         <humidity value="0" unit="%" />
+         <clouds value="broken clouds" all="64" unit="%" />
+      </time>
+   </forecast>
+  </weatherd
+Toggle
+Copy Icon
+Units of measurement
+
+standard, metric, and imperial units are available. List of all API parameters with available units.
+
+Parameters
+
+units
+
+optional
+
+standard, metric, imperial. When you do not use the units parameter, format is standard by default.
+
+Temperature is available in Fahrenheit, Celsius and Kelvin units.
+
+List of all API parameters with units openweathermap.org/weather-data
+
+Standard
+
+Examples of API calls:
+{
+  "coord": {
+    "lon": -2.15,
+    "lat": 57
+  },
+  "weather": [
+    {
+      "id": 804,
+      "main": "Clouds",
+      "description": "overcast clouds",
+      "icon": "04d"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 281.63,
+    "feels_like": 278.05,
+    "temp_min": 281.33,
+    "temp_max": 282.41,
+    "pressure": 1016,
+    "humidity": 79,
+    "sea_level": 1016,
+    "grnd_level": 1016
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 7.3,
+    "deg": 189,
+    "gust": 13.48
+  },
+  "clouds": {
+    "all": 100
+  },
+  "dt": 1647347424,
+  "sys": {
+    "type": 2,
+    "id": 2031790,
+    "country": "GB",
+    "sunrise": 1647325488,
+    "sunset": 1647367827
+  },
+  "timezone": 0,
+  "id": 2641549,
+  "name": "Newtonhill",
+  "cod": 200
+}
+Toggle
+Copy Icon
+metric
+
+Example of API response
+{
+  "coord": {
+    "lon": -2.15,
+    "lat": 57
+  },
+  "weather": [
+    {
+      "id": 804,
+      "main": "Clouds",
+      "description": "overcast clouds",
+      "icon": "04d"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 8.48,
+    "feels_like": 4.9,
+    "temp_min": 8.18,
+    "temp_max": 9.26,
+    "pressure": 1016,
+    "humidity": 79,
+    "sea_level": 1016,
+    "grnd_level": 1016
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 7.3,
+    "deg": 189,
+    "gust": 13.48
+  },
+  "clouds": {
+    "all": 100
+  },
+  "dt": 1647347424,
+  "sys": {
+    "type": 2,
+    "id": 2031790,
+    "country": "GB",
+    "sunrise": 1647325488,
+    "sunset": 1647367827
+  },
+  "timezone": 0,
+  "id": 2641549,
+  "name": "Newtonhill",
+  "cod": 200
+}
+Toggle
+Copy Icon
+imperial
+
+Example of API response
+{
+  "coord": {
+    "lon": -2.15,
+    "lat": 57
+  },
+  "weather": [
+    {
+      "id": 804,
+      "main": "Clouds",
+      "description": "overcast clouds",
+      "icon": "04d"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 47.26,
+    "feels_like": 40.82,
+    "temp_min": 46.72,
+    "temp_max": 48.67,
+    "pressure": 1016,
+    "humidity": 79,
+    "sea_level": 1016,
+    "grnd_level": 1016
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 16.33,
+    "deg": 189,
+    "gust": 30.15
+  },
+  "clouds": {
+    "all": 100
+  },
+  "dt": 1647347504,
+  "sys": {
+    "type": 2,
+    "id": 2031790,
+    "country": "GB",
+    "sunrise": 1647325488,
+    "sunset": 1647367827
+  },
+  "timezone": 0,
+  "id": 2641549,
+  "name": "Newtonhill",
+  "cod": 200
+}
+Toggle
+Copy Icon
+Multilingual support
+
+Multilingual support
+You can use the lang parameter to get the output in your language.
+
+Translation is applied for the city name and description fields.
+
+API call
+https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={API key}&lang={lang}
+Copy Icon
+Parameters
+
+lang
+
+optional
+
+Language code
+
+Examples of API calls
+{
+  "coord": {
+    "lon": 37.62,
+    "lat": 55.75
+  },
+  "weather": [
+    {
+      "id": 501,
+      "main": "Rain",
+      "description": "pluie modérée",
+      "icon": "10d"
+    }
+  ],
+  "base": "stations",
+  "main": {
+    "temp": 295.48,
+    "feels_like": 295.41,
+    "temp_min": 295.15,
+    "temp_max": 296.15,
+    "pressure": 1018,
+    "humidity": 60
+  },
+  "visibility": 10000,
+  "wind": {
+    "speed": 2,
+    "deg": 260
+  },
+  "rain": {
+    "1h": 1.23
+  },
+  "clouds": {
+    "all": 100
+  },
+  "dt": 1599492273,
+  "sys": {
+    "type": 1,
+    "id": 9029,
+    "country": "RU",
+    "sunrise": 1599446791,
+    "sunset": 1599494929
+  },
+  "timezone": 10800,
+  "id": 524901,
+  "name": "Moscou",
+  "cod": 200
+  }
+Toggle
+Copy Icon
+We support the following languages that you can use with the corresponded lang values:
+
+sq Albanian
+af Afrikaans
+ar Arabic
+az Azerbaijani
+eu Basque
+be Belarusian
+bg Bulgarian
+ca Catalan
+zh_cn Chinese Simplified
+zh_tw Chinese Traditional
+hr Croatian
+cz Czech
+da Danish
+nl Dutch
+en English
+fi Finnish
+fr French
+gl Galician
+de German
+el Greek
+he Hebrew
+hi Hindi
+hu Hungarian
+is Icelandic
+id Indonesian
+it Italian
+ja Japanese
+kr Korean
+ku Kurmanji (Kurdish)
+la Latvian
+lt Lithuanian
+mk Macedonian
+no Norwegian
+fa Persian (Farsi)
+pl Polish
+pt Portuguese
+pt_br Português Brasil
+ro Romanian
+ru Russian
+sr Serbian
+sk Slovak
+sl Slovenian
+sp, es Spanish
+sv, se Swedish
+th Thai
+tr Turkish
+ua, uk Ukrainian
+vi Vietnamese
+zu Zulu
+Call back function for JavaScript code
+
+Call back function for JavaScript code
+To use JavaScript code you can transfer callback functionName to JSONP callback.
+
+Example of API call
+test(
+      {
+         "coord":{
+            "lon":-0.13,
+            "lat":51.51
+         },
+         "weather":[
+            {
+               "id":300,
+               "main":"Drizzle",
+               "description":"light intensity drizzle",
+               "icon":"09d"
+            }
+         ],
+         "base":"stations",
+         "main":{
+            "temp":280.32,
+            "pressure":1012,
+            "humidity":81,
+            "temp_min":279.15,
+            "temp_max":281.15
+         },
+         "visibility":10000,
+         "wind":{
+            "speed":4.1,
+            "deg":80
+         },
+         "clouds":{
+            "all":90
+         },
+         "dt":1485789600,
+         "sys":{
+            "type":1,
+            "id":5091,
+            "message":0.0103,
+            "country":"GB",
+            "sunrise":1485762037,
+            "sunset":1485794875
+         },
+         "id":2643743,
+         "name":"London",
+         "cod":200
+      }
+   )
+   Solar Irradiance API
+
+✔ This is the latest version of the API (v2).
+
+Looking for the previous version? You can find the v1 documentation here.
+
+Product concept
+
+Solar Irradiance service supplies accurate solar irradiance data for any location on the globe.
+
+Main features of Solar Irradiance API:
+
+Essential solar irradiation data:
+Global Horizontal Irradiation (GHI)
+Direct Normal Irradiation (DNI)
+Diffuse Horizontal Irradiation (DHI)
+All indices are available in Clear Sky and Cloudy Sky models
+Current data and forecast for 15 days ahead
+Historical data is available for 47+ years back (from 1st January 1979)
+Data contains daily aggregation for each requested day with hourly detalization or detalization by specified intervals
+Global coverage
+You can find the previous documentation v1 here
+
+Data is available in JSON format.
+
+The detailed information about what technologies, algorithms, etc. are behind the Solar Irradiance API can be found here.
+
+How to get access
+
+01 icon
+Sign up
+Sign up to OpenWeather service in case you haven't got your OpenWeather API key yet.
+
+02 icon
+Follow the pricing page
+Follow the pricing page to learn details about the price.
+
+Solar Irradiance API is included in the separate subscription only and allows you to pay only for the number of API calls made to this product. Please find more details on the pricing page.
+
+03 icon
+Make an API call
+Just make an API call according to the tech documentation below, remembering to add your key to each call.
+
+Call Solar Irradiance data
+
+In this section you will find how to request historical starting from 1st January 1979, current or forecast for 15 days ahead daily aggregated and accumulated over 1 hour, 15 minutes or 1 day interval solar radiation data for particular geographical location and for specified date.
+
+How to make an API call
+https://api.openweathermap.org/energy/2.0/solar/interval_data?lat={lat}&lon={lon}&date={date}&interval={interval}&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude, decimal (−90; 90)
+
+lon
+
+required
+
+Longitude, decimal (−180; 180)
+
+date
+
+required
+
+Date in the `YYYY-MM-DD` format for which data is requested. Date available from 1979-01-01 up to +15 days to the current date
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+interval
+
+optional
+
+The time interval during which the energy is summed up, defines the temporary resolution of solar radiation data. If not specified, the default interval of "1h" (1 hour) will be used. Available values for this parameter include: "15m" (15 minutes), "1h" (1 hour) and "1d" (1 day)
+
+If the service detected timezone for your location incorrectly you can specify correct timezone manually by adding tz parameter in the ±XX:XX format to API call.API call
+
+https://api.openweathermap.org/energy/2.0/solar/interval_data?lat={lat}&lon={lon}&date={date}&interval={interval}&tz={tz}&appid={API key}
+
+Example of API call
+
+https://api.openweathermap.org/energy/2.0/solar/interval_data?lat=60.45&lon=-38.67&date=2023-03-30&interval=1h&tz=+03:00&appid={API key}
+
+Please pay attention that in case timezone is specified time of sunset and sunrise will be returned in accordance with this specified timezone.
+
+Example of API call
+https://api.openweathermap.org/energy/2.0/solar/interval_data?lat=51.509865&lon=-0.118092&date=2023-10-10&interval=1h&appid={API key}
+Copy Icon
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Fields in API response
+lat Latitude of the location,decimal (−90; 90)
+lon Longitude of the location,decimal (-180; 180)
+date Date specified in the API request in the `YYYY-MM-DD` format (from 1979-01-01 up to +15 days to the current date)
+interval Time interval during which the energy is summed up. Determines temporary resolution of solar radiation data. If not specified "1h" interval will be used. Available values : 15m, 1h and 1d.
+tz Timezone in the ±XX:XX format
+sunrise Date and time of sunrise based on date specified in the API request and timezone authomatically determinated by on latitude and longitute of requested location. If you added timezone parameter into API request, then time of sunrise will be recalculated in accordance with this timezone. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+sunset Date and time of sunset based on date specified in the API request and timezone authomatically determinated by on latitude and longitute of requested location. If you added timezone parameter into API request, then time of sunset will be recalculated in accordance with this timezone. For polar areas in midnight sun and polar night periods this parameter is not returned in the response
+intervals Interval detalization of daily aggregated irradiation data for the requested date
+start Start of the time interval for which the energy is summed up. Time interval displays hour and minutes of the day for which indexes were aggregated in "hh:mm" format
+end End of the time interval for which the energy is summed up. Time interval displays hour and minutes of the day for which indexes were aggregated in "hh:mm" format
+avg_irradiance Average irradiance per period
+clear sky clear sky model
+ghi Clear sky GHI - Global Horizontal Irradiance, W/m2
+dni Clear sky DNI - Direct Normal Irradiance, W/m2
+dhi Clear sky DHI - Diffuse Horizontal Irradiance, W/m2
+cloud sky cloudy sky model
+ghi Cloudy sky GHI - Global Horizontal Irradiance, W/m2
+dni Cloudy sky DNI - Direct Normal Irradiance, W/m2
+dhi Cloudy sky DHI - Diffuse Horizontal Irradiance, W/m2
+max_irradiance Maximum irradiance per period
+clear sky clear sky model
+ghi Clear sky GHI - Global Horizontal Irradiance, W/m2
+dni Clear sky DNI - Direct Normal Irradiance, W/m2
+dhi Clear sky DHI - Diffuse Horizontal Irradiance, W/m2
+cloud sky cloudy sky model
+ghi Cloudy sky GHI - Global Horizontal Irradiance, W/m2
+dni Cloudy sky DNI - Direct Normal Irradiance, W/m2
+dhi Cloudy sky DHI - Diffuse Horizontal Irradiance, W/m2
+irradiation Irradiation related information
+clear sky clear sky model
+ghi Clear sky GHI - Global Horizontal Irradiation, Wh/m2
+dni Clear sky DNI - Direct Normal Irradiation, Wh/m2
+dhi Clear sky DHI - Diffuse Horizontal Irradiation, Wh/m2
+cloud sky cloudy sky model
+ghi Cloudy sky GHI - Global Horizontal Irradiation, Wh/m2
+dni Cloudy sky DNI - Direct Normal Irradiation, Wh/m2
+dhi Cloudy sky DHI - Diffuse Horizontal Irradiation, Wh/m2
+Bulk downloading
+
+You can get the entire available historical solar irradiance archive in CSV and JSON formats:
+
+Solar Irradiance History Bulk - archive for 47+ years with 15-minutes and 1-hour steps, available from January 1979.
+Solar Irradiance History Forecast Bulk - archive of previously made 16 days ahead forecasts on solar irradiance data with 1-hour step (15-minutes step by request), available from April, 2017.
+You can find prices on the corresponding page.
+
+API errors
+
+Structure of API errors
+In case of incorrected API call you will receive API error response. Error response payload returned for all types of errors with the structure below.
+
+Example of error response
+{
+    "code": "400",
+    "message": "Invalid date format",
+    "parameters": [
+        "date"
+    ]
+}
+Toggle
+Copy Icon
+Fields in error response
+code Code of error
+message Description of error
+parameters(optional) List of request parameters names that are related to this particular error
+Errors list
+Please find more detailed information about some popular errors below.
+
+API calls return an error 400
+
+Open FAQ
+API calls return an error 401
+
+Open FAQ
+API calls return an error 404
+
+Open FAQ
+API calls return an error 429
+
+Open FAQ
+API calls return errors '5xx'
+
+Open FAQ
+Pay as you call
+
+There are no limits on the number of API calls, users pay for a subscription according to the actual use of the product.
+
+0.1 GBP per API call
+
+Any location | No API call limits | Pay-as-you-call
+
+Subscribe
+For large-scale projects, we provide a variety of custom packages. Please get in touch with us with your requirements to learn more.
+History API
+
+Product concept
+We provide hourly historical weather data for any location on the globe via History API. Availability of hourly historical data depends on a type of your subscription.
+
+You can also download this data in JSON or CSV format - please read History Bulk and History Forecast Bulk.
+
+Call hourly historical data
+
+How to make an API call
+https://history.openweathermap.org/data/2.5/history/city?lat={lat}&lon={lon}&type=hour&start={start}&end={end}&appid={API key}
+Copy Icon
+API call
+https://history.openweathermap.org/data/2.5/history/city?lat={lat}&lon={lon}&type=hour&start={start}&cnt={cnt}&appid={API key}
+Copy Icon
+Parameters
+
+lat
+
+required
+
+Latitude. If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+lon
+
+required
+
+Longitude. If you need the geocoder to automatic convert city names and zip-codes to geo coordinates and the other way around, please use our Geocoding API
+
+type
+
+required
+
+Type of the call, keep this parameter in the API call as hour
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+start
+
+optional
+
+Start date (unix time, UTC time zone), e.g. start=1369728000
+
+end
+
+optional
+
+End date (unix time, UTC time zone), e.g. end=1369789200
+
+cnt
+
+optional
+
+A number of timestamps in response (one per hour, can be used instead of the parameter end)
+
+Please use Geocoder API if you need automatic convert city names and zip-codes to geo coordinates and the other way around.
+
+Please note that built-in geocoder has been deprecated. Although it is still available for use, bug fixing and updates are no longer available for this functionality.
+
+Example of API call
+https://history.openweathermap.org/data/2.5/history/city?lat=41.85&lon=-87.65&appid={API key}
+Copy Icon
+Example of API call
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+
+If you do not see some of the parameters in your API response it means that these weather phenomena are just not happened for the time of measurement for the city or location chosen. Only really measured or calculated data is displayed in API response.
+
+List of all API parameters with units openweathermap.org/weather-data.
+
+JSON
+
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Fields in API Response
+message Internal parameter
+cod Internal parameter
+city_id City ID. Please note that built-in geocoder functionality has been deprecated. Learn more here
+calctime Internal parameter
+list
+dt Time of data calculation, unix, UTC
+main
+main.temp Temperature. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. Learn more
+main.feels_like This temperature parameter accounts for the human perception of weather. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. Learn more
+main.pressure Atmospheric pressure on the sea level, hPa
+main.humidity Humidity, %
+main.temp_min Minimum temperature within a large city or a megalopolis (optional parameter). Please find more here. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. Learn more
+main.temp_max Maximum temperature within a large city or a megalopolis (optional parameter). Please find more here. Unit Default: Kelvin, Metric: Celsius, Imperial: Fahrenheit. Learn more
+main.sea_level Atmospheric pressure on the sea level, hPa
+main.grnd_level Atmospheric pressure on the ground level, hPa
+wind
+wind.speed Wind speed. Unit Default: meter/sec, Metric: meter/sec, Imperial: miles/hour. Learn more
+wind.deg Wind direction, degrees (meteorological)
+clouds
+clouds.all Cloudiness, %
+rain
+rain.1h Rain volume for the last 1 hour, mm. Please note that only mm as units of measurement are available for this parameter
+rain.3h Rain volume for the last 3 hours, mm. Please note that only mm as units of measurement are available for this parameter
+snow
+snow.1h Snow volume for the last 1 hour, mm. Please note that only mm as units of measurement are available for this parameter
+snow.3h Snow volume for the last 3 hours, mm. Please note that only mm as units of measurement are available for this parameter
+weather (more info Weather condition codes)
+weather.id Weather condition id
+weather.main Group of weather parameters (Rain, Snow, Clouds etc.)
+weather.description Weather condition within the group. Please find more here
+weather.icon Weather icon id
+
+We provide a broad variety of products such as One Call API 3.0, Solar Irradiance & Energy Prediction service, Road Risk API, Air Pollution API and solutions for advanced weather parameters like solar irradiance data, UVI, dew point, government weather alerts, etc. Please review our product list page and find more info in the product documentation and pricing pages.
+
+List of weather condition codes
+
+List of weather condition codes with icons (range of thunderstorm, drizzle, rain, snow, clouds, atmosphere etc.)
+
+Min/max temperature in historical weather API and forecast API
+
+Please, do not confuse min/max parameters in hourly historical weather API and forecast API. In hourly historical weather API temp_min and temp_max are optional parameters mean min / max temperature in the city at the moment of calculation to show deviation from the average temperature just for your reference. For large cities and megalopolises geographically expanded it might be applicable. In most cases both temp_min and temp_max parameters have the same volume as 'temp'. Please, use temp_min and temp_max parameters optionally.
+
+Example of historical weather for cities API response
+"main":{
+   "temp":306.15, // temperature at the moment of calculation
+   "pressure":1013,
+   "humidity":44,
+   "temp_min":306.15, //min  temperature in the city at the moment of calculation
+   "temp_max":306.15 //max  temperature in the city at the moment of calculation
+},
+Toggle
+Copy Icon
+For comparison look at example of daily forecast weather API response
+
+Example of daily forecast weather API response
+"dt":1406080800,
+"temp":{
+  "day":297.77,  //daily averaged temperature
+  "min":293.52, //daily min temperature
+  "max":297.77, //daily max temperature
+  "night":293.52, //night temperature
+  "eve":297.77, //evening temperature
+  "morn":297.77, //morning temperature
+}
+Toggle
+Copy Icon
+History Bulk
+
+We have recently announced the History Bulk functionality that allows to extract historical data for any location for 47+ years in the past.
+
+For accessing this feature please click the next link. The detailed documentation can be found here.
+
+Other features
+
+Geocoding API
+Requesting API calls by geographical coordinates is the most accurate way to specify any location. If you need to convert city names and zip-codes to geo coordinates and the other way around automatically, please use our Geocoding API.
+
+Built-in geocoding
+Please use Geocoder API if you need automatic convert city names and zip-codes to geo coordinates and the other way around.
+
+Please note that API requests by city name and city id have been deprecated. Although they are still available for use, bug fixing and updates are no longer available for this functionality.
+
+Built-in API request by city name
+Call historical data by city name.
+
+API call
+https://history.openweathermap.org/data/2.5/history/city?q={city name},{country code}&type=hour&start={start}&end={end}&appid={API key}
+Copy Icon
+API call
+https://history.openweathermap.org/data/2.5/history/city?q={city name},{country code}&type=hour&start={start}&cnt={cnt}&appid={API key}
+Copy Icon
+Parameters
+
+q
+
+required
+
+City name, state code and country code divided by comma, please refer to ISO 3166 for the state codes or country codes. You can specify the parameter not only in English. In this case, the API response should be returned in the same language as the language of requested location name if the location is in our predefined list of more than 200,000 locations.
+
+type
+
+required
+
+type of the call, keep this parameter in the API call as hour
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+start
+
+optional
+
+Start date (unix time, UTC time zone), e.g. start=1369728000
+
+end
+
+optional
+
+End date (unix time, UTC time zone), e.g. end=1369789200
+
+cnt
+
+optional
+
+A number of timestamps in response (one per hour, can be used instead of end)
+
+Example of API call
+https://history.openweathermap.org/data/2.5/history/city?q=London,UK&appid={API key}
+Copy Icon
+Example of API call
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+There is a possibility to receive a central district of the city/town with its own parameters (geographic coordinates/id/name) in API response. Please see the example below.
+
+Example of API response
+https://history.openweathermap.org/data/2.5/history/city?q=Munchen,DE&appid={API key}
+Copy Icon
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Built-in API request by city ID
+Call historical data by city ID.
+
+The list of city IDs can be downloaded here.
+
+API calls
+https://history.openweathermap.org/data/2.5/history/city?id={id}&type=hour&start={start}&end={end}&appid={API key}
+Copy Icon
+API call
+https://history.openweathermap.org/data/2.5/history/city?id={id}&type=hour&start={start}&cnt={cnt}&appid={API key}
+Copy Icon
+Parameters
+
+id
+
+required
+
+City ID. The list of city IDs 'city.list.json.gz' can be downloaded here.
+
+type
+
+required
+
+Type of the call, keep this parameter in the API call as hour
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+start
+
+optional
+
+Start date (unix time, UTC time zone), e.g. start=1369728000
+
+end
+
+optional
+
+End date (unix time, UTC time zone), e.g. end=1369789200
+
+cnt
+
+optional
+
+Amount of returned data (one per hour, can be used instead of end)
+
+Example of API call
+https://history.openweathermap.org/data/2.5/history/city?id=2885679&type=hour&appid={API key}
+Copy Icon
+Example of API call
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Only for Professional and Expert plans: The maximum historical data depth in one API response is one week.
+
+If you specify a historical data depth more than one week in the request, you will receive a historical data only for first week from start date in one API response.
+
+If you want to get the historical data depth more than one week, then please use several queries.
+
+Units of measurement
+standard, metric, and imperial units are available. List of all API parameters with available units.
+
+Parameters
+
+units
+
+optional
+
+standard, metric, imperial. When you do not use the units parameter, format is standard by default.
+
+Standard (by default): temperature in Kelvin, wind speed in meter/sec
+
+Examples of API calls:
+https://history.openweathermap.org/data/2.5/history/city?lat=41.85&lon=-87&type=hour&start=1643720400&end=1643806800&appid={API key}
+Copy Icon
+Examples of API calls:
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Metric: temperature in Celsius, wind speed in meter/sec
+
+Example of API response
+https://history.openweathermap.org/data/2.5/history/city?lat=41.85&lon=-87&type=hour&start=1643720400&end=1643806800&units=metric&appid={API key}
+Copy Icon
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Imperial: temperature in Fahrenheit, wind speed in miles/hour
+
+Example of API response
+https://history.openweathermap.org/data/2.5/history/city?lat=41.85&lon=-87&type=hour&start=1643720400&end=1643806800&units=imperial&appid={API key}
+Copy Icon
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Weather maps 2.0
+
+Forecast, Historical and Current weather maps. 15 weather map layers.You can get all of them using only one simple URL!
+
+Using one simple URL you can get the following weather maps:
+
+Current weather maps
+Forecast weather maps: The forecast for 10 days with a 3 hours-step
+Historical weather map: Archive since March, 2019
+URL format and parameters
+
+Use the following URL format and parameters to get weather maps. Please pay attention to the URL example.
+
+API call
+http://maps.openweathermap.org/maps/2.0/weather/{op}/{z}/{x}/{y}?appid={API key}
+Copy Icon
+Parameters
+
+{op}
+
+required
+
+Weather map layer. Full list of available weather map layers here
+
+{z}
+
+required
+
+Number of zoom level. You could find information about correlation between zoom levels, X, Y tile coordinate numbers and level scale here
+
+{x}
+
+required
+
+Number of x tile coordinate. You could find information about correlation between zoom levels, X, Y tile coordinate numbers and level scale here
+
+{y}
+
+required
+
+Number of y tile coordinate. You could find information about correlation between zoom levels, X, Y tile coordinate numbers and level scale here
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+date
+
+optional
+
+Date and time of (Unix time, UTC), e.g. date=1552861800. If you do not specify any date and time, you will get Current weather map. More information about how to get Current, Forecast and Historical maps you can find here.
+
+opacity
+
+optional
+
+Degree of layer opacity. Available value from 0 to 1 (default - 0.8)
+
+palette
+
+optional
+
+Color palette. You can use custom palettes for each layer. You can also create a palette for yourself and pass it to the URL as follows {value}:{HEX color};..;{value}:{HEX color}. More information about it here.
+
+fill_bound
+
+optional
+
+true or false. If true, then all weather values outside the specified set of values will be filled by color corresponding to the nearest specified value (default value - false: all weather values outside the specified set of values are not filled).
+
+arrow_step
+
+optional
+
+Step of values for drawing wind arrows, specify in pixels (default - 32). Parameter only for wind layers (WND).
+
+use_norm
+
+optional
+
+true or false. If true, then the length of the arrows is normalizing (default - false: the length of the arrows is proportional to the speed wind value). Parameter only for wind layers (WND).
+
+URL example
+http://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?date=1552861800&opacity=0.9&fill_bound=true&appid={API key}
+Copy Icon
+You need to insert the generated URL into special plugins.
+
+For example, Leaflet, OpenLayers. You can also use any other apps that support the display of layers. Learn more.
+
+How to get current, forecast and historical weather maps using only 'date' parameter?
+
+To get current, forecast or historical weather maps you just need to change only date parameter in the URL request:
+
+1. Current weather maps. Specify the current date and time to get Current weather map. The date and time specified in the request will be rounded to the previous 3-hour interval.
+
+2. Forecast weather maps. You can specify any date and time within the next 10 days to get the Forecast weather maps for the specified time. If you do not specify any date and time, you will get Current weather map.
+
+Not available for TS0 and TS10 layers.
+
+3. Historical weather maps. If you specify any date and time since 18 March 2019, you will receive Historical weather maps for the selected date and time. If you do not specify any date and time, you will get Current weather map.
+
+Please note that the date and time specified in the request will be rounded to the previous 3-hour interval (except TS0 and TS10 layers).
+
+Date and time specified in the request will be rounded to the previous 12-hour interval for TS0 and TS10 layers.
+
+What layers are there in the new weather maps?
+
+To specify the selected layer in the URL, insert instead of the {op} parameter one of the following values:
+
+{Op}
+
+Meaning
+
+Units
+
+PAC0
+
+Convective precipitation
+
+mm
+
+PR0
+
+Precipitation intensity
+
+mm/s
+
+PA0
+
+Accumulated precipitation
+
+mm
+
+PAR0
+
+Accumulated precipitation - rain
+
+mm
+
+PAS0
+
+Accumulated precipitation - snow
+
+mm
+
+SD0
+
+Depth of snow
+
+m
+
+WS10
+
+Wind speed at an altitude of 10 meters
+
+m/s
+
+WND
+
+Joint display of speed wind (color) and wind direction (arrows), received by U and V components
+
+m/s
+
+APM
+
+Atmospheric pressure on mean sea level
+
+hPa
+
+TA2
+
+Air temperature at a height of 2 meters
+
+°C
+
+TD2
+
+Temperature of a dew point
+
+°C
+
+TS0
+
+Soil temperature 0-10 сm
+
+K
+
+TS10
+
+Soil temperature >10 сm
+
+K
+
+HRD0
+
+Relative humidity
+
+%
+
+CL
+
+Cloudiness
+
+%
+
+How to pass my palette in the map?
+
+For each layer we have custom palettes, but you can use your own palette and pass it to the URL as shown {value}:{HEX color};..;{value}:{HEX color}.
+
+The number of values in the custom palette can be any, but not less than 2. You can set the color for any value with any precision.
+
+To pass the code of color, use the HEX format.
+
+URL Example
+http://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?date=1552861800&opacity=0.9&fill_bound=true&palette=0:FF0000;10:00FF00;20:0000FF&appid={API key}
+Copy Icon
+Examples of Weather maps
+
+Air temperature at a height of 2 meters weather layer
+Default parameters
+
+op : TA2
+
+fill_bound : false
+
+URL example
+http://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid={API key}
+Copy Icon
+Air temperature at a height of 2 meters weather layer
+Custom palette
+
+op : TA2
+
+opacity : 0.6
+
+fill_bound : true
+
+palette : custom (see example)
+
+Palette current weathermaps2
+URL example
+http://maps.openweathermap.org/maps/2.0/weather/TA2/{z}/{x}/{y}?appid={API key}&fill_bound=true&opacity=0.6&palette=-65:821692;-55:821692;-45:821692;-40:821692;-30:8257db;-20:208cec;-10:20c4e8;0:23dddd;10:c2ff28;20:fff028;25:ffc228;30:fc8014
+Copy Icon
+Accumulated precipitation weather layer
+Default parameters
+
+op : PA0
+
+PA0 current weathermaps2
+URL example
+http://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?date=1552861800&appid={API key}
+Copy Icon
+Atmospheric pressure on mean sea level weather layer
+Default parameters
+
+op : APM
+
+APM_current_weathermaps2
+URL example
+http://maps.openweathermap.org/maps/2.0/weather/PA0/{z}/{x}/{y}?date=1552861800&appid={API key}
+Copy Icon
+Joint display of speed wind (color) and wind direction (arrows) weather layer
+Default parameters
+
+op : WND
+
+use_norm : false
+
+arrow_step : 32
+
+WND current weathermaps2
+URL example
+http://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?date=1552861800&appid={API key}
+Copy Icon
+Joint display of speed wind (color) and wind direction (arrows) weather layer
+Custom parameters
+
+op : WND
+
+use_norm : true
+
+arrow_step : 16
+
+WND2 current weathermaps2
+URL example
+http://maps.openweathermap.org/maps/2.0/weather/WND/{z}/{x}/{y}?date=1552861800&use_norm=true&arrow_step=16&appid={API key}
+Copy Icon
+Default palettes
+
+Weather layer
+
+Palette
+
+Opacity
+
+Fill bound
+
+Use norm
+
+Arrow step
+
+PAC0
+
+Convective precipitation
+
+1:ACAAF7; 10:8D8AF3; 20:706EC2; 40:5658FF; 100:5B5DB1; 200:3E3F85
+
+0.8
+
+0
+
+-
+
+-
+
+PR0
+
+Precipitation intensity
+
+0.000005:FEF9CA; 0.000009:B9F7A8; 0.000014:93F57D; 0.000023:78F554; 0.000046:50B033; 0.000092:387F22; 0.000231:204E11; 0.000463:F2A33A; 0.000694:E96F2D; 0.000926:EB4726; 0.001388:B02318; 0.002315:971D13; 0.023150:090A08
+
+0.8
+
+0
+
+-
+
+-
+
+PA0
+
+Accumulated precipitation
+
+0:00000000; 0.1:C8969600; 0.2:9696AA00; 0.5:7878BE19; 1:6E6ECD33; 10:5050E1B2; 140:1414FFE5
+
+0.6
+
+0
+
+-
+
+-
+
+PAR0
+
+Accumulated precipitation - rain
+
+0:E1C86400; 0.1:C8963200; 0.2:9696AA00; 0.5:7878BE00; 1:6E6ECD4C; 10:5050E1B2; 140:1414FFE5
+
+0.6
+
+0
+
+-
+
+-
+
+PAS0
+
+Accumulated precipitation - snow
+
+0:00000000; 5:00D8FFFF; 10:00B6FFFF; 25.076:9549FF
+
+0.7
+
+0
+
+-
+
+-
+
+SD0
+
+Depth of snow
+
+0.05:EDEDED; 0.1:D9F0F4; 0.2:A5E5EF; 0.3:7DDEED; 0.4:35D2EA; 0.5:00CCE8; 0.6:706DCE; 0.7:514FCC; 0.8:3333CC; 0.9:1818CC; 1.2:C454B7; 1.5:C12CB0; 1.8:BF00A8; 2.5:85408C; 3.0:7F2389; 4.0:790087; 15:E80068
+
+0.8
+
+0
+
+-
+
+-
+
+WS10
+
+Wind speed at an altitude of 10 meters
+
+1:FFFFFF00; 5:EECECC66; 15:B364BCB3; 25:3F213BCC; 50:744CACE6; 100:4600AFFF; 200:0D1126FF
+
+0.6
+
+0
+
+-
+
+-
+
+WND
+
+Joint display of speed wind (color) and wind direction (arrows)
+
+1:FFFFFF00; 5:EECECC66; 15:B364BCB3; 25:3F213BCC; 50:744CACE6; 100:4600AFFF; 200:0D1126FF
+
+0.6
+
+0
+
+0
+
+32
+
+APM
+
+Atmospheric pressure on mean sea level
+
+94000:0073FF; 96000:00AAFF; 98000:4BD0D6; 100000:8DE7C7; 101000:B0F720; 102000:F0B800; 104000:FB5515; 106000:F3363B; 108000:C60000
+
+0.4
+
+1
+
+-
+
+-
+
+TA2
+
+Air temperature at a height of 2 meters
+
+-65:821692; -55:821692; -45:821692; -40:821692; -30:8257DB; -20:208CEC; -10:20C4E8; 0:23DDDD; 10:C2FF28; 20:FFF028; 25:FFC228; 30:FC8014
+
+0.3
+
+1
+
+-
+
+-
+
+TD2
+
+Temperature of a dew point
+
+-65:821692; -55:821692; -45:821692; -40:821692; -30:8257DB; -20:208CEC; -10:20C4E8; 0:23DDDD; 10:C2FF28; 20:FFF028; 25:FFC228; 30:FC8014
+
+0.3
+
+1
+
+-
+
+-
+
+TS0
+
+Soil temperature 0-10 сm
+
+203.15:491763; 228.15:4E1378; 235.15:514F9B; 239.15:446DA9; 243.15:5C85B7; 247.15:739FC5; 251.15:88A7C9; -255.15:6CBCD4; 259.15:87CADC; 263.15:A7D8E5; 267.15:A7D5AD; 271.15:D2E9C8; 275.15:FEFEBB; 279.15:F5CEBB; 283.15:F2B68A; 287.15:EE934F; 291.15:EB702D; 295.15:E8706E; 303.15:CC2C44; 313.15:CC0000; 323.15:990000
+
+0.8
+
+1
+
+-
+
+-
+
+TS10
+
+Soil temperature >10 сm
+
+203.15:491763; 228.15:4E1378; 235.15:514F9B; 239.15:446DA9; 243.15:5C85B7; 247.15:739FC5; 251.15:88A7C9; -255.15:6CBCD4; 259.15:87CADC; 263.15:A7D8E5; 267.15:A7D5AD; 271.15:D2E9C8; 275.15:FEFEBB; 279.15:F5CEBB; 283.15:F2B68A; 287.15:EE934F; 291.15:EB702D; 295.15:E8706E; 303.15:CC2C44; 313.15:CC0000; 323.15:990000
+
+0.8
+
+0
+
+-
+
+-
+
+HRD0
+
+Relative humidity
+
+0:db1200; 20:965700; 40:ede100; 60:8bd600; 80:00a808; 100:000099; 100.1:000099
+
+0.8
+
+1
+
+-
+
+-
+
+CL
+
+Cloudiness
+
+0:FFFFFF00; 10:FDFDFF19; 20:FCFBFF26; 30:FAFAFF33; 40:F9F8FF4C; 50:F7F7FF66; 60:F6F5FF8C; 70:F4F4FFBF; 80:E9E9DFCC; 90:DEDEDED8; 100:D2D2D2FF; 200:D2D2D2FF
+
+0.5
+
+0
+
+-
+
+-
+
+Libraries to connect weather layers
+
+Open Layers
+
+The following functions are available for the OpenLayers library:
+
+Classes of weather layer and weather stations layer
+Possibility to set your own style
+Classes with clustered markers
+Support of marker server clustering
+Leaflet
+
+The OpenWeatherMap javascript library is designed to work with the Leaflet mapping service. The current version of the library allows the following:
+
+Embedding of layer with current weather in cities
+Embedding of layer with weather stations
+The library supports customer clustering
+Leaflet library
+
+Another implementation of map based on Leaflet technology supports OWM's TileLayers and current city/station data. It is configurable with many options. For current city/station data the library supports refreshing the data in intervals, some types of client-side clustering (show only the station/city with the highest rank for a defined pixel square), custom image set (if you provide one), different languages (en, de, ru, fr, but translation is incomplete), minZoom and others.
+
+Source and documentation (README.md) is available on GitHub https://github.com/buche/leaflet-openweathermap
+
+Example of weather map: https://github.com/owm-inc/VANE-intro/tree/master/apps
+
+Using OpenWeatherMap weather tiles with leaflet: PDF
+
+Air Pollution Index levels scale
+
+Overview
+Different countries have their own air quality indices, corresponding to different national air quality standards. Please find air quality index levels scales used in UK, Europe, USA and Mainland China in the sections below. You can get air pollution data for any coordinates on the globe using Air Pollution API.
+
+Air quality index levels scale in UK
+
+Below is a description of UK Air Quality Index levels:
+
+Qualitative name
+
+Index
+
+Pollutant concentration in μg/m3
+
+SO2
+
+NO2
+
+PM2.5
+
+PM10
+
+O3
+
+Low
+
+1
+
+0-88
+
+0-67
+
+0-11
+
+0-16
+
+0-33
+
+Low
+
+2
+
+89-177
+
+68-134
+
+12-23
+
+17-33
+
+34-66
+
+Low
+
+3
+
+178-266
+
+135-200
+
+24-35
+
+34-50
+
+67-100
+
+Moderate
+
+4
+
+267-354
+
+201-267
+
+36-41
+
+52-58
+
+101-120
+
+Moderate
+
+5
+
+355-443
+
+268-334
+
+42-47
+
+59-66
+
+121-140
+
+Moderate
+
+6
+
+444-532
+
+335-400
+
+48-53
+
+67-75
+
+141-160
+
+High
+
+7
+
+533-710
+
+401-467
+
+54-58
+
+76-83
+
+161-187
+
+High
+
+8
+
+711-887
+
+468-534
+
+59-64
+
+84-91
+
+188-213
+
+High
+
+9
+
+888-1064
+
+535-600
+
+65-70
+
+92-100
+
+214-240
+
+Very High
+
+10
+
+⩾1065
+
+⩾601
+
+⩾71
+
+⩾101
+
+⩾241
+
+Air quality index levels scale in Europe
+
+Below is a description of Europe Air Quality Index levels:
+
+Qualitative name
+
+Index or sub-index
+
+Pollutant (hourly) concentration in μg/m3
+
+NO2
+
+PM10
+
+O3
+
+PM2.5
+
+Very Low
+
+0-25
+
+0-50
+
+0-25
+
+0-60
+
+0-15
+
+Low
+
+25-50
+
+50-100
+
+25-50
+
+60-120
+
+15-30
+
+Medium
+
+50-75
+
+100-200
+
+50-90
+
+120-180
+
+30-55
+
+High
+
+75-100
+
+200-400
+
+90-180
+
+180-240
+
+55-110
+
+Very high
+
+>100
+
+>400
+
+>180
+
+>240
+
+>110
+
+Air quality index levels scale in USA
+
+Below is a description of USA Air Quality Index levels:
+
+AQI
+
+Level of health concern
+
+Color
+
+0 to 50
+
+Good
+
+Green
+
+51 to 100
+
+Moderate
+
+Yellow
+
+101 to 150
+
+Unhealthy for sensitive groups
+
+Orange
+
+151 - 200
+
+Unhealthy
+
+Red
+
+201-300
+
+Very unhealthy
+
+Purple
+
+301-500
+
+Hazardous
+
+Maroon
+
+501-1000
+
+Very Hazardous
+
+Brown
+
+For pollutants concentration recalculation into AQI equation and table below is used:
+
+computingaqi
+where:
+
+I = the Air Quality index,
+
+C = the pollutant concentration,
+
+Clow= the concentration breakpoint that is ≤C,
+
+Chigh= the concentration breakpoint that is ≥C,
+
+Ilow= the index breakpoint corresponding to Clow,
+
+Ihigh= the index breakpoint corresponding to Chigh.
+
+Ilow-Ihigh
+
+O3, ppb (8-hr)
+
+O3, ppb (1-hr)
+
+PM2.5, μg/m3 (24-hr)
+
+PM10, μg/m3 (24-hr)
+
+CO, ppm (8-hr)
+
+SO2, ppb
+
+NO2, ppb (1-hr)
+
+Сlow-Chigh(avg)
+
+0-50
+
+0-54
+
+-
+
+0.0-12.0
+
+0-54
+
+0.0-4.4
+
+0-35 (1-hr)
+
+0-53
+
+51-100
+
+55-70
+
+-
+
+12.1-35.4
+
+55-154
+
+4.5-9.4
+
+36-75 (1-hr)
+
+54-100
+
+101-150
+
+71-85
+
+125-164
+
+35.5-55.4
+
+155-254
+
+9.5-12.4
+
+76-185 (1-hr)
+
+101-360
+
+151-200
+
+86-105
+
+165-204
+
+55.5-150.4
+
+255-354
+
+12.5-15.4
+
+186-304 (1-hr)
+
+361-649
+
+201-300
+
+106-200
+
+205-404
+
+150.5-250.4
+
+355-424
+
+15.5-30.4
+
+305-604 (24-hr)
+
+650-1249
+
+301-400
+
+-
+
+405-504
+
+250.5-350.4
+
+425-504
+
+30.5-40.4
+
+605-804 (24-hr)
+
+1250-1649
+
+401-500
+
+-
+
+505-604
+
+350.5-500.4
+
+505-604
+
+40.5-50.4
+
+805-1004 (24-hr)
+
+1650-2049
+
+Air quality index levels scale in Mainland China
+
+Below is a description of Mainland China Air Quality Index levels:
+
+AQI
+
+Air pollution level
+
+Air pollution category
+
+0-50
+
+Level 1
+
+Excellent
+
+51-100
+
+Level 2
+
+Good
+
+101-150
+
+Level 3
+
+Lightly polluted
+
+151-200
+
+Level 4
+
+Moderatory polluted
+
+201-300
+
+Level 5
+
+Heavily polluted
+
+>300
+
+Level 6
+
+Severely polluted
+
+An individual score (Individual Air Quality Index, IAQI) is calculated using formula and table with breakpoint concentrations below:
+
+computingaqi
+where:
+
+I = the Individual Air Quality index,
+
+C = the pollutant concentration,
+
+Clow= the concentration breakpoint that is ≤C,
+
+Chigh= the concentration breakpoint that is ≥C,
+
+Ilow= the index breakpoint corresponding to Clow,
+
+Ihigh= the index breakpoint corresponding to Chigh.
+
+Individual index
+
+Units are in μg/m3 except CO, which is in mg/m3
+
+IAQI
+
+SO2, 24 hour
+
+SO2,1 hour (1)
+
+NO2, 24 hour
+
+NO2, 1 hour (1)
+
+PM10, 24 hour
+
+CO, 24 hour
+
+CO, 1 hour (1)
+
+O3, 1 hour
+
+O3, 8 hour
+
+PM2.5, 24 hour
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+0
+
+50
+
+50
+
+150
+
+40
+
+100
+
+50
+
+2
+
+5
+
+160
+
+100
+
+35
+
+100
+
+150
+
+500
+
+80
+
+200
+
+150
+
+4
+
+10
+
+200
+
+160
+
+75
+
+150
+
+475
+
+650
+
+180
+
+700
+
+250
+
+14
+
+35
+
+300
+
+215
+
+115
+
+200
+
+800
+
+800
+
+280
+
+1200
+
+350
+
+24
+
+60
+
+400
+
+265
+
+150
+
+300
+
+1600
+
+(2)
+
+565
+
+2340
+
+420
+
+36
+
+90
+
+800
+
+800
+
+250
+
+400
+
+2100
+
+(2)
+
+750
+
+3090
+
+500
+
+48
+
+120
+
+1000
+
+(3)
+
+350
+
+500
+
+2620
+
+(2)
+
+940
+
+3840
+
+600
+
+60
+
+150
+
+1200
+
+(3)
+
+500
+
+Notes
+
+(1) SO2, NO2, CO 1 hour average concentrations are only for real time reporting. For daily reports use 24 hour average concentration.
+
+(2) If the SO2 concentration exceeds 800 μg/m3 use the index from the 24 hour concentration instead.
+
+(3) If the O3 concentration exceeds 800 μg/m3 use the index from the 1 hour concentration instead.
+
+
+Geocoding API
+
+Geocoding API is a simple tool that we have developed to ease the search for locations while working with geographic names and coordinates.
+
+Supporting API calls by geographical coordinates is the most accurate way to specify any location, that is why this method is integrated in all OpenWeather APIs. However, this way is not always suitable for all users. Geocoding is the process of transformation of any location name into geographical coordinates, and the other way around (reverse geocoding). OpenWeather’s Geocoding API supports both the direct and reverse methods, working at the level of city names, areas and districts, countries and states:
+
+Direct geocoding converts the specified name of a location or zip/post code into the exact geographical coordinates;
+Reverse geocoding converts the geographical coordinates into the names of the nearby locations.
+Direct geocoding
+
+Direct geocoding allows to get geographical coordinates (lat, lon) by using name of the location (city name or area name). If you use the limit parameter in the API call, you can cap how many locations with the same name will be seen in the API response (for instance, London in the UK and London in the US).
+
+Coordinates by location name
+How to make an API call
+API call
+http://api.openweathermap.org/geo/1.0/direct?q={city name},{state code},{country code}&limit={limit}&appid={API key}
+Copy Icon
+Parameters
+
+q
+
+required
+
+City name, state code (only for the US) and country code divided by comma. Please use ISO 3166 country codes.
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+limit
+
+optional
+
+Number of the locations in the API response (up to 5 results can be returned in the API response)
+
+Example of API call
+http://api.openweathermap.org/geo/1.0/direct?q=London&limit=5&appid={API key}
+Copy Icon
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Please note that the fields present will vary based on a country to which a location belongs as well as a specific location.
+
+name Name of the found location
+local_names
+local_names.[language code] Name of the found location in different languages. The list of names can be different for different locations
+local_names.ascii Internal field
+local_names.feature_name Internal field
+lat Geographical coordinates of the found location (latitude)
+lon Geographical coordinates of the found location (longitude)
+country Country of the found location
+state (where available) State of the found location
+Coordinates by zip/post code
+How to make an API call
+http://api.openweathermap.org/geo/1.0/zip?zip={zip code},{country code}&appid={API key}
+Copy Icon
+Parameters
+
+zip code
+
+required
+
+Zip/post code and country code divided by comma. Please use ISO 3166 country codes.
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+Example of API call
+http://api.openweathermap.org/geo/1.0/zip?zip=E14,GB&appid={API key}
+Copy Icon
+Example of API response
+{
+  "zip": "90210",
+  "name": "Beverly Hills",
+  "lat": 34.0901,
+  "lon": -118.4065,
+  "country": "US"
+}
+Toggle
+Copy Icon
+Fields in API response
+zip Specified zip/post code in the API request
+name Name of the found area
+lat Geographical coordinates of the centroid of found zip/post code (latitude)
+lon Geographical coordinates of the centroid of found zip/post code (longitude)
+country Country of the found zip/post code
+Reverse geocoding
+
+Reverse geocoding allows to get name of the location (city name or area name) by using geografical coordinates (lat, lon). The limit parameter in the API call allows you to cap how many location names you will see in the API response.
+
+API call
+http://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={lon}&limit={limit}&appid={API key}
+Copy Icon
+Parameters
+
+lat, lon
+
+required
+
+Geographical coordinates (latitude, longitude)
+
+appid
+
+required
+
+Your unique API key (you can always find it on your account page under the "API key" tab)
+
+limit
+
+optional
+
+Number of the location names in the API response (several results can be returned in the API response)
+
+Example of API call
+http://api.openweathermap.org/geo/1.0/reverse?lat=51.5098&lon=-0.1180&limit=5&appid={API key}
+Copy Icon
+Example of API response
+To view the API response, expand the example by clicking the triangle.
+Toggle
+Copy Icon
+Please note that the fields present will vary based on a country to which a location belongs as well as a specific location.
+
+name Name of the found location
+local_names
+local_names.[language code] Name of the found location in different languages. The list of names can be different for different locations.
+local_names.ascii Internal field
+local_names.feature_name Internal field
+lat Geographical coordinates of the found location (latitude)
+lon Geographical coordinates of the found location (longitude)
+country Country of the found location
+state (where available) State of the found location
+
