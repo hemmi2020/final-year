@@ -32,37 +32,41 @@ export default function ChatInterface() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
+    const messageText = input.trim();
 
-    const userMessage = {
-      id: Date.now(),
-      role: "user",
-      content: input,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), role: "user", content: messageText },
+    ]);
     setInput("");
     setIsTyping(true);
 
     try {
-      const { data } = await chatAPI.send(input);
-      const aiMessage = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: data.data.message,
-        actions: ["save", "book"],
-      };
-      setMessages((prev) => [...prev, aiMessage]);
+      const { data } = await chatAPI.send(messageText);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: data.data.message,
+          actions: ["save", "book"],
+        },
+      ]);
     } catch (err) {
-      const errorMessage = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: "assistant",
+          content:
+            err.response?.data?.error ||
+            "Sorry, something went wrong. Please try again.",
+        },
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -70,116 +74,101 @@ export default function ChatInterface() {
 
   const handleAction = (action) => {
     if (!isAuthenticated) {
-      // Show login prompt and open modal
-      const loginPrompt = {
-        id: Date.now(),
-        role: "system",
-        content:
-          "🔐 Please sign in to save your itinerary or make bookings. Your chat history will be preserved!",
-        requiresAuth: true,
-      };
-      setMessages((prev) => [...prev, loginPrompt]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: "system",
+          content: "🔐 Please sign in to save your itinerary or make bookings.",
+          requiresAuth: true,
+        },
+      ]);
       setIsLoginModalOpen(true);
       return;
     }
-
-    // Handle authenticated actions
-    if (action === "save") {
-      router.push("/dashboard?action=save");
-    } else if (action === "book") {
-      router.push("/trips/new");
-    }
+    if (action === "save") router.push("/dashboard");
+    else if (action === "book") router.push("/trips");
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-neutral-50">
+    <div className="flex flex-col h-full bg-neutral-50">
       {/* Chat Header */}
-      <div className="bg-white border-b border-neutral-200 px-6 py-4">
-        <div className="flex items-center space-x-3">
+      <div className="bg-white border-b border-neutral-200 px-4 sm:px-6 py-3 shrink-0">
+        <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
-            <Bot className="w-6 h-6 text-white" />
+            <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900">
+            <h2 className="text-base font-semibold text-neutral-900">
               AI Travel Assistant
             </h2>
-            <p className="text-sm text-neutral-600">Powered by GPT-4</p>
+            <p className="text-xs text-neutral-500">Powered by GPT-4o-mini</p>
           </div>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-        {messages.map((message) => (
+      {/* Messages — this is the scrollable area */}
+      <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-6 py-4 space-y-4">
+        {messages.map((msg) => (
           <div
-            key={message.id}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            key={msg.id}
+            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`flex space-x-3 max-w-3xl ${
-                message.role === "user"
-                  ? "flex-row-reverse space-x-reverse"
-                  : ""
-              }`}
+              className={`flex gap-2.5 max-w-[85%] sm:max-w-2xl ${msg.role === "user" ? "flex-row-reverse" : ""}`}
             >
               {/* Avatar */}
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === "user"
+                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-1 ${
+                  msg.role === "user"
                     ? "bg-primary-600"
-                    : message.role === "system"
+                    : msg.role === "system"
                       ? "bg-accent-500"
                       : "bg-gradient-to-br from-primary-500 to-secondary-500"
                 }`}
               >
-                {message.role === "user" ? (
-                  <User className="w-5 h-5 text-white" />
-                ) : message.role === "system" ? (
-                  <Sparkles className="w-5 h-5 text-white" />
+                {msg.role === "user" ? (
+                  <User className="w-3.5 h-3.5 text-white" />
+                ) : msg.role === "system" ? (
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
                 ) : (
-                  <Bot className="w-5 h-5 text-white" />
+                  <Bot className="w-3.5 h-3.5 text-white" />
                 )}
               </div>
 
-              {/* Message Content */}
+              {/* Bubble */}
               <div
-                className={`rounded-2xl px-4 py-3 ${
-                  message.role === "user"
-                    ? "bg-primary-600 text-white"
-                    : message.role === "system"
-                      ? "bg-accent-50 text-accent-900 border border-accent-200"
-                      : "bg-white text-neutral-900 shadow-sm border border-neutral-200"
+                className={`rounded-2xl px-4 py-2.5 ${
+                  msg.role === "user"
+                    ? "bg-primary-600 text-white rounded-tr-sm"
+                    : msg.role === "system"
+                      ? "bg-accent-50 text-accent-900 border border-accent-200 rounded-tl-sm"
+                      : "bg-white text-neutral-800 border border-neutral-200 shadow-sm rounded-tl-sm"
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                  {msg.content}
+                </p>
 
-                {/* Action Buttons */}
-                {message.actions && (
-                  <div className="flex space-x-2 mt-3">
-                    {message.actions.includes("save") && (
-                      <button
-                        onClick={() => handleAction("save")}
-                        className="flex items-center space-x-2 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium"
-                      >
-                        <Save className="w-4 h-4" />
-                        <span>Save Itinerary</span>
-                      </button>
-                    )}
-                    {message.actions.includes("book") && (
-                      <button
-                        onClick={() => handleAction("book")}
-                        className="flex items-center space-x-2 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg hover:bg-secondary-100 transition-colors text-sm font-medium"
-                      >
-                        <Calendar className="w-4 h-4" />
-                        <span>Book Now</span>
-                      </button>
-                    )}
+                {msg.actions && (
+                  <div className="flex flex-wrap gap-2 mt-2.5 pt-2.5 border-t border-neutral-100">
+                    <button
+                      onClick={() => handleAction("save")}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg hover:bg-primary-100 transition-colors text-xs font-medium"
+                    >
+                      <Save className="w-3.5 h-3.5" /> Save Itinerary
+                    </button>
+                    <button
+                      onClick={() => handleAction("book")}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-lg hover:bg-secondary-100 transition-colors text-xs font-medium"
+                    >
+                      <Calendar className="w-3.5 h-3.5" /> Plan Trip
+                    </button>
                   </div>
                 )}
 
-                {/* Login Button for System Messages */}
-                {message.requiresAuth && (
-                  <div className="mt-3">
+                {msg.requiresAuth && (
+                  <div className="mt-2.5">
                     <Button
                       variant="primary"
                       size="sm"
@@ -194,59 +183,55 @@ export default function ChatInterface() {
           </div>
         ))}
 
-        {/* Typing Indicator */}
+        {/* Typing */}
         {isTyping && (
           <div className="flex justify-start">
-            <div className="flex space-x-3 max-w-3xl">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
+            <div className="flex gap-2.5">
+              <div className="w-7 h-7 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full flex items-center justify-center shrink-0 mt-1">
+                <Bot className="w-3.5 h-3.5 text-white" />
               </div>
-              <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-neutral-200">
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
+              <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 border border-neutral-200 shadow-sm">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" />
                   <div
                     className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
+                    style={{ animationDelay: "0.15s" }}
+                  />
                   <div
                     className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.4s" }}
-                  ></div>
+                    style={{ animationDelay: "0.3s" }}
+                  />
                 </div>
               </div>
             </div>
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="bg-white border-t border-neutral-200 px-6 py-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex space-x-4">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Ask me anything about your travel plans..."
-              className="flex-1 px-4 py-3 border border-neutral-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-            />
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleSend}
-              disabled={!input.trim() || isTyping}
-            >
-              <Send className="w-5 h-5" />
-            </Button>
-          </div>
-          <p className="text-xs text-neutral-500 mt-2 text-center">
-            💡 Tip: You can chat freely! Sign in to save your itineraries and
-            make bookings.
-          </p>
+      {/* Input — pinned at bottom */}
+      <div className="bg-white border-t border-neutral-200 px-4 sm:px-6 py-3 shrink-0">
+        <div className="max-w-3xl mx-auto flex gap-3">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+            placeholder="Ask me anything about your travel plans..."
+            className="flex-1 px-4 py-2.5 border border-neutral-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+            disabled={isTyping}
+          />
+          <Button
+            variant="primary"
+            onClick={handleSend}
+            disabled={!input.trim() || isTyping}
+          >
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
+        <p className="text-xs text-neutral-400 mt-1.5 text-center">
+          No login needed to chat · Sign in to save trips
+        </p>
       </div>
 
       {/* Auth Modals */}
