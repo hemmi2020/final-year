@@ -1,7 +1,7 @@
 const OpenAI = require('openai');
-const { graphRAGSearch } = require('../graph/graphService');
+const { graphRAGSearch, getPersonalizedRecommendations } = require('../graph/graphService');
 const { semanticSearch } = require('../vector/vectorService');
-const { getConversation, addMessage, trackInteraction } = require('../memory/memoryService');
+const { getConversation, addMessage, trackInteraction, getLongTermMemory, saveTripToMemory, addInsight } = require('../memory/memoryService');
 const { getCurrentWeather } = require('../external/weatherService');
 const { getExchangeRate } = require('../external/currencyService');
 const { geocode } = require('../external/mapsService');
@@ -31,6 +31,18 @@ exports.generateItinerary = async (user, params) => {
 
     // Step 2: Query Knowledge Graph
     const graphResults = await graphRAGSearch(destination, searchTags);
+
+    // Step 2b: Get personalized recommendations from graph
+    let personalizedRecs = [];
+    if (user) {
+        personalizedRecs = await getPersonalizedRecommendations(user._id.toString(), preferences, destination);
+    }
+
+    // Step 2c: Load long-term memory
+    let longTermMemory = null;
+    if (user) {
+        longTermMemory = await getLongTermMemory(user._id.toString());
+    }
 
     // Step 3: Semantic search in Vector Store
     const vectorResults = await semanticSearch(
@@ -80,6 +92,8 @@ exports.generateItinerary = async (user, params) => {
         await addMessage(user._id.toString(), 'user', `Generate ${days}-day trip to ${destination}`);
         await addMessage(user._id.toString(), 'assistant', `Generated itinerary for ${destination}`);
         await trackInteraction(user._id.toString(), 'destination', destination);
+        await saveTripToMemory(user._id.toString(), destination, 0, `${days}-day trip generated`);
+        await addInsight(user._id.toString(), `User interested in ${destination} with ${preferences.dietary.join(', ')} food`, 0.8, 'itinerary_generation');
     }
 
     return {

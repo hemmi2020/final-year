@@ -3,12 +3,12 @@
  * Each tool wraps a service call for the AI orchestrator
  */
 
-const { graphRAGSearch, findNearby } = require('../graph/graphService');
+const { graphRAGSearch, findNearby, findHalalNearLocation, getPersonalizedRecommendations } = require('../graph/graphService');
 const { semanticSearch } = require('../vector/vectorService');
 const { getCurrentWeather, getForecast } = require('../external/weatherService');
 const { searchPlaces, geocode, findAttractions } = require('../external/mapsService');
 const { convertCurrency, getExchangeRate } = require('../external/currencyService');
-const { getConversation, getPatterns } = require('../memory/memoryService');
+const { getConversation, getPatterns, getLongTermMemory } = require('../memory/memoryService');
 
 /**
  * Tool: Search Knowledge Graph for destinations, restaurants, attractions by tags
@@ -89,4 +89,25 @@ exports.getUserMemory = async (userId) => {
  */
 exports.geocodePlace = async (placeName) => {
     return geocode(placeName);
+};
+
+/**
+ * Tool: Find halal restaurants near coordinates using graph
+ */
+exports.findHalalNear = async (lat, lng, radius) => {
+    return findHalalNearLocation(lat, lng, radius);
+};
+
+/**
+ * Tool: Get personalized recommendations from knowledge graph
+ */
+exports.getPersonalized = async (userId, preferences, destination) => {
+    return getPersonalizedRecommendations(userId, preferences, destination);
+};
+
+/**
+ * Tool: Get long-term user memory from MongoDB
+ */
+exports.getLongMemory = async (userId) => {
+    return getLongTermMemory(userId);
 };

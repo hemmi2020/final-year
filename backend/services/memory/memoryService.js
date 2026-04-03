@@ -1,17 +1,17 @@
 const { getRedisClient } = require('../../config/redis');
+const UserMemory = require('../../models/UserMemory');
 
-const CONVERSATION_TTL = 24 * 60 * 60; // 24 hours
+const CONVERSATION_TTL = 86400; // 24 hours
 const MAX_MESSAGES = 20;
 
 /**
- * Get conversation history for a user
+ * Get conversation history for a user (Redis short-term)
  */
 exports.getConversation = async (userId) => {
     try {
         const redis = getRedisClient();
         if (!redis) return [];
-
-        const data = await redis.get(`conv:${userId}`);
+        const data = await redis.get(`chat:${userId}`);
         return data ? JSON.parse(data) : [];
     } catch (error) {
         console.warn('Memory get error:', error.message);
@@ -26,13 +26,11 @@ exports.addMessage = async (userId, role, content) => {
     try {
         const redis = getRedisClient();
         if (!redis) return;
-
         const conversation = await exports.getConversation(userId);
         conversation.push({ role, content, timestamp: Date.now() });
-
-        // Keep only last N messages
+        // Keep last N messages
         const trimmed = conversation.slice(-MAX_MESSAGES);
-        await redis.set(`conv:${userId}`, JSON.stringify(trimmed), 'EX', CONVERSATION_TTL);
+        await redis.set(`chat:${userId}`, JSON.stringify(trimmed), 'EX', CONVERSATION_TTL);
     } catch (error) {
         console.warn('Memory add error:', error.message);
     }
@@ -45,36 +43,123 @@ exports.clearConversation = async (userId) => {
     try {
         const redis = getRedisClient();
         if (!redis) return;
-        await redis.del(`conv:${userId}`);
+        await redis.del(`chat:${userId}`);
     } catch (error) {
         console.warn('Memory clear error:', error.message);
     }
 };
 
 /**
- * Store user interaction pattern (frequently searched destinations, etc.)
+ * Store user interaction pattern (Redis short-term)
  */
 exports.trackInteraction = async (userId, type, value) => {
     try {
         const redis = getRedisClient();
-        if (!redis) return;
-        await redis.zincrby(`patterns:${userId}`, 1, `${type}:${value}`);
-        await redis.expire(`patterns:${userId}`, 30 * 24 * 60 * 60); // 30 days
+        if (redis) {
+            await redis.zincrby(`interactions:${userId}:${type}`, 1, value);
+            await redis.expire(`interactions:${userId}:${type}`, CONVERSATION_TTL * 30);
+        }
+        // Also persist to MongoDB for long-term memory
+        await UserMemory.findOneAndUpdate(
+            { userId },
+            {
+                $push: {
+                    interactions: {
+                        entityType: type,
+                        entityName: value,
+                        interaction: 'searched',
+                        timestamp: new Date(),
+                    },
+                },
+            },
+            { upsert: true }
+        );
     } catch (error) {
-        console.warn('Memory track error:', error.message);
+        console.warn('Track interaction error:', error.message);
     }
 };
 
 /**
- * Get user interaction patterns
+ * Get user interaction patterns (Redis)
  */
 exports.getPatterns = async (userId, limit = 10) => {
     try {
         const redis = getRedisClient();
         if (!redis) return [];
-        return await redis.zrevrange(`patterns:${userId}`, 0, limit - 1, 'WITHSCORES');
+        const destinations = await redis.zrevrange(`interactions:${userId}:destination`, 0, limit - 1, 'WITHSCORES');
+        const result = [];
+        for (let i = 0; i < destinations.length; i += 2) {
+            result.push({ value: destinations[i], count: parseInt(destinations[i + 1]) });
+        }
+        return result;
     } catch (error) {
-        console.warn('Memory patterns error:', error.message);
+        console.warn('Get patterns error:', error.message);
         return [];
+    }
+};
+
+/**
+ * Save trip to long-term memory (MongoDB)
+ */
+exports.saveTripToMemory = async (userId, destination, satisfaction, notes) => {
+    try {
+        await UserMemory.findOneAndUpdate(
+            { userId },
+            {
+                $push: {
+                    tripHistory: { destination, satisfaction, notes, date: new Date() },
+                },
+            },
+            { upsert: true }
+        );
+    } catch (error) {
+        console.warn('Save trip memory error:', error.message);
+    }
+};
+
+/**
+ * Add insight from conversation analysis
+ */
+exports.addInsight = async (userId, insight, confidence, source) => {
+    try {
+        await UserMemory.findOneAndUpdate(
+            { userId },
+            {
+                $push: {
+                    insights: { insight, confidence, source, timestamp: new Date() },
+                },
+            },
+            { upsert: true }
+        );
+    } catch (error) {
+        console.warn('Add insight error:', error.message);
+    }
+};
+
+/**
+ * Get long-term memory (MongoDB)
+ */
+exports.getLongTermMemory = async (userId) => {
+    try {
+        const memory = await UserMemory.findOne({ userId });
+        return memory || null;
+    } catch (error) {
+        console.warn('Get long-term memory error:', error.message);
+        return null;
+    }
+};
+
+/**
+ * Update learned preferences based on behavior
+ */
+exports.updateLearnedPreferences = async (userId, preferences) => {
+    try {
+        await UserMemory.findOneAndUpdate(
+            { userId },
+            { $set: { learnedPreferences: preferences } },
+            { upsert: true }
+        );
+    } catch (error) {
+        console.warn('Update learned prefs error:', error.message);
     }
 };
