@@ -2,211 +2,261 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { useScrollPosition } from "@/hooks/useScrollPosition";
-import { NAV_LINKS } from "@/lib/constants";
 import { useAuthStore } from "@/store/authStore";
-import Container from "./Container";
+import { User, LogOut, Menu, X } from "lucide-react";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
-import { User, LogOut } from "lucide-react";
 
-/**
- * Navigation component with mobile menu
- */
+const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/chat", label: "AI Chat" },
+  { href: "/destinations", label: "Destinations" },
+  { href: "/about", label: "About" },
+];
+
 export default function Navigation() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const scrollPosition = useScrollPosition();
-  const isScrolled = scrollPosition > 50;
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const scrollY = useScrollPosition();
+  const isScrolled = scrollY > 10;
   const { user, isAuthenticated, logout } = useAuthStore();
 
   return (
     <>
       <nav
-        className={cn(
-          "fixed top-0 w-full z-[var(--z-fixed)] transition-all duration-300",
-          isScrolled
-            ? "bg-white/80 backdrop-blur-md border-b border-border-light shadow-sm"
-            : "bg-white/80 backdrop-blur-md border-b border-border-light",
-        )}
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          background: "#FFFFFF",
+          borderBottom: isScrolled
+            ? "1px solid #F0F0F0"
+            : "1px solid transparent",
+          boxShadow: isScrolled ? "0 2px 16px rgba(0,0,0,0.06)" : "none",
+          transition: "all 0.3s ease",
+        }}
       >
-        <Container>
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-primary-600">
-                TravelAI
-              </span>
-            </Link>
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            padding: "0 24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            height: 64,
+          }}
+        >
+          {/* Logo */}
+          <Link
+            href="/"
+            style={{
+              fontSize: 22,
+              fontWeight: 800,
+              color: "#0A0A0A",
+              textDecoration: "none",
+            }}
+          >
+            TravelAI
+          </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-              {NAV_LINKS.map((link) => (
+          {/* Desktop Nav */}
+          <div
+            style={{ display: "flex", gap: 32, alignItems: "center" }}
+            className="hidden md:flex"
+          >
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                style={{
+                  color: "#6B7280",
+                  textDecoration: "none",
+                  fontSize: 15,
+                  fontWeight: 500,
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => (e.target.style.color = "#0A0A0A")}
+                onMouseLeave={(e) => (e.target.style.color = "#6B7280")}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right side */}
+          <div
+            style={{ display: "flex", gap: 12, alignItems: "center" }}
+            className="hidden md:flex"
+          >
+            {isAuthenticated ? (
+              <>
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-neutral-700 hover:text-primary-600 transition-colors duration-150 font-medium"
+                  href="/dashboard"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    color: "#6B7280",
+                    textDecoration: "none",
+                    fontSize: 14,
+                    fontWeight: 500,
+                  }}
                 >
-                  {link.label}
+                  <User size={16} /> {user?.name}
                 </Link>
-              ))}
-            </div>
+                <button
+                  onClick={logout}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    color: "#6B7280",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 14,
+                  }}
+                >
+                  <LogOut size={16} /> Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setLoginOpen(true)}
+                  style={{
+                    color: "#6B7280",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 15,
+                    fontWeight: 500,
+                  }}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => setRegisterOpen(true)}
+                  className="btn-coral"
+                  style={{ padding: "10px 24px", fontSize: 14 }}
+                >
+                  Get Started
+                </button>
+              </>
+            )}
+          </div>
 
-            {/* User Menu / Sign In */}
-            <div className="hidden md:flex items-center space-x-4">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#0A0A0A",
+            }}
+          >
+            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Mobile menu */}
+        {mobileOpen && (
+          <div
+            style={{
+              background: "#FFFFFF",
+              borderTop: "1px solid #F0F0F0",
+              padding: "16px 24px",
+            }}
+            className="md:hidden"
+          >
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  display: "block",
+                  padding: "12px 0",
+                  color: "#0A0A0A",
+                  textDecoration: "none",
+                  fontSize: 16,
+                  fontWeight: 500,
+                  borderBottom: "1px solid #F5F5F5",
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div style={{ paddingTop: 16, display: "flex", gap: 12 }}>
               {isAuthenticated ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 transition-colors duration-150 font-medium"
-                  >
-                    <User className="w-4 h-4" />
-                    <span>{user?.name}</span>
-                  </Link>
-                  <button
-                    onClick={logout}
-                    className="flex items-center space-x-2 px-4 py-2 text-neutral-700 hover:text-error-600 transition-colors duration-150 font-medium"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
-                  </button>
-                </>
+                <button
+                  onClick={() => {
+                    logout();
+                    setMobileOpen(false);
+                  }}
+                  style={{
+                    color: "#6B7280",
+                    background: "none",
+                    border: "none",
+                    fontSize: 15,
+                  }}
+                >
+                  Logout
+                </button>
               ) : (
                 <>
                   <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="text-neutral-700 hover:text-primary-600 transition-colors duration-150 font-medium"
+                    onClick={() => {
+                      setLoginOpen(true);
+                      setMobileOpen(false);
+                    }}
+                    style={{
+                      color: "#6B7280",
+                      background: "none",
+                      border: "none",
+                      fontSize: 15,
+                    }}
                   >
                     Sign In
                   </button>
                   <button
-                    onClick={() => setIsRegisterModalOpen(true)}
-                    className="px-4 py-2 rounded-lg transition-colors duration-150 font-medium"
-                    style={{ backgroundColor: "#111827", color: "#ffffff" }}
+                    onClick={() => {
+                      setRegisterOpen(true);
+                      setMobileOpen(false);
+                    }}
+                    className="btn-coral"
+                    style={{ padding: "10px 24px", fontSize: 14 }}
                   >
                     Get Started
                   </button>
                 </>
               )}
             </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-neutral-700 hover:text-primary-600 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500 rounded"
-              aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
-            >
-              {isMobileMenuOpen ? (
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </Container>
-
-        {/* Mobile Menu Overlay */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden animate-slide-in-right">
-            <div className="px-4 pt-2 pb-4 space-y-2 bg-white border-t border-border-light shadow-lg">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="block px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-150 font-medium"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="pt-4 space-y-2 border-t border-border-light">
-                {isAuthenticated ? (
-                  <>
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center justify-center space-x-2 px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-150 font-medium"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      <User className="w-4 h-4" />
-                      <span>{user?.name}</span>
-                    </Link>
-                    <button
-                      onClick={() => {
-                        logout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="w-full flex items-center justify-center space-x-2 px-3 py-2 text-neutral-700 hover:text-error-600 hover:bg-error-50 rounded-lg transition-colors duration-150 font-medium"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setIsLoginModalOpen(true);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="block w-full px-3 py-2 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors duration-150 font-medium text-center"
-                    >
-                      Sign In
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsRegisterModalOpen(true);
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="block w-full px-3 py-2 rounded-lg transition-colors duration-150 font-medium text-center"
-                      style={{ backgroundColor: "#111827", color: "#ffffff" }}
-                    >
-                      Get Started
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
           </div>
         )}
       </nav>
 
-      {/* Auth Modals - rendered outside nav to avoid stacking context issues */}
       <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
         onSwitchToRegister={() => {
-          setIsLoginModalOpen(false);
-          setIsRegisterModalOpen(true);
+          setLoginOpen(false);
+          setRegisterOpen(true);
         }}
       />
       <RegisterModal
-        isOpen={isRegisterModalOpen}
-        onClose={() => setIsRegisterModalOpen(false)}
+        isOpen={registerOpen}
+        onClose={() => setRegisterOpen(false)}
         onSwitchToLogin={() => {
-          setIsRegisterModalOpen(false);
-          setIsLoginModalOpen(true);
+          setRegisterOpen(false);
+          setLoginOpen(true);
         }}
       />
     </>

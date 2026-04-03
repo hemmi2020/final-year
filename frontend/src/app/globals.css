@@ -1,316 +1,111 @@
 @import "tailwindcss";
 
-/* Tailwind v4 Inline Theme Configuration */
 @theme {
-  /* Colors referencing CSS custom properties */
-  --color-primary-50: rgb(var(--color-primary-50));
-  --color-primary-100: rgb(var(--color-primary-100));
-  --color-primary-200: rgb(var(--color-primary-200));
-  --color-primary-300: rgb(var(--color-primary-300));
-  --color-primary-400: rgb(var(--color-primary-400));
-  --color-primary-500: rgb(var(--color-primary-500));
-  --color-primary-600: rgb(var(--color-primary-600));
-  --color-primary-700: rgb(var(--color-primary-700));
-  --color-primary-800: rgb(var(--color-primary-800));
-  --color-primary-900: rgb(var(--color-primary-900));
-
-  --color-secondary-50: rgb(var(--color-secondary-50));
-  --color-secondary-100: rgb(var(--color-secondary-100));
-  --color-secondary-200: rgb(var(--color-secondary-200));
-  --color-secondary-300: rgb(var(--color-secondary-300));
-  --color-secondary-400: rgb(var(--color-secondary-400));
-  --color-secondary-500: rgb(var(--color-secondary-500));
-  --color-secondary-600: rgb(var(--color-secondary-600));
-  --color-secondary-700: rgb(var(--color-secondary-700));
-  --color-secondary-800: rgb(var(--color-secondary-800));
-  --color-secondary-900: rgb(var(--color-secondary-900));
-
-  --color-accent-50: rgb(var(--color-accent-50));
-  --color-accent-100: rgb(var(--color-accent-100));
-  --color-accent-200: rgb(var(--color-accent-200));
-  --color-accent-300: rgb(var(--color-accent-300));
-  --color-accent-400: rgb(var(--color-accent-400));
-  --color-accent-500: rgb(var(--color-accent-500));
-  --color-accent-600: rgb(var(--color-accent-600));
-  --color-accent-700: rgb(var(--color-accent-700));
-  --color-accent-800: rgb(var(--color-accent-800));
-  --color-accent-900: rgb(var(--color-accent-900));
-
-  --color-neutral-50: rgb(var(--color-neutral-50));
-  --color-neutral-100: rgb(var(--color-neutral-100));
-  --color-neutral-200: rgb(var(--color-neutral-200));
-  --color-neutral-300: rgb(var(--color-neutral-300));
-  --color-neutral-400: rgb(var(--color-neutral-400));
-  --color-neutral-500: rgb(var(--color-neutral-500));
-  --color-neutral-600: rgb(var(--color-neutral-600));
-  --color-neutral-700: rgb(var(--color-neutral-700));
-  --color-neutral-800: rgb(var(--color-neutral-800));
-  --color-neutral-900: rgb(var(--color-neutral-900));
-
-  /* Semantic colors */
-  --color-success: rgb(var(--color-success-500));
-  --color-warning: rgb(var(--color-warning-500));
-  --color-error: rgb(var(--color-error-500));
-  --color-info: rgb(var(--color-info-500));
-
-  /* Background & Text */
-  --color-background: rgb(var(--color-background));
-  --color-surface: rgb(var(--color-surface));
-  --color-text-primary: rgb(var(--color-text-primary));
-  --color-text-secondary: rgb(var(--color-text-secondary));
-  --color-text-tertiary: rgb(var(--color-text-tertiary));
-  --color-text-inverse: rgb(var(--color-text-inverse));
-
-  /* Border colors */
-  --color-border-light: rgb(var(--color-border-light));
-  --color-border-medium: rgb(var(--color-border-medium));
-  --color-border-dark: rgb(var(--color-border-dark));
-
-  /* Breakpoints */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
   --breakpoint-xl: 1280px;
-  --breakpoint-2xl: 1536px;
-
-  /* Font Families */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-
-  /* Font Sizes */
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-4xl: 2.25rem;
-  --font-size-5xl: 3rem;
-  --font-size-6xl: 3.75rem;
-
-  /* Line Heights */
-  --line-height-tight: 1.25;
-  --line-height-snug: 1.375;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.625;
-  --line-height-loose: 2;
 }
 
 @layer base {
   :root {
-    /* Primary Colors - Blue theme for trust and travel */
-    --color-primary-50: 239 246 255;
-    --color-primary-100: 219 234 254;
-    --color-primary-200: 191 219 254;
-    --color-primary-300: 147 197 253;
-    --color-primary-400: 96 165 250;
-    --color-primary-500: 59 130 246;
-    --color-primary-600: 37 99 235;
-    --color-primary-700: 29 78 216;
-    --color-primary-800: 30 64 175;
-    --color-primary-900: 30 58 138;
-
-    /* Secondary Colors - Teal for energy and adventure */
-    --color-secondary-50: 240 253 250;
-    --color-secondary-100: 204 251 241;
-    --color-secondary-200: 153 246 228;
-    --color-secondary-300: 94 234 212;
-    --color-secondary-400: 45 212 191;
-    --color-secondary-500: 20 184 166;
-    --color-secondary-600: 13 148 136;
-    --color-secondary-700: 15 118 110;
-    --color-secondary-800: 17 94 89;
-    --color-secondary-900: 19 78 74;
-
-    /* Accent Colors - Amber for warmth and highlights */
-    --color-accent-50: 255 251 235;
-    --color-accent-100: 254 243 199;
-    --color-accent-200: 253 230 138;
-    --color-accent-300: 252 211 77;
-    --color-accent-400: 251 191 36;
-    --color-accent-500: 245 158 11;
-    --color-accent-600: 217 119 6;
-    --color-accent-700: 180 83 9;
-    --color-accent-800: 146 64 14;
-    --color-accent-900: 120 53 15;
-
-    /* Neutral Colors - Gray scale */
-    --color-neutral-50: 249 250 251;
-    --color-neutral-100: 243 244 246;
-    --color-neutral-200: 229 231 235;
-    --color-neutral-300: 209 213 219;
-    --color-neutral-400: 156 163 175;
-    --color-neutral-500: 107 114 128;
-    --color-neutral-600: 75 85 99;
-    --color-neutral-700: 55 65 81;
-    --color-neutral-800: 31 41 55;
-    --color-neutral-900: 17 24 39;
-
-    /* Semantic Colors */
-    --color-success-500: 34 197 94;
-    --color-success-600: 22 163 74;
-    --color-warning-500: 234 179 8;
-    --color-warning-600: 202 138 4;
-    --color-error-500: 239 68 68;
-    --color-error-600: 220 38 38;
-    --color-info-500: 59 130 246;
-    --color-info-600: 37 99 235;
-
-    /* Background Colors */
-    --color-background: 255 255 255;
-    --color-surface: 249 250 251;
-    --color-overlay: 0 0 0;
-
-    /* Text Colors */
-    --color-text-primary: 17 24 39;
-    --color-text-secondary: 75 85 99;
-    --color-text-tertiary: 156 163 175;
-    --color-text-inverse: 255 255 255;
-
-    /* Border Colors */
-    --color-border-light: 229 231 235;
-    --color-border-medium: 209 213 219;
-    --color-border-dark: 156 163 175;
-
-    /* Spacing Scale */
-    --spacing-xs: 0.25rem;
-    --spacing-sm: 0.5rem;
-    --spacing-md: 1rem;
-    --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
-    --spacing-2xl: 3rem;
-    --spacing-3xl: 4rem;
-
-    /* Border Radius */
-    --radius-sm: 0.25rem;
-    --radius-md: 0.375rem;
-    --radius-lg: 0.5rem;
-    --radius-xl: 0.75rem;
-    --radius-2xl: 1rem;
-    --radius-full: 9999px;
-
-    /* Transitions */
-    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
-
-    /* Z-index Scale */
-    --z-dropdown: 1000;
-    --z-sticky: 1020;
-    --z-fixed: 1030;
-    --z-modal-backdrop: 1040;
-    --z-modal: 1050;
-    --z-popover: 1060;
-    --z-tooltip: 1070;
+    --coral: #FF6B35;
+    --coral-light: #FF8F5E;
+    --gold: #F7C948;
+    --text-dark: #0A0A0A;
+    --text-body: #6B7280;
+    --bg-warm: #FAF9F7;
+    --bg-peach: #FFF8F0;
+    --bg-section: #F5F5F5;
+    --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    --card-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.14);
   }
 
-  /* Base Styles */
   * {
-    border-color: rgb(var(--color-border-light));
+    border-color: #E5E7EB;
   }
 
   body {
-    background-color: rgb(var(--color-background));
-    color: rgb(var(--color-text-primary));
+    background-color: #FFFFFF;
+    color: var(--text-dark);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
-  /* Focus Styles */
   *:focus-visible {
-    outline: 2px solid rgb(var(--color-primary-500));
+    outline: 2px solid var(--coral);
     outline-offset: 2px;
   }
-
-  /* Typography Styles */
-  h1,
-  .h1 {
-    font-size: var(--font-size-5xl);
-    font-weight: 700;
-    line-height: var(--line-height-tight);
-    letter-spacing: -0.025em;
-  }
-
-  h2,
-  .h2 {
-    font-size: var(--font-size-4xl);
-    font-weight: 700;
-    line-height: var(--line-height-tight);
-    letter-spacing: -0.025em;
-  }
-
-  h3,
-  .h3 {
-    font-size: var(--font-size-3xl);
-    font-weight: 600;
-    line-height: var(--line-height-snug);
-  }
-
-  h4,
-  .h4 {
-    font-size: var(--font-size-2xl);
-    font-weight: 600;
-    line-height: var(--line-height-snug);
-  }
-
-  h5,
-  .h5 {
-    font-size: var(--font-size-xl);
-    font-weight: 500;
-    line-height: var(--line-height-normal);
-  }
-
-  h6,
-  .h6 {
-    font-size: var(--font-size-lg);
-    font-weight: 500;
-    line-height: var(--line-height-normal);
-  }
-
-  /* Reduced Motion */
-  @media (prefers-reduced-motion: reduce) {
-
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
 }
 
-/* Custom Animations */
-@keyframes slideInFromRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+/* Gradient button */
+.btn-coral {
+  background: linear-gradient(135deg, #FF6B35, #F7C948);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@keyframes fadeInUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+.btn-coral:hover {
+  filter: brightness(1.08);
+  transform: scale(1.02);
 }
 
-.animate-slide-in-right {
-  animation: slideInFromRight 300ms ease-out;
+.btn-outline-coral {
+  background: transparent;
+  color: var(--coral);
+  border: 2px solid var(--coral);
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 500ms ease-out;
+.btn-outline-coral:hover {
+  background: rgba(255, 107, 53, 0.08);
+}
+
+.btn-ghost-white {
+  background: transparent;
+  color: #FFFFFF;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Card base */
+.card-magazine {
+  background: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-magazine:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-4px);
+}
+
+/* Section label */
+.section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--coral);
+}
+
+/* Hide scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
