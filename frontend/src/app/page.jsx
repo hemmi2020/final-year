@@ -2,7 +2,6 @@ import Hero from "@/components/features/Hero";
 import FeaturesSection from "@/components/features/FeaturesSection";
 import PipelineSection from "@/components/features/PipelineSection";
 import DestinationsSection from "@/components/features/DestinationsSection";
-import QuizSection from "@/components/features/QuizSection";
 import TestimonialsSection from "@/components/features/TestimonialsSection";
 
 const destinations = [
@@ -90,7 +89,6 @@ export default function Home() {
       <FeaturesSection />
       <PipelineSection />
       <DestinationsSection destinations={destinations} />
-      <QuizSection />
       <TestimonialsSection testimonials={testimonials} />
     </div>
   );

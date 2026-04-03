@@ -17,7 +17,6 @@ export const NAV_LINKS = [
     { href: '/', label: 'Home' },
     { href: '/chat', label: 'AI Chat' },
     { href: '/destinations', label: 'Destinations' },
-    { href: '/quiz', label: 'Travel Quiz' },
     { href: '/about', label: 'About' },
 ];
 
