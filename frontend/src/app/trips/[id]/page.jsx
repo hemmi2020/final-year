@@ -7,20 +7,17 @@ import { tripsAPI, externalAPI } from "@/lib/api";
 import {
   MapPin,
   Calendar,
-  Cloud,
+  Clock,
   DollarSign,
   ArrowLeft,
-  Clock,
-  Sparkles,
   Trash2,
-  Edit3,
-  Sun,
-  CloudRain,
-  Thermometer,
+  Download,
+  Share2,
+  ChevronDown,
+  ChevronUp,
+  Cloud,
+  Globe,
 } from "lucide-react";
-import Container from "@/components/layout/Container";
-import Button from "@/components/ui/Button";
-import Card, { CardBody } from "@/components/ui/Card";
 
 export default function TripDetailPage() {
   const router = useRouter();
@@ -29,10 +26,11 @@ export default function TripDetailPage() {
   const [trip, setTrip] = useState(null);
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [expandedDay, setExpandedDay] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/");
+      router.push("/login?returnUrl=/trips/" + id);
       return;
     }
     fetchTrip();
@@ -42,7 +40,6 @@ export default function TripDetailPage() {
     try {
       const { data } = await tripsAPI.getById(id);
       setTrip(data.data);
-      // Fetch weather for destination
       try {
         const geo = await externalAPI.geocode(data.data.destination);
         if (geo.data.data) {
@@ -54,233 +51,409 @@ export default function TripDetailPage() {
         }
       } catch {}
     } catch {
-      router.push("/trips");
+      router.push("/profile");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm("Delete this trip?")) return;
-    await tripsAPI.delete(id);
-    router.push("/trips");
-  };
-
   if (loading)
     return (
-      <Container className="py-16 text-center">
-        <p className="text-neutral-500">Loading trip...</p>
-      </Container>
+      <div style={{ display: "flex", justifyContent: "center", padding: 80 }}>
+        <div className="skeleton" style={{ width: 200, height: 20 }} />
+      </div>
     );
-
   if (!trip) return null;
 
-  const statusColors = {
-    draft: "bg-neutral-100 text-neutral-700",
-    planned: "bg-primary-100 text-primary-700",
-    active: "bg-success-100 text-success-700",
-    completed: "bg-secondary-100 text-secondary-700",
-  };
-
   return (
-    <Container className="py-8">
-      {/* Back + Actions */}
-      <div className="flex items-center justify-between mb-6">
-        <button
-          onClick={() => router.push("/trips")}
-          className="flex items-center text-neutral-600 hover:text-primary-600 transition-colors"
+    <div
+      style={{
+        display: "flex",
+        height: "calc(100vh - 64px)",
+        overflow: "hidden",
+      }}
+    >
+      {/* ─── LEFT PANEL ─── */}
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 620,
+          overflowY: "auto",
+          borderRight: "1px solid var(--border-light)",
+          background: "#FFF",
+        }}
+        className="lg:max-w-[620px]"
+      >
+        {/* Top actions */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "12px 24px",
+            borderBottom: "1px solid var(--border-light)",
+          }}
         >
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Trips
-        </button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleDelete}>
-            <Trash2 className="w-4 h-4 mr-1" /> Delete
-          </Button>
-        </div>
-      </div>
-
-      {/* Trip Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold text-neutral-900">{trip.title}</h1>
-          <span
-            className={`px-3 py-1 text-xs font-medium rounded-full ${statusColors[trip.status] || statusColors.draft}`}
+          <button
+            onClick={() => router.push("/profile")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-secondary)",
+              fontSize: 14,
+              fontFamily: "inherit",
+            }}
           >
-            {trip.status}
-          </span>
-          {trip.aiGenerated && (
-            <span className="px-3 py-1 text-xs font-medium rounded-full bg-accent-100 text-accent-700 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> AI Generated
-            </span>
-          )}
+            <ArrowLeft size={16} /> Back
+          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "#FFF",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-muted)",
+              }}
+            >
+              <Download size={16} />
+            </button>
+            <button
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "#FFF",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-muted)",
+              }}
+            >
+              <Share2 size={16} />
+            </button>
+            <button
+              onClick={async () => {
+                if (confirm("Delete?")) {
+                  await tripsAPI.delete(id);
+                  router.push("/profile");
+                }
+              }}
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "#FFF",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-muted)",
+              }}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-4 text-neutral-600">
-          <span className="flex items-center gap-1">
-            <MapPin className="w-4 h-4" /> {trip.destination}
-          </span>
+
+        {/* Trip header */}
+        <div style={{ padding: "24px 24px 0" }}>
           {trip.startDate && (
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {new Date(trip.startDate).toLocaleDateString()}
+            <span
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                background: "#F5F5F5",
+                padding: "4px 12px",
+                borderRadius: 99,
+              }}
+            >
+              {new Date(trip.startDate).toLocaleDateString("en-US", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
               {trip.endDate &&
-                ` — ${new Date(trip.endDate).toLocaleDateString()}`}
+                ` – ${new Date(trip.endDate).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}`}
             </span>
           )}
-          {trip.budget?.total > 0 && (
-            <span className="flex items-center gap-1">
-              <DollarSign className="w-4 h-4" /> {trip.budget.currency}{" "}
-              {trip.budget.total}
-            </span>
-          )}
+          <h1
+            style={{
+              fontSize: 24,
+              fontWeight: 800,
+              color: "var(--text-primary)",
+              marginTop: 12,
+              marginBottom: 8,
+            }}
+          >
+            {trip.title}
+          </h1>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              fontSize: 13,
+              color: "var(--text-secondary)",
+            }}
+          >
+            {trip.budget?.total > 0 && (
+              <span>
+                💰 {trip.budget.currency} {trip.budget.total}
+              </span>
+            )}
+            <span>📍 {trip.destination}</span>
+            <span style={{ textTransform: "capitalize" }}>• {trip.status}</span>
+            {trip.aiGenerated && <span>• ✨ AI Generated</span>}
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Itinerary */}
-        <div className="lg:col-span-2">
-          <h2 className="text-xl font-bold text-neutral-900 mb-4">Itinerary</h2>
-          {trip.itinerary && trip.itinerary.length > 0 ? (
-            <div className="space-y-4">
-              {trip.itinerary.map((day, i) => (
-                <Card key={i}>
-                  <CardBody>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-neutral-900">
-                        Day {day.day || i + 1}
-                      </h3>
-                      {day.weather && (
-                        <span className="text-sm text-neutral-500 flex items-center gap-1">
-                          <Thermometer className="w-3 h-3" /> {day.weather.temp}
-                          ° — {day.weather.description}
-                        </span>
-                      )}
-                    </div>
-                    {day.activities && day.activities.length > 0 ? (
-                      <div className="space-y-3">
-                        {day.activities.map((act, j) => (
-                          <div
-                            key={j}
-                            className="flex gap-3 pl-4 border-l-2 border-primary-200"
-                          >
-                            <div>
-                              {act.time && (
-                                <span className="text-xs font-medium text-primary-600">
-                                  {act.time}
-                                </span>
-                              )}
-                              <p className="font-medium text-neutral-800">
-                                {act.name}
-                              </p>
-                              {act.description && (
-                                <p className="text-sm text-neutral-600">
-                                  {act.description}
-                                </p>
-                              )}
-                              <div className="flex gap-2 mt-1">
-                                {act.cost?.amount > 0 && (
-                                  <span className="text-xs text-neutral-500">
-                                    {act.cost.currency} {act.cost.amount}
-                                  </span>
-                                )}
-                                {act.tags?.map((tag, k) => (
-                                  <span
-                                    key={k}
-                                    className="text-xs px-2 py-0.5 bg-neutral-100 rounded-full text-neutral-600"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-neutral-500">
-                        No activities planned for this day
-                      </p>
-                    )}
-                  </CardBody>
-                </Card>
-              ))}
+        {/* Info grid */}
+        {weather && (
+          <div
+            style={{
+              padding: "20px 24px",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 13,
+                color: "var(--text-secondary)",
+              }}
+            >
+              <Cloud size={16} style={{ color: "var(--orange)" }} />{" "}
+              {Math.round(weather.temp)}° — {weather.description}
             </div>
-          ) : (
-            <Card>
-              <CardBody className="text-center py-8">
-                <Calendar className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                <p className="text-neutral-500">
-                  No itinerary yet. Use AI Chat to generate one!
-                </p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="mt-4"
-                  onClick={() => router.push("/chat")}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 13,
+                color: "var(--text-secondary)",
+              }}
+            >
+              💧 Humidity: {weather.humidity}%
+            </div>
+          </div>
+        )}
+
+        {/* Itinerary */}
+        <div style={{ padding: "0 24px 32px" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 16,
+              marginTop: 16,
+            }}
+          >
+            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>
+              Itinerary
+            </h2>
+          </div>
+
+          {trip.itinerary && trip.itinerary.length > 0 ? (
+            trip.itinerary.map((day, i) => (
+              <div
+                key={i}
+                style={{
+                  marginBottom: 12,
+                  border: "1px solid var(--border-light)",
+                  borderRadius: 16,
+                  overflow: "hidden",
+                }}
+              >
+                <button
+                  onClick={() => setExpandedDay(expandedDay === i ? -1 : i)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "14px 20px",
+                    background: expandedDay === i ? "var(--orange-bg)" : "#FFF",
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                  }}
                 >
-                  Generate with AI
-                </Button>
-              </CardBody>
-            </Card>
-          )}
-        </div>
-
-        {/* Sidebar — Weather + Info */}
-        <div className="space-y-6">
-          {weather && (
-            <Card>
-              <CardBody>
-                <h3 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                  <Cloud className="w-4 h-4" /> Current Weather
-                </h3>
-                <div className="text-center">
-                  <p className="text-4xl font-bold text-neutral-900">
-                    {Math.round(weather.temp)}°
-                  </p>
-                  <p className="text-neutral-600 capitalize">
-                    {weather.description}
-                  </p>
-                  <div className="flex justify-center gap-4 mt-3 text-sm text-neutral-500">
-                    <span>Humidity: {weather.humidity}%</span>
-                    <span>Wind: {weather.windSpeed} m/s</span>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          )}
-
-          <Card>
-            <CardBody>
-              <h3 className="font-semibold text-neutral-900 mb-3">
-                Trip Details
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-neutral-500">Status</span>
-                  <span className="font-medium capitalize">{trip.status}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-neutral-500">Destination</span>
-                  <span className="font-medium">{trip.destination}</span>
-                </div>
-                {trip.budget?.total > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">Budget</span>
-                    <span className="font-medium">
-                      {trip.budget.currency} {trip.budget.total}
+                  <div>
+                    <span
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      Day {day.day || i + 1}
                     </span>
+                    {day.weather && (
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: "var(--text-muted)",
+                          marginLeft: 12,
+                        }}
+                      >
+                        {day.weather.temp}° {day.weather.description}
+                      </span>
+                    )}
+                  </div>
+                  {expandedDay === i ? (
+                    <ChevronUp size={18} />
+                  ) : (
+                    <ChevronDown size={18} />
+                  )}
+                </button>
+                {expandedDay === i && day.activities && (
+                  <div style={{ padding: "12px 20px 20px" }}>
+                    {day.activities.map((act, j) => (
+                      <div
+                        key={j}
+                        style={{
+                          display: "flex",
+                          gap: 14,
+                          padding: "12px 0",
+                          borderBottom:
+                            j < day.activities.length - 1
+                              ? "1px solid var(--border-light)"
+                              : "none",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: "50%",
+                            background: "#0A0A0A",
+                            color: "#FFF",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {j + 1}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <p
+                            style={{
+                              fontSize: 15,
+                              fontWeight: 600,
+                              color: "var(--text-primary)",
+                              margin: 0,
+                            }}
+                          >
+                            {act.name}
+                          </p>
+                          {act.description && (
+                            <p
+                              style={{
+                                fontSize: 13,
+                                color: "var(--text-secondary)",
+                                margin: "4px 0 0",
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {act.description}
+                            </p>
+                          )}
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              marginTop: 6,
+                              fontSize: 12,
+                              color: "var(--text-muted)",
+                            }}
+                          >
+                            {act.time && (
+                              <span>
+                                <Clock
+                                  size={11}
+                                  style={{ display: "inline", marginRight: 3 }}
+                                />
+                                {act.time}
+                              </span>
+                            )}
+                            {act.cost?.amount > 0 && (
+                              <span>
+                                <DollarSign
+                                  size={11}
+                                  style={{ display: "inline", marginRight: 2 }}
+                                />
+                                {act.cost.currency} {act.cost.amount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <div className="flex justify-between">
-                  <span className="text-neutral-500">Created</span>
-                  <span className="font-medium">
-                    {new Date(trip.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
               </div>
-            </CardBody>
-          </Card>
+            ))
+          ) : (
+            <div style={{ textAlign: "center", padding: "40px 0" }}>
+              <Calendar
+                size={40}
+                style={{ color: "#D1D5DB", margin: "0 auto 12px" }}
+              />
+              <p style={{ color: "var(--text-secondary)" }}>No itinerary yet</p>
+              <button
+                onClick={() => router.push("/chat")}
+                className="btn-orange"
+                style={{ padding: "10px 24px", fontSize: 14, marginTop: 12 }}
+              >
+                Generate with AI
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </Container>
+
+      {/* ─── RIGHT PANEL — Map placeholder ─── */}
+      <div
+        className="hidden lg:flex"
+        style={{
+          flex: 1,
+          background: "#F0F0F0",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ textAlign: "center", color: "var(--text-muted)" }}>
+          <Globe size={80} strokeWidth={0.5} />
+          <p style={{ marginTop: 12, fontSize: 15, fontWeight: 500 }}>
+            Map View
+          </p>
+          <p style={{ fontSize: 13, maxWidth: 240 }}>
+            Activity pins will appear here
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

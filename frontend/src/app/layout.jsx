@@ -3,6 +3,7 @@ import "./globals.css";
 import Navigation from "@/components/layout/Navigation";
 import Footer from "@/components/layout/Footer";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -25,12 +26,16 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="font-sans">
-        <SmoothScrollProvider>
-          <Navigation />
-          <main className="pt-16 min-h-screen">{children}</main>
-          <Footer />
-        </SmoothScrollProvider>
+      <body style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}>
+        <ToastProvider>
+          <SmoothScrollProvider>
+            <Navigation />
+            <main style={{ paddingTop: 64, minHeight: "100vh" }}>
+              {children}
+            </main>
+            <Footer />
+          </SmoothScrollProvider>
+        </ToastProvider>
       </body>
     </html>
   );

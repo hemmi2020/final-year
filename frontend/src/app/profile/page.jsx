@@ -4,240 +4,727 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { usersAPI, tripsAPI } from "@/lib/api";
+import Image from "next/image";
 import {
   User,
   Mail,
-  MapPin,
   Calendar,
+  MapPin,
+  Trash2,
   Settings,
-  Sparkles,
-  Utensils,
-  Wallet,
+  Plane,
   Globe,
+  Edit3,
+  Save,
 } from "lucide-react";
-import Container from "@/components/layout/Container";
-import Button from "@/components/ui/Button";
-import Card, { CardBody } from "@/components/ui/Card";
-import LoginModal from "@/components/auth/LoginModal";
-import RegisterModal from "@/components/auth/RegisterModal";
+
+const INTERESTS = [
+  "Culture 🎭",
+  "Food 🍜",
+  "Adventure 🧗",
+  "Shopping 🛍️",
+  "Nature 🌿",
+  "Nightlife 🎉",
+  "History 🏛️",
+  "Wellness 🧘",
+];
+const DIETARY = ["None", "Halal", "Vegan", "Vegetarian", "Gluten-free"];
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, updateUser } = useAuthStore();
+  const [tab, setTab] = useState("trips");
   const [profile, setProfile] = useState(null);
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [settingsForm, setSettingsForm] = useState({ name: "", email: "" });
+  const [prefs, setPrefs] = useState({
+    dietary: [],
+    budget: "moderate",
+    preferredCurrency: "USD",
+    temperatureUnit: "metric",
+    interests: [],
+    travelStyle: "solo",
+  });
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setIsLoginModalOpen(true);
+      router.push("/login?returnUrl=/profile");
       return;
     }
     Promise.all([
-      usersAPI.getProfile().then(({ data }) => setProfile(data.data)),
+      usersAPI.getProfile().then(({ data }) => {
+        setProfile(data.data);
+        setSettingsForm({
+          name: data.data.name || "",
+          email: data.data.email || "",
+        });
+        const p = data.data.preferences || {};
+        setPrefs({
+          dietary: p.dietary || [],
+          budget: p.budget || "moderate",
+          preferredCurrency: p.preferredCurrency || "USD",
+          temperatureUnit: p.temperatureUnit || "metric",
+          interests: p.interests || [],
+          travelStyle: p.travelStyle || "solo",
+        });
+      }),
       tripsAPI.getAll().then(({ data }) => setTrips(data.data || [])),
     ])
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
 
-  if (!isAuthenticated) {
-    return (
-      <>
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => router.push("/")}
-          onSwitchToRegister={() => {
-            setIsLoginModalOpen(false);
-            setIsRegisterModalOpen(true);
-          }}
-        />
-        <RegisterModal
-          isOpen={isRegisterModalOpen}
-          onClose={() => router.push("/")}
-          onSwitchToLogin={() => {
-            setIsRegisterModalOpen(false);
-            setIsLoginModalOpen(true);
-          }}
-        />
-      </>
-    );
-  }
+  const handleDeleteTrip = async (id) => {
+    if (!confirm("Delete this trip?")) return;
+    try {
+      await tripsAPI.delete(id);
+      setTrips((t) => t.filter((x) => x._id !== id));
+    } catch {}
+  };
 
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await usersAPI.updateProfile(settingsForm);
+      updateUser(settingsForm);
+    } catch {}
+    setSaving(false);
+  };
+
+  const handleSavePrefs = async () => {
+    setSaving(true);
+    try {
+      await usersAPI.updatePreferences(prefs);
+      updateUser({ preferences: prefs });
+    } catch {}
+    setSaving(false);
+  };
+
+  const toggleArr = (arr, val) =>
+    arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
+
+  if (!isAuthenticated) return null;
   if (loading)
     return (
-      <Container className="py-16 text-center">
-        <p className="text-neutral-500">Loading...</p>
-      </Container>
+      <div style={{ display: "flex", justifyContent: "center", padding: 80 }}>
+        <div className="skeleton" style={{ width: 200, height: 20 }} />
+      </div>
     );
 
-  const prefs = profile?.preferences || {};
-
   return (
-    <Container className="py-8 max-w-4xl">
-      {/* Profile Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center">
-            <User className="w-10 h-10 text-primary-600" />
+    <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      {/* Cover photo */}
+      <div
+        style={{
+          height: 200,
+          background: "linear-gradient(135deg, #FF4500, #FF6B35, #F7C948)",
+          borderRadius: "0 0 20px 20px",
+          position: "relative",
+        }}
+      />
+
+      {/* Profile info */}
+      <div style={{ padding: "0 24px", marginTop: -48 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "end",
+            gap: 20,
+            flexWrap: "wrap",
+          }}
+        >
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: "50%",
+              background: "#FFF",
+              border: "4px solid #FFF",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 36,
+              fontWeight: 800,
+              color: "var(--orange)",
+            }}
+          >
+            {profile?.name?.[0]?.toUpperCase() || "U"}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-neutral-900">
+          <div style={{ flex: 1, paddingBottom: 8 }}>
+            <h1
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: "var(--text-primary)",
+                margin: 0,
+              }}
+            >
               {profile?.name}
             </h1>
-            <p className="text-neutral-600 flex items-center gap-1">
-              <Mail className="w-4 h-4" /> {profile?.email}
+            <p
+              style={{
+                fontSize: 14,
+                color: "var(--text-secondary)",
+                margin: "4px 0 0",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Mail size={14} /> {profile?.email}
             </p>
-            <p className="text-sm text-neutral-500 mt-1">
-              Member since {new Date(profile?.createdAt).toLocaleDateString()}
+            <p
+              style={{
+                fontSize: 13,
+                color: "var(--text-muted)",
+                margin: "2px 0 0",
+              }}
+            >
+              Member since{" "}
+              {new Date(profile?.createdAt).toLocaleDateString("en-US", {
+                month: "long",
+                year: "numeric",
+              })}
             </p>
           </div>
+          <button
+            onClick={() => setTab("settings")}
+            className="btn-outline"
+            style={{ padding: "8px 20px", fontSize: 13 }}
+          >
+            <Edit3 size={14} style={{ marginRight: 6 }} /> Edit Profile
+          </button>
         </div>
-        <Button variant="outline" onClick={() => router.push("/settings")}>
-          <Settings className="w-4 h-4 mr-2" /> Edit Settings
-        </Button>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Preferences Card */}
-        <Card>
-          <CardBody>
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-              Travel Preferences
-            </h2>
-            <div className="space-y-3">
-              {prefs.dietary?.length > 0 && (
-                <div className="flex items-start gap-2">
-                  <Utensils className="w-4 h-4 text-neutral-400 mt-0.5" />
-                  <div>
-                    <p className="text-sm text-neutral-500">Dietary</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {prefs.dietary.map((d) => (
+        {/* Stats */}
+        <div
+          style={{ display: "flex", gap: 16, marginTop: 24, flexWrap: "wrap" }}
+        >
+          {[
+            {
+              icon: <Plane size={18} />,
+              value: trips.length,
+              label: "Trips Planned",
+            },
+            {
+              icon: <Globe size={18} />,
+              value: [...new Set(trips.map((t) => t.destination))].length,
+              label: "Destinations",
+            },
+            { icon: <Calendar size={18} />, value: "Active", label: "Member" },
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="card"
+              style={{
+                padding: "16px 24px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                flex: 1,
+                minWidth: 160,
+              }}
+            >
+              <div style={{ color: "var(--orange)" }}>{s.icon}</div>
+              <div>
+                <p
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 800,
+                    color: "var(--text-primary)",
+                    margin: 0,
+                  }}
+                >
+                  {s.value}
+                </p>
+                <p
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                    margin: 0,
+                  }}
+                >
+                  {s.label}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs */}
+        <div
+          style={{
+            display: "flex",
+            gap: 0,
+            marginTop: 32,
+            borderBottom: "2px solid var(--border-light)",
+          }}
+        >
+          {["trips", "settings", "preferences"].map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                padding: "12px 24px",
+                fontSize: 15,
+                fontWeight: 600,
+                border: "none",
+                background: "none",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                color: tab === t ? "var(--orange)" : "var(--text-secondary)",
+                borderBottom:
+                  tab === t
+                    ? "2px solid var(--orange)"
+                    : "2px solid transparent",
+                marginBottom: -2,
+              }}
+            >
+              {t === "trips"
+                ? "My Trips"
+                : t === "settings"
+                  ? "Settings"
+                  : "Preferences"}
+            </button>
+          ))}
+        </div>
+
+        {/* ─── MY TRIPS TAB ─── */}
+        {tab === "trips" && (
+          <div style={{ padding: "32px 0" }}>
+            {trips.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 0" }}>
+                <MapPin
+                  size={48}
+                  style={{ color: "#D1D5DB", margin: "0 auto 16px" }}
+                />
+                <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+                  No trips yet
+                </h3>
+                <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
+                  Start planning your first adventure!
+                </p>
+                <button
+                  onClick={() => router.push("/planner")}
+                  className="btn-orange"
+                  style={{ padding: "12px 28px", fontSize: 15 }}
+                >
+                  Start Planning
+                </button>
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                  gap: 20,
+                }}
+              >
+                {trips.map((trip) => (
+                  <div
+                    key={trip._id}
+                    className="card"
+                    style={{ overflow: "hidden" }}
+                  >
+                    <div
+                      style={{
+                        height: 180,
+                        background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MapPin
+                        size={40}
+                        style={{ color: "rgba(255,255,255,0.3)" }}
+                      />
+                    </div>
+                    <div style={{ padding: 20 }}>
+                      <h3
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 700,
+                          color: "var(--text-primary)",
+                          marginBottom: 4,
+                        }}
+                      >
+                        {trip.title}
+                      </h3>
+                      <p
+                        style={{
+                          fontSize: 13,
+                          color: "var(--text-secondary)",
+                          marginBottom: 4,
+                        }}
+                      >
+                        <MapPin
+                          size={12}
+                          style={{ display: "inline", marginRight: 4 }}
+                        />
+                        {trip.destination}
+                      </p>
+                      {trip.startDate && (
+                        <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                          {new Date(trip.startDate).toLocaleDateString()}
+                          {trip.endDate &&
+                            ` – ${new Date(trip.endDate).toLocaleDateString()}`}
+                        </p>
+                      )}
+                      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
                         <span
-                          key={d}
-                          className="px-2 py-0.5 text-xs bg-primary-50 text-primary-700 rounded-full"
+                          style={{
+                            fontSize: 11,
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                            background: "var(--orange-bg)",
+                            color: "var(--orange)",
+                            fontWeight: 600,
+                          }}
                         >
-                          {d}
+                          {trip.status}
                         </span>
-                      ))}
+                        {trip.aiGenerated && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              padding: "3px 10px",
+                              borderRadius: 99,
+                              background: "#E8F5E9",
+                              color: "#2E7D32",
+                              fontWeight: 600,
+                            }}
+                          >
+                            AI
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                        <button
+                          onClick={() => router.push(`/trips/${trip._id}`)}
+                          className="btn-orange"
+                          style={{ padding: "8px 18px", fontSize: 13, flex: 1 }}
+                        >
+                          View Trip
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTrip(trip._id)}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            border: "1px solid var(--border)",
+                            background: "#FFF",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "var(--text-muted)",
+                            transition: "color 0.2s",
+                          }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color = "var(--error)")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "var(--text-muted)")
+                          }
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-neutral-400" />
-                <div>
-                  <p className="text-sm text-neutral-500">Budget</p>
-                  <p className="text-sm font-medium capitalize">
-                    {prefs.budget || "moderate"}
-                  </p>
-                </div>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-neutral-400" />
-                <div>
-                  <p className="text-sm text-neutral-500">Currency / Temp</p>
-                  <p className="text-sm font-medium">
-                    {prefs.preferredCurrency || "USD"} ·{" "}
-                    {prefs.temperatureUnit === "imperial" ? "°F" : "°C"}
-                  </p>
-                </div>
-              </div>
-              {prefs.interests?.length > 0 && (
-                <div>
-                  <p className="text-sm text-neutral-500 mb-1">Interests</p>
-                  <div className="flex flex-wrap gap-1">
-                    {prefs.interests.map((i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-0.5 text-xs bg-secondary-50 text-secondary-700 rounded-full capitalize"
-                      >
-                        {i}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <User className="w-4 h-4 text-neutral-400" />
-                <div>
-                  <p className="text-sm text-neutral-500">Travel Style</p>
-                  <p className="text-sm font-medium capitalize">
-                    {prefs.travelStyle || "solo"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardBody>
-        </Card>
+            )}
+          </div>
+        )}
 
-        {/* Stats Card */}
-        <Card>
-          <CardBody>
-            <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-              Trip Stats
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-primary-50 rounded-lg">
-                <p className="text-2xl font-bold text-primary-700">
-                  {trips.length}
-                </p>
-                <p className="text-sm text-primary-600">Total Trips</p>
-              </div>
-              <div className="text-center p-4 bg-success-50 rounded-lg">
-                <p className="text-2xl font-bold text-success-700">
-                  {trips.filter((t) => t.status === "completed").length}
-                </p>
-                <p className="text-sm text-success-600">Completed</p>
-              </div>
-              <div className="text-center p-4 bg-accent-50 rounded-lg">
-                <p className="text-2xl font-bold text-accent-700">
-                  {trips.filter((t) => t.aiGenerated).length}
-                </p>
-                <p className="text-sm text-accent-600">AI Generated</p>
-              </div>
-              <div className="text-center p-4 bg-secondary-50 rounded-lg">
-                <p className="text-2xl font-bold text-secondary-700">
-                  {trips.filter((t) => t.status === "active").length}
-                </p>
-                <p className="text-sm text-secondary-600">Active</p>
-              </div>
+        {/* ─── SETTINGS TAB ─── */}
+        {tab === "settings" && (
+          <div style={{ padding: "32px 0", maxWidth: 500 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>
+              Personal Information
+            </h3>
+            <div style={{ marginBottom: 16 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginBottom: 6,
+                }}
+              >
+                Full Name
+              </label>
+              <input
+                className="input-field"
+                value={settingsForm.name}
+                onChange={(e) =>
+                  setSettingsForm({ ...settingsForm, name: e.target.value })
+                }
+              />
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  marginBottom: 6,
+                }}
+              >
+                Email
+              </label>
+              <input
+                className="input-field"
+                value={settingsForm.email}
+                onChange={(e) =>
+                  setSettingsForm({ ...settingsForm, email: e.target.value })
+                }
+              />
+            </div>
+            <button
+              onClick={handleSaveSettings}
+              className="btn-orange"
+              disabled={saving}
+              style={{ padding: "12px 28px", fontSize: 15 }}
+            >
+              <Save size={16} style={{ marginRight: 6 }} />{" "}
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        )}
+
+        {/* ─── PREFERENCES TAB ─── */}
+        {tab === "preferences" && (
+          <div style={{ padding: "32px 0", maxWidth: 600 }}>
+            {/* Dietary */}
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+              Dietary Preferences
+            </h3>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                marginBottom: 28,
+              }}
+            >
+              {DIETARY.map((d) => (
+                <button
+                  key={d}
+                  onClick={() =>
+                    setPrefs({
+                      ...prefs,
+                      dietary: toggleArr(prefs.dietary, d.toLowerCase()),
+                    })
+                  }
+                  style={{
+                    padding: "8px 18px",
+                    borderRadius: 50,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    border: "1.5px solid",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    transition: "all 0.2s",
+                    background: prefs.dietary.includes(d.toLowerCase())
+                      ? "var(--orange)"
+                      : "#FFF",
+                    color: prefs.dietary.includes(d.toLowerCase())
+                      ? "#FFF"
+                      : "var(--text-body)",
+                    borderColor: prefs.dietary.includes(d.toLowerCase())
+                      ? "var(--orange)"
+                      : "var(--border)",
+                  }}
+                >
+                  {d}
+                </button>
+              ))}
             </div>
 
-            {/* Recent Trips */}
-            {trips.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-sm font-medium text-neutral-700 mb-2">
-                  Recent Trips
-                </h3>
-                <div className="space-y-2">
-                  {trips.slice(0, 3).map((trip) => (
+            {/* Budget */}
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+              Travel Budget
+            </h3>
+            <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
+              {["budget", "moderate", "luxury"].map((b) => (
+                <button
+                  key={b}
+                  onClick={() => setPrefs({ ...prefs, budget: b })}
+                  style={{
+                    padding: "8px 20px",
+                    borderRadius: 50,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    border: "1.5px solid",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    textTransform: "capitalize",
+                    background: prefs.budget === b ? "var(--orange)" : "#FFF",
+                    color: prefs.budget === b ? "#FFF" : "var(--text-body)",
+                    borderColor:
+                      prefs.budget === b ? "var(--orange)" : "var(--border)",
+                  }}
+                >
+                  {b === "budget"
+                    ? "💰 Budget"
+                    : b === "moderate"
+                      ? "💳 Mid-range"
+                      : "💎 Luxury"}
+                </button>
+              ))}
+            </div>
+
+            {/* Interests */}
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+              Interests
+            </h3>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                marginBottom: 28,
+              }}
+            >
+              {INTERESTS.map((i) => {
+                const val = i.split(" ")[0].toLowerCase();
+                return (
+                  <button
+                    key={i}
+                    onClick={() =>
+                      setPrefs({
+                        ...prefs,
+                        interests: toggleArr(prefs.interests, val),
+                      })
+                    }
+                    style={{
+                      padding: "8px 18px",
+                      borderRadius: 50,
+                      fontSize: 14,
+                      fontWeight: 500,
+                      border: "1.5px solid",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      background: prefs.interests.includes(val)
+                        ? "var(--orange)"
+                        : "#FFF",
+                      color: prefs.interests.includes(val)
+                        ? "#FFF"
+                        : "var(--text-body)",
+                      borderColor: prefs.interests.includes(val)
+                        ? "var(--orange)"
+                        : "var(--border)",
+                    }}
+                  >
+                    {i}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Currency + Temp */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                marginBottom: 28,
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    marginBottom: 6,
+                  }}
+                >
+                  Currency
+                </label>
+                <select
+                  className="input-field"
+                  value={prefs.preferredCurrency}
+                  onChange={(e) =>
+                    setPrefs({ ...prefs, preferredCurrency: e.target.value })
+                  }
+                  style={{ cursor: "pointer" }}
+                >
+                  {["USD", "EUR", "GBP", "PKR", "AED", "INR", "JPY"].map(
+                    (c) => (
+                      <option key={c}>{c}</option>
+                    ),
+                  )}
+                </select>
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    marginBottom: 6,
+                  }}
+                >
+                  Temperature
+                </label>
+                <div
+                  style={{
+                    display: "flex",
+                    border: "1.5px solid var(--border)",
+                    borderRadius: 50,
+                    overflow: "hidden",
+                    width: "fit-content",
+                  }}
+                >
+                  {["metric", "imperial"].map((u) => (
                     <button
-                      key={trip._id}
-                      onClick={() => router.push(`/trips/${trip._id}`)}
-                      className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 transition-colors text-left"
+                      key={u}
+                      type="button"
+                      onClick={() => setPrefs({ ...prefs, temperatureUnit: u })}
+                      style={{
+                        padding: "10px 20px",
+                        border: "none",
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        background:
+                          prefs.temperatureUnit === u
+                            ? "var(--orange)"
+                            : "#FFF",
+                        color:
+                          prefs.temperatureUnit === u
+                            ? "#FFF"
+                            : "var(--text-body)",
+                      }}
                     >
-                      <div>
-                        <p className="text-sm font-medium text-neutral-800">
-                          {trip.title}
-                        </p>
-                        <p className="text-xs text-neutral-500">
-                          {trip.destination}
-                        </p>
-                      </div>
-                      <span className="text-xs capitalize text-neutral-400">
-                        {trip.status}
-                      </span>
+                      {u === "metric" ? "°C" : "°F"}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
-          </CardBody>
-        </Card>
+            </div>
+
+            <button
+              onClick={handleSavePrefs}
+              className="btn-orange"
+              disabled={saving}
+              style={{ padding: "12px 28px", fontSize: 15 }}
+            >
+              <Save size={16} style={{ marginRight: 6 }} />{" "}
+              {saving ? "Saving..." : "Save Preferences"}
+            </button>
+          </div>
+        )}
       </div>
-    </Container>
+    </div>
   );
 }
