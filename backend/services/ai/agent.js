@@ -5,7 +5,7 @@ const { getConversation, addMessage, trackInteraction, getLongTermMemory, saveTr
 const { getCurrentWeather } = require('../external/weatherService');
 const { getExchangeRate } = require('../external/currencyService');
 const { geocode } = require('../external/mapsService');
-const { getPreferences, buildSearchTags } = require('../preferenceEngine');
+const { getPreferences, buildSearchTags, cacheAIResponse, getCachedAIResponse, generateCacheKey } = require('../preferenceEngine');
 const { itineraryPrompt, chatPrompt } = require('./prompts');
 
 let openai = null;
@@ -28,6 +28,14 @@ exports.generateItinerary = async (user, params) => {
     // Step 1: Load preferences (merge stored + request overrides)
     const preferences = getPreferences(user, { budget, interests, dietary });
     const searchTags = buildSearchTags(preferences);
+
+    // Step 1b: Check Redis cache for similar itinerary
+    const cacheKey = generateCacheKey(destination, days, preferences);
+    const cached = await getCachedAIResponse(cacheKey);
+    if (cached) {
+        console.log('Cache hit for itinerary:', cacheKey);
+        return cached;
+    }
 
     // Step 2: Query Knowledge Graph
     const graphResults = await graphRAGSearch(destination, searchTags);
@@ -86,6 +94,19 @@ exports.generateItinerary = async (user, params) => {
     });
 
     const itinerary = JSON.parse(response.choices[0].message.content);
+
+    // Cache the result for 24 hours
+    await cacheAIResponse(cacheKey, {
+        ...itinerary,
+        aiGenerated: true,
+        metadata: {
+            graphResultsUsed: graphResults.restaurants.length + graphResults.attractions.length,
+            vectorResultsUsed: vectorResults.length,
+            weatherAvailable: !!weather,
+            currencyConverted: !!currencyRate,
+            cached: false,
+        },
+    });
 
     // Step 8: Save to memory and track interaction
     if (user) {

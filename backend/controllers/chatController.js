@@ -21,7 +21,7 @@ exports.generateItinerary = async (req, res, next) => {
 
         const itinerary = await generateAI(req.user, { destination, days, budget, interests, dietary });
 
-        // Auto-save as draft trip
+        // Auto-save as draft trip with snapshots
         const trip = await Trip.create({
             user: req.user._id,
             title: itinerary.title || `${days}-day ${destination} trip`,
@@ -30,6 +30,9 @@ exports.generateItinerary = async (req, res, next) => {
             budget: itinerary.totalBudget || { total: 0, currency: 'USD' },
             status: 'draft',
             aiGenerated: true,
+            preferences: { budget, dietary, interests },
+            weatherSnapshot: itinerary.metadata?.weatherAvailable ? { checkedAt: new Date() } : undefined,
+            currencySnapshot: itinerary.metadata?.currencyConverted ? { checkedAt: new Date() } : undefined,
         });
 
         res.json({ success: true, data: { trip, itinerary } });

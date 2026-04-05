@@ -14,13 +14,18 @@ const userSchema = new mongoose.Schema({
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     avatar: { type: String, default: '' },
     preferences: {
-        dietary: { type: [String], default: [] },           // ['halal', 'vegan', 'vegetarian']
+        dietary: { type: [String], default: [] },
         budget: { type: String, enum: ['budget', 'moderate', 'luxury'], default: 'moderate' },
         preferredCurrency: { type: String, default: 'USD' },
         temperatureUnit: { type: String, enum: ['metric', 'imperial'], default: 'metric' },
-        interests: { type: [String], default: [] },          // ['history', 'food', 'adventure']
+        interests: { type: [String], default: [] },
         travelStyle: { type: String, enum: ['solo', 'family', 'couple', 'group'], default: 'solo' },
+        cuisines: { type: [String], default: [] },
+        pace: { type: String, enum: ['relaxed', 'moderate', 'packed'], default: 'moderate' },
+        favoriteDestinations: { type: [String], default: [] },
     },
+    isActive: { type: Boolean, default: true },
+    lastLogin: Date,
 }, { timestamps: true });
 
 // Hash password before saving
