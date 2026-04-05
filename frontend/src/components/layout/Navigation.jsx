@@ -20,6 +20,8 @@ import RegisterModal from "@/components/auth/RegisterModal";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
+  { href: "/planner", label: "Trip Planner" },
+  { href: "/chat", label: "AI Chat" },
   { href: "/destinations", label: "Destinations" },
   { href: "/about", label: "About" },
 ];
