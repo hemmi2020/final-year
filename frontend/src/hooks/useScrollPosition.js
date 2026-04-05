@@ -7,7 +7,9 @@ import { useState, useEffect } from 'react';
  * @returns {number} Current scroll Y position
  */
 export function useScrollPosition() {
-    const [scrollPosition, setScrollPosition] = useState(0);
+    const [scrollPosition, setScrollPosition] = useState(
+        typeof window !== 'undefined' ? window.scrollY : 0
+    );
 
     useEffect(() => {
         let timeoutId = null;
@@ -23,9 +25,6 @@ export function useScrollPosition() {
         };
 
         window.addEventListener('scroll', handleScroll, { passive: true });
-
-        // Set initial position
-        setScrollPosition(window.scrollY);
 
         return () => {
             window.removeEventListener('scroll', handleScroll);

@@ -10,18 +10,18 @@ const links = {
   ],
   Company: [
     { href: "/about", label: "About Us" },
-    { href: "/about", label: "Careers" },
-    { href: "/about", label: "Blog" },
+    { href: "/careers", label: "Careers" },
+    { href: "/blog", label: "Blog" },
   ],
   Resources: [
-    { href: "/about", label: "Help Center" },
-    { href: "/about", label: "Travel Guides" },
-    { href: "/about", label: "API" },
+    { href: "/help", label: "Help Center" },
+    { href: "/guides", label: "Travel Guides" },
+    { href: "/api-docs", label: "API" },
   ],
   Legal: [
-    { href: "/about", label: "Privacy Policy" },
-    { href: "/about", label: "Terms of Service" },
-    { href: "/about", label: "Cookie Policy" },
+    { href: "/privacy", label: "Privacy Policy" },
+    { href: "/terms", label: "Terms of Service" },
+    { href: "/cookies", label: "Cookie Policy" },
   ],
 };
 
