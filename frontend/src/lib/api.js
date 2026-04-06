@@ -33,6 +33,8 @@ export default api;
 export const authAPI = {
     login: (credentials) => api.post('/api/auth/login', credentials),
     register: (userData) => api.post('/api/auth/register', userData),
+    verify: (data) => api.post('/api/auth/verify', data),
+    resendOTP: (email) => api.post('/api/auth/resend-otp', { email }),
     logout: () => api.post('/api/auth/logout'),
     refreshToken: () => api.post('/api/auth/refresh'),
     getProfile: () => api.get('/api/auth/profile'),

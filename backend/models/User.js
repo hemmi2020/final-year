@@ -25,6 +25,9 @@ const userSchema = new mongoose.Schema({
         favoriteDestinations: { type: [String], default: [] },
     },
     isActive: { type: Boolean, default: true },
+    emailVerified: { type: Boolean, default: false },
+    otp: { type: String, select: false },
+    otpExpires: { type: Date, select: false },
     lastLogin: Date,
 }, { timestamps: true });
 

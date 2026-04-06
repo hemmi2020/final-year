@@ -25,6 +25,11 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
       setUser(data.data.user, data.data.token);
       onClose();
     } catch (err) {
+      if (err.response?.data?.requiresVerification) {
+        onClose();
+        window.location.href = `/verify?email=${encodeURIComponent(formData.email)}`;
+        return;
+      }
       setError(
         err.response?.data?.error ||
           err.response?.data?.errors?.[0] ||
@@ -146,7 +151,14 @@ export default function LoginModal({ isOpen, onClose, onSwitchToRegister }) {
 
         {/* Social Login */}
         <div>
-          <button className="flex items-center justify-center w-full px-4 py-2.5 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors text-sm font-medium text-neutral-700">
+          <button
+            onClick={() => {
+              window.location.href =
+                (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000") +
+                "/api/auth/google";
+            }}
+            className="flex items-center justify-center w-full px-4 py-2.5 border border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors text-sm font-medium text-neutral-700"
+          >
             <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
