@@ -139,13 +139,13 @@ export default function SettingsPage() {
 
   return (
     <Container className="py-8 max-w-3xl">
-      <h1 className="text-3xl font-bold text-neutral-900 mb-2">Settings</h1>
-      <p className="text-neutral-600 mb-8">
+      <h1 className="text-3xl font-bold text-[#0A0A0A] mb-2">Settings</h1>
+      <p className="text-[#6B7280] mb-8">
         Manage your profile and travel preferences
       </p>
 
       {saved && (
-        <div className="mb-6 p-3 bg-success-50 border border-success-200 rounded-lg text-sm text-success-700">
+        <div className="mb-6 p-3 bg-[#E8F5E9] border border-success-200 rounded-lg text-sm text-[#22C55E]">
           Settings saved successfully!
         </div>
       )}
@@ -154,12 +154,12 @@ export default function SettingsPage() {
       <Card className="mb-6">
         <CardBody>
           <div className="flex items-center gap-2 mb-4">
-            <User className="w-5 h-5 text-primary-600" />
-            <h2 className="text-lg font-semibold text-neutral-900">Profile</h2>
+            <User className="w-5 h-5 text-[#FF4500]" />
+            <h2 className="text-lg font-semibold text-[#0A0A0A]">Profile</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <label className="block text-sm font-medium text-[#374151] mb-1">
                 Name
               </label>
               <input
@@ -168,11 +168,11 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setProfile({ ...profile, name: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF4500] focus:border-[#FF4500] text-sm"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-1">
+              <label className="block text-sm font-medium text-[#374151] mb-1">
                 Email
               </label>
               <input
@@ -181,7 +181,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setProfile({ ...profile, email: e.target.value })
                 }
-                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+                className="w-full px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF4500] focus:border-[#FF4500] text-sm"
               />
             </div>
             <Button
@@ -200,12 +200,12 @@ export default function SettingsPage() {
       <Card>
         <CardBody>
           <div className="flex items-center gap-2 mb-6">
-            <Heart className="w-5 h-5 text-accent-600" />
-            <h2 className="text-lg font-semibold text-neutral-900">
+            <Heart className="w-5 h-5 text-[#F59E0B]" />
+            <h2 className="text-lg font-semibold text-[#0A0A0A]">
               Travel Preferences
             </h2>
           </div>
-          <p className="text-sm text-neutral-500 mb-6">
+          <p className="text-sm text-[#9CA3AF] mb-6">
             These preferences personalize your AI recommendations, weather data,
             currency conversions, and restaurant suggestions.
           </p>
@@ -214,8 +214,8 @@ export default function SettingsPage() {
             {/* Dietary */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Utensils className="w-4 h-4 text-neutral-500" />
-                <label className="text-sm font-medium text-neutral-700">
+                <Utensils className="w-4 h-4 text-[#9CA3AF]" />
+                <label className="text-sm font-medium text-[#374151]">
                   Dietary Preferences
                 </label>
               </div>
@@ -231,8 +231,8 @@ export default function SettingsPage() {
                     }
                     className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
                       prefs.dietary.includes(opt)
-                        ? "bg-primary-100 border-primary-300 text-primary-700"
-                        : "bg-white border-neutral-300 text-neutral-600 hover:border-neutral-400"
+                        ? "bg-[#FFF5F0] border-[#FF4500] text-[#FF4500]"
+                        : "bg-white border-[#D1D5DB] text-[#6B7280] hover:border-neutral-400"
                     }`}
                   >
                     {opt}
@@ -244,8 +244,8 @@ export default function SettingsPage() {
             {/* Budget */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Wallet className="w-4 h-4 text-neutral-500" />
-                <label className="text-sm font-medium text-neutral-700">
+                <Wallet className="w-4 h-4 text-[#9CA3AF]" />
+                <label className="text-sm font-medium text-[#374151]">
                   Budget Level
                 </label>
               </div>
@@ -256,8 +256,8 @@ export default function SettingsPage() {
                     onClick={() => setPrefs({ ...prefs, budget: opt })}
                     className={`px-4 py-2 text-sm rounded-lg border transition-colors capitalize ${
                       prefs.budget === opt
-                        ? "bg-primary-100 border-primary-300 text-primary-700"
-                        : "bg-white border-neutral-300 text-neutral-600 hover:border-neutral-400"
+                        ? "bg-[#FFF5F0] border-[#FF4500] text-[#FF4500]"
+                        : "bg-white border-[#D1D5DB] text-[#6B7280] hover:border-neutral-400"
                     }`}
                   >
                     {opt}
@@ -268,7 +268,7 @@ export default function SettingsPage() {
 
             {/* Currency */}
             <div>
-              <label className="text-sm font-medium text-neutral-700 mb-1 block">
+              <label className="text-sm font-medium text-[#374151] mb-1 block">
                 Preferred Currency
               </label>
               <select
@@ -276,7 +276,7 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   setPrefs({ ...prefs, preferredCurrency: e.target.value })
                 }
-                className="px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                className="px-3 py-2 border border-[#D1D5DB] rounded-lg focus:ring-2 focus:ring-[#FF4500] text-sm"
               >
                 {CURRENCY_OPTIONS.map((c) => (
                   <option key={c} value={c}>
@@ -289,8 +289,8 @@ export default function SettingsPage() {
             {/* Temperature */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Thermometer className="w-4 h-4 text-neutral-500" />
-                <label className="text-sm font-medium text-neutral-700">
+                <Thermometer className="w-4 h-4 text-[#9CA3AF]" />
+                <label className="text-sm font-medium text-[#374151]">
                   Temperature Unit
                 </label>
               </div>
@@ -301,8 +301,8 @@ export default function SettingsPage() {
                     onClick={() => setPrefs({ ...prefs, temperatureUnit: opt })}
                     className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                       prefs.temperatureUnit === opt
-                        ? "bg-primary-100 border-primary-300 text-primary-700"
-                        : "bg-white border-neutral-300 text-neutral-600 hover:border-neutral-400"
+                        ? "bg-[#FFF5F0] border-[#FF4500] text-[#FF4500]"
+                        : "bg-white border-[#D1D5DB] text-[#6B7280] hover:border-neutral-400"
                     }`}
                   >
                     {opt === "metric" ? "°C (Celsius)" : "°F (Fahrenheit)"}
@@ -313,7 +313,7 @@ export default function SettingsPage() {
 
             {/* Interests */}
             <div>
-              <label className="text-sm font-medium text-neutral-700 mb-2 block">
+              <label className="text-sm font-medium text-[#374151] mb-2 block">
                 Interests
               </label>
               <div className="flex flex-wrap gap-2">
@@ -328,8 +328,8 @@ export default function SettingsPage() {
                     }
                     className={`px-3 py-1.5 text-sm rounded-full border transition-colors capitalize ${
                       prefs.interests.includes(opt)
-                        ? "bg-secondary-100 border-secondary-300 text-secondary-700"
-                        : "bg-white border-neutral-300 text-neutral-600 hover:border-neutral-400"
+                        ? "bg-[#E0F2FE] border-[#0284C7] text-[#0284C7]"
+                        : "bg-white border-[#D1D5DB] text-[#6B7280] hover:border-neutral-400"
                     }`}
                   >
                     {opt}
@@ -341,8 +341,8 @@ export default function SettingsPage() {
             {/* Travel Style */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-neutral-500" />
-                <label className="text-sm font-medium text-neutral-700">
+                <Users className="w-4 h-4 text-[#9CA3AF]" />
+                <label className="text-sm font-medium text-[#374151]">
                   Travel Style
                 </label>
               </div>
@@ -353,8 +353,8 @@ export default function SettingsPage() {
                     onClick={() => setPrefs({ ...prefs, travelStyle: opt })}
                     className={`px-4 py-2 text-sm rounded-lg border transition-colors capitalize ${
                       prefs.travelStyle === opt
-                        ? "bg-primary-100 border-primary-300 text-primary-700"
-                        : "bg-white border-neutral-300 text-neutral-600 hover:border-neutral-400"
+                        ? "bg-[#FFF5F0] border-[#FF4500] text-[#FF4500]"
+                        : "bg-white border-[#D1D5DB] text-[#6B7280] hover:border-neutral-400"
                     }`}
                   >
                     {opt}

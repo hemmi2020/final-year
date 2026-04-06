@@ -83,11 +83,11 @@ export default function AdminPage() {
   if (error && !stats) {
     return (
       <Container className="py-16 text-center">
-        <Shield className="w-16 h-16 text-error-300 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-neutral-900 mb-2">
+        <Shield className="w-16 h-16 text-[#FCA5A5] mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-[#0A0A0A] mb-2">
           Access Denied
         </h1>
-        <p className="text-neutral-600 mb-6">{error}</p>
+        <p className="text-[#6B7280] mb-6">{error}</p>
         <Button variant="primary" onClick={() => router.push("/")}>
           Go Home
         </Button>
@@ -98,19 +98,19 @@ export default function AdminPage() {
   if (loading)
     return (
       <Container className="py-16 text-center">
-        <p className="text-neutral-500">Loading...</p>
+        <p className="text-[#9CA3AF]">Loading...</p>
       </Container>
     );
 
   return (
     <Container className="py-8">
-      <h1 className="text-3xl font-bold text-neutral-900 mb-2">Admin Panel</h1>
-      <p className="text-neutral-600 mb-6">
+      <h1 className="text-3xl font-bold text-[#0A0A0A] mb-2">Admin Panel</h1>
+      <p className="text-[#6B7280] mb-6">
         Manage users, trips, and view platform stats
       </p>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-neutral-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 mb-6 bg-[#F5F5F5] rounded-lg p-1 w-fit">
         {[
           { key: "stats", label: "Stats", icon: BarChart3 },
           { key: "users", label: "Users", icon: Users },
@@ -121,8 +121,8 @@ export default function AdminPage() {
             onClick={() => handleTabChange(t.key)}
             className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               tab === t.key
-                ? "bg-white text-primary-700 shadow-sm"
-                : "text-neutral-600 hover:text-neutral-900"
+                ? "bg-white text-[#FF4500] shadow-sm"
+                : "text-[#6B7280] hover:text-[#0A0A0A]"
             }`}
           >
             <t.icon className="w-4 h-4" /> {t.label}
@@ -135,32 +135,32 @@ export default function AdminPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardBody>
-              <p className="text-sm text-neutral-500">Total Users</p>
-              <p className="text-3xl font-bold text-neutral-900">
+              <p className="text-sm text-[#9CA3AF]">Total Users</p>
+              <p className="text-3xl font-bold text-[#0A0A0A]">
                 {stats.totalUsers}
               </p>
             </CardBody>
           </Card>
           <Card>
             <CardBody>
-              <p className="text-sm text-neutral-500">Total Trips</p>
-              <p className="text-3xl font-bold text-neutral-900">
+              <p className="text-sm text-[#9CA3AF]">Total Trips</p>
+              <p className="text-3xl font-bold text-[#0A0A0A]">
                 {stats.totalTrips}
               </p>
             </CardBody>
           </Card>
           <Card>
             <CardBody>
-              <p className="text-sm text-neutral-500">Total Groups</p>
-              <p className="text-3xl font-bold text-neutral-900">
+              <p className="text-sm text-[#9CA3AF]">Total Groups</p>
+              <p className="text-3xl font-bold text-[#0A0A0A]">
                 {stats.totalGroups}
               </p>
             </CardBody>
           </Card>
           <Card>
             <CardBody>
-              <p className="text-sm text-neutral-500">New Users (7d)</p>
-              <p className="text-3xl font-bold text-primary-600">
+              <p className="text-sm text-[#9CA3AF]">New Users (7d)</p>
+              <p className="text-3xl font-bold text-[#FF4500]">
                 {stats.recentUsers}
               </p>
             </CardBody>
@@ -169,17 +169,17 @@ export default function AdminPage() {
             Object.entries(stats.tripsByStatus).length > 0 && (
               <Card className="sm:col-span-2">
                 <CardBody>
-                  <p className="text-sm text-neutral-500 mb-3">
+                  <p className="text-sm text-[#9CA3AF] mb-3">
                     Trips by Status
                   </p>
                   <div className="flex gap-4">
                     {Object.entries(stats.tripsByStatus).map(
                       ([status, count]) => (
                         <div key={status} className="text-center">
-                          <p className="text-xl font-bold text-neutral-900">
+                          <p className="text-xl font-bold text-[#0A0A0A]">
                             {count}
                           </p>
-                          <p className="text-xs text-neutral-500 capitalize">
+                          <p className="text-xs text-[#9CA3AF] capitalize">
                             {status}
                           </p>
                         </div>
@@ -197,34 +197,34 @@ export default function AdminPage() {
         <div>
           <div className="flex gap-2 mb-4">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && fetchUsers()}
                 placeholder="Search users..."
-                className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-lg text-sm"
+                className="w-full pl-10 pr-4 py-2 border border-[#D1D5DB] rounded-lg text-sm"
               />
             </div>
             <Button variant="outline" size="sm" onClick={() => fetchUsers()}>
               Search
             </Button>
           </div>
-          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+          <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
+              <thead className="bg-[#FAF9F7] border-b border-[#E5E7EB]">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Name
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Email
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Role
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Joined
                   </th>
                   <th className="px-4 py-3"></th>
@@ -234,24 +234,24 @@ export default function AdminPage() {
                 {users.map((u) => (
                   <tr
                     key={u._id}
-                    className="border-b border-neutral-100 hover:bg-neutral-50"
+                    className="border-b border-[#F0F0F0] hover:bg-[#FAF9F7]"
                   >
                     <td className="px-4 py-3 font-medium">{u.name}</td>
-                    <td className="px-4 py-3 text-neutral-600">{u.email}</td>
+                    <td className="px-4 py-3 text-[#6B7280]">{u.email}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`px-2 py-0.5 text-xs rounded-full ${u.role === "admin" ? "bg-primary-100 text-primary-700" : "bg-neutral-100 text-neutral-600"}`}
+                        className={`px-2 py-0.5 text-xs rounded-full ${u.role === "admin" ? "bg-[#FFF5F0] text-[#FF4500]" : "bg-[#F5F5F5] text-[#6B7280]"}`}
                       >
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">
+                    <td className="px-4 py-3 text-[#9CA3AF]">
                       {new Date(u.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleDeleteUser(u._id)}
-                        className="text-neutral-400 hover:text-error-500"
+                        className="text-[#9CA3AF] hover:text-[#EF4444]"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -271,7 +271,7 @@ export default function AdminPage() {
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-sm text-neutral-600">
+              <span className="text-sm text-[#6B7280]">
                 Page {usersPagination.page} of {usersPagination.pages}
               </span>
               <Button
@@ -290,23 +290,23 @@ export default function AdminPage() {
       {/* Trips Tab */}
       {tab === "trips" && (
         <div>
-          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+          <div className="bg-white border border-[#E5E7EB] rounded-lg overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-neutral-50 border-b border-neutral-200">
+              <thead className="bg-[#FAF9F7] border-b border-[#E5E7EB]">
                 <tr>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Title
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Destination
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     User
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Status
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-neutral-600">
+                  <th className="text-left px-4 py-3 font-medium text-[#6B7280]">
                     Created
                   </th>
                 </tr>
@@ -315,21 +315,21 @@ export default function AdminPage() {
                 {trips.map((t) => (
                   <tr
                     key={t._id}
-                    className="border-b border-neutral-100 hover:bg-neutral-50"
+                    className="border-b border-[#F0F0F0] hover:bg-[#FAF9F7]"
                   >
                     <td className="px-4 py-3 font-medium">{t.title}</td>
-                    <td className="px-4 py-3 text-neutral-600">
+                    <td className="px-4 py-3 text-[#6B7280]">
                       {t.destination}
                     </td>
-                    <td className="px-4 py-3 text-neutral-600">
+                    <td className="px-4 py-3 text-[#6B7280]">
                       {t.user?.name || "—"}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-neutral-100 text-neutral-600 capitalize">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-[#F5F5F5] text-[#6B7280] capitalize">
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-neutral-500">
+                    <td className="px-4 py-3 text-[#9CA3AF]">
                       {new Date(t.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
@@ -347,7 +347,7 @@ export default function AdminPage() {
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <span className="text-sm text-neutral-600">
+              <span className="text-sm text-[#6B7280]">
                 Page {tripsPagination.page} of {tripsPagination.pages}
               </span>
               <Button
