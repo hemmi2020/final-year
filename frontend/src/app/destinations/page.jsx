@@ -2,29 +2,116 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { externalAPI } from "@/lib/api";
 import {
   Search,
   MapPin,
   Cloud,
-  Thermometer,
   Utensils,
   Landmark,
   Loader2,
+  ArrowRight,
+  Plane,
 } from "lucide-react";
-import Container from "@/components/layout/Container";
-import Button from "@/components/ui/Button";
-import Card, { CardBody } from "@/components/ui/Card";
 
-const POPULAR = [
-  { name: "Tokyo", country: "Japan", emoji: "🇯🇵" },
-  { name: "Istanbul", country: "Turkey", emoji: "🇹🇷" },
-  { name: "Paris", country: "France", emoji: "🇫🇷" },
-  { name: "Dubai", country: "UAE", emoji: "🇦🇪" },
-  { name: "London", country: "UK", emoji: "🇬🇧" },
-  { name: "New York", country: "USA", emoji: "🇺🇸" },
-  { name: "Bangkok", country: "Thailand", emoji: "🇹🇭" },
-  { name: "Rome", country: "Italy", emoji: "🇮🇹" },
+const DESTINATIONS = [
+  {
+    name: "Tokyo",
+    country: "Japan",
+    flag: "🇯🇵",
+    tagline: "Where tradition meets innovation",
+    img: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80",
+    tags: ["Culture", "Food", "Tech"],
+  },
+  {
+    name: "Istanbul",
+    country: "Turkey",
+    flag: "🇹🇷",
+    tagline: "Where East meets West",
+    img: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&q=80",
+    tags: ["History", "Halal", "Bazaars"],
+  },
+  {
+    name: "Paris",
+    country: "France",
+    flag: "🇫🇷",
+    tagline: "The City of Light and Love",
+    img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80",
+    tags: ["Art", "Romance", "Cuisine"],
+  },
+  {
+    name: "Dubai",
+    country: "UAE",
+    flag: "🇦🇪",
+    tagline: "Futuristic luxury in the desert",
+    img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80",
+    tags: ["Luxury", "Shopping", "Halal"],
+  },
+  {
+    name: "Bali",
+    country: "Indonesia",
+    flag: "🇮🇩",
+    tagline: "Tropical paradise awaits",
+    img: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80",
+    tags: ["Nature", "Wellness", "Beach"],
+  },
+  {
+    name: "London",
+    country: "UK",
+    flag: "🇬🇧",
+    tagline: "Royal heritage and modern vibes",
+    img: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80",
+    tags: ["History", "Culture", "Food"],
+  },
+  {
+    name: "New York",
+    country: "USA",
+    flag: "🇺🇸",
+    tagline: "The city that never sleeps",
+    img: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80",
+    tags: ["Nightlife", "Food", "Art"],
+  },
+  {
+    name: "Bangkok",
+    country: "Thailand",
+    flag: "🇹🇭",
+    tagline: "Street food capital of the world",
+    img: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=800&q=80",
+    tags: ["Food", "Temples", "Budget"],
+  },
+  {
+    name: "Rome",
+    country: "Italy",
+    flag: "🇮🇹",
+    tagline: "Walk through ancient history",
+    img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80",
+    tags: ["History", "Food", "Art"],
+  },
+  {
+    name: "Barcelona",
+    country: "Spain",
+    flag: "🇪🇸",
+    tagline: "Gaudí, beaches, and tapas",
+    img: "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80",
+    tags: ["Architecture", "Beach", "Nightlife"],
+  },
+  {
+    name: "Maldives",
+    country: "Maldives",
+    flag: "🇲🇻",
+    tagline: "Crystal clear waters and overwater villas",
+    img: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80",
+    tags: ["Beach", "Luxury", "Halal"],
+  },
+  {
+    name: "Marrakech",
+    country: "Morocco",
+    flag: "🇲🇦",
+    tagline: "Colors, spices, and souks",
+    img: "https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=800&q=80",
+    tags: ["Culture", "Halal", "Adventure"],
+  },
 ];
 
 export default function DestinationsPage() {
@@ -50,8 +137,6 @@ export default function DestinationsPage() {
       }
       const loc = geo.data.data;
       setResult(loc);
-
-      // Fetch weather, restaurants, attractions in parallel
       const [wx, rest, attr] = await Promise.allSettled([
         externalAPI.weather(loc.lat, loc.lng),
         externalAPI.places(name, loc.lat, loc.lng, "restaurant"),
@@ -59,204 +144,650 @@ export default function DestinationsPage() {
       ]);
       if (wx.status === "fulfilled") setWeather(wx.value.data.data);
       if (rest.status === "fulfilled")
-        setRestaurants(rest.value.data.data?.slice(0, 6) || []);
+        setRestaurants(rest.value.data.data?.slice(0, 8) || []);
       if (attr.status === "fulfilled")
-        setAttractions(attr.value.data.data?.slice(0, 6) || []);
+        setAttractions(attr.value.data.data?.slice(0, 8) || []);
     } catch {}
     setLoading(false);
   };
 
   return (
-    <Container className="py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-          Explore Destinations
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 24px" }}>
+      {/* Hero */}
+      <div style={{ textAlign: "center", marginBottom: 48 }}>
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 16px",
+            background: "var(--orange-bg)",
+            borderRadius: 50,
+            marginBottom: 16,
+          }}
+        >
+          <Plane size={16} style={{ color: "var(--orange)" }} />
+          <span
+            style={{ fontSize: 13, fontWeight: 600, color: "var(--orange)" }}
+          >
+            Explore the World
+          </span>
+        </div>
+        <h1
+          style={{
+            fontSize: "clamp(32px, 5vw, 48px)",
+            fontWeight: 800,
+            color: "#0A0A0A",
+            marginBottom: 12,
+          }}
+        >
+          Discover Your Next{" "}
+          <span style={{ color: "var(--orange)" }}>Destination</span>
         </h1>
-        <p className="text-neutral-600">
-          Search any city to see weather, restaurants, and attractions
+        <p
+          style={{
+            fontSize: 17,
+            color: "#6B7280",
+            maxWidth: 520,
+            margin: "0 auto 32px",
+          }}
+        >
+          Search any city or explore our curated picks — with real-time weather,
+          restaurants, and attractions
         </p>
-      </div>
 
-      {/* Search Bar */}
-      <div className="max-w-xl mx-auto mb-8">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                query.trim() &&
-                searchDestination(query.trim())
-              }
-              placeholder="Search a city... (e.g. Tokyo, Istanbul, Paris)"
-              className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
-            />
-          </div>
-          <Button
-            variant="primary"
+        {/* Search */}
+        <div style={{ maxWidth: 600, margin: "0 auto", position: "relative" }}>
+          <Search
+            size={20}
+            style={{
+              position: "absolute",
+              left: 18,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#9CA3AF",
+            }}
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) =>
+              e.key === "Enter" &&
+              query.trim() &&
+              searchDestination(query.trim())
+            }
+            placeholder="Search any city... Tokyo, Istanbul, Paris..."
+            className="input-field"
+            style={{
+              paddingLeft: 48,
+              paddingRight: 120,
+              height: 56,
+              fontSize: 16,
+              borderRadius: 50,
+            }}
+          />
+          <button
             onClick={() => query.trim() && searchDestination(query.trim())}
             disabled={loading}
+            className="btn-orange"
+            style={{
+              position: "absolute",
+              right: 6,
+              top: 6,
+              bottom: 6,
+              padding: "0 24px",
+              fontSize: 14,
+              borderRadius: 50,
+            }}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Search"}
-          </Button>
+            {loading ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              "Search"
+            )}
+          </button>
         </div>
       </div>
-
-      {/* Popular Destinations */}
-      {!result && !loading && (
-        <div>
-          <h2 className="text-lg font-semibold text-neutral-900 mb-4">
-            Popular Destinations
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {POPULAR.map((dest) => (
-              <button
-                key={dest.name}
-                onClick={() => {
-                  setQuery(dest.name);
-                  searchDestination(dest.name);
-                }}
-                className="p-4 bg-white border border-neutral-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-colors text-left"
-              >
-                <span className="text-2xl">{dest.emoji}</span>
-                <p className="font-medium text-neutral-900 mt-1">{dest.name}</p>
-                <p className="text-xs text-neutral-500">{dest.country}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Loading */}
       {loading && (
-        <div className="text-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary-500 mx-auto mb-3" />
-          <p className="text-neutral-500">Fetching destination data...</p>
+        <div style={{ textAlign: "center", padding: "60px 0" }}>
+          <Loader2
+            size={40}
+            style={{
+              color: "var(--orange)",
+              margin: "0 auto 16px",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          <p style={{ color: "#6B7280", fontSize: 16 }}>
+            Searching destinations...
+          </p>
         </div>
       )}
 
-      {/* Results */}
+      {/* Search Results */}
       {result && !loading && (
-        <div>
-          <div className="flex items-center justify-between mb-6">
+        <div style={{ marginBottom: 60 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 24,
+              flexWrap: "wrap",
+              gap: 12,
+            }}
+          >
             <div>
-              <h2 className="text-2xl font-bold text-neutral-900">
-                {result.displayName}
+              <h2 style={{ fontSize: 28, fontWeight: 800, color: "#0A0A0A" }}>
+                {result.displayName?.split(",")[0]}
               </h2>
-              <p className="text-sm text-neutral-500">
-                Lat: {result.lat.toFixed(4)}, Lng: {result.lng.toFixed(4)}
+              <p style={{ fontSize: 14, color: "#9CA3AF" }}>
+                {result.displayName}
               </p>
             </div>
-            <Button variant="primary" onClick={() => router.push(`/chat`)}>
-              Plan a Trip Here
-            </Button>
+            <button
+              onClick={() => router.push("/chat")}
+              className="btn-orange"
+              style={{
+                padding: "12px 28px",
+                fontSize: 14,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Plane size={16} /> Plan a Trip Here
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: 20,
+            }}
+          >
             {/* Weather */}
             {weather && (
-              <Card>
-                <CardBody>
-                  <h3 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                    <Cloud className="w-4 h-4" /> Current Weather
-                  </h3>
-                  <div className="text-center">
-                    <p className="text-4xl font-bold text-neutral-900">
-                      {Math.round(weather.temp)}°C
-                    </p>
-                    <p className="text-neutral-600 capitalize">
-                      {weather.description}
-                    </p>
-                    <div className="flex justify-center gap-4 mt-2 text-xs text-neutral-500">
-                      <span>Feels like {Math.round(weather.feelsLike)}°</span>
-                      <span>Humidity {weather.humidity}%</span>
-                    </div>
-                  </div>
-                </CardBody>
-              </Card>
+              <div
+                className="card"
+                style={{ padding: 24, textAlign: "center" }}
+              >
+                <Cloud
+                  size={32}
+                  style={{ color: "var(--orange)", margin: "0 auto 12px" }}
+                />
+                <p style={{ fontSize: 40, fontWeight: 800, color: "#0A0A0A" }}>
+                  {Math.round(weather.temp)}°C
+                </p>
+                <p
+                  style={{
+                    fontSize: 15,
+                    color: "#6B7280",
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {weather.description}
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: 16,
+                    marginTop: 8,
+                    fontSize: 13,
+                    color: "#9CA3AF",
+                  }}
+                >
+                  <span>Feels {Math.round(weather.feelsLike)}°</span>
+                  <span>💧 {weather.humidity}%</span>
+                  <span>💨 {weather.windSpeed} m/s</span>
+                </div>
+              </div>
             )}
 
             {/* Restaurants */}
-            <Card>
-              <CardBody>
-                <h3 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                  <Utensils className="w-4 h-4" /> Restaurants
+            <div className="card" style={{ padding: 24 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 16,
+                }}
+              >
+                <Utensils size={20} style={{ color: "var(--orange)" }} />
+                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
+                  Restaurants
                 </h3>
-                {restaurants.length > 0 ? (
-                  <div className="space-y-2">
-                    {restaurants.map((r, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between py-1.5 border-b border-neutral-100 last:border-0"
+              </div>
+              {restaurants.length > 0 ? (
+                restaurants.map((r, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 0",
+                      borderBottom:
+                        i < restaurants.length - 1
+                          ? "1px solid #F0F0F0"
+                          : "none",
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#0A0A0A",
+                        }}
                       >
-                        <div>
-                          <p className="text-sm font-medium text-neutral-800">
-                            {r.name}
-                          </p>
-                          {r.cuisine && (
-                            <p className="text-xs text-neutral-500">
-                              {r.cuisine}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-1">
-                          {r.dietary?.halal && (
-                            <span className="text-xs px-1.5 py-0.5 bg-success-50 text-success-700 rounded">
-                              halal
-                            </span>
-                          )}
-                          {r.dietary?.vegan && (
-                            <span className="text-xs px-1.5 py-0.5 bg-primary-50 text-primary-700 rounded">
-                              vegan
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                        {r.name}
+                      </p>
+                      {r.cuisine && (
+                        <p style={{ fontSize: 12, color: "#9CA3AF" }}>
+                          {r.cuisine}
+                        </p>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {r.dietary?.halal && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            padding: "2px 8px",
+                            borderRadius: 99,
+                            background: "#E8F5E9",
+                            color: "#2E7D32",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Halal
+                        </span>
+                      )}
+                      {r.dietary?.vegan && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            padding: "2px 8px",
+                            borderRadius: 99,
+                            background: "#E3F2FD",
+                            color: "#1565C0",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Vegan
+                        </span>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <p className="text-sm text-neutral-500">
-                    No restaurants found nearby
-                  </p>
-                )}
-              </CardBody>
-            </Card>
+                ))
+              ) : (
+                <p style={{ fontSize: 14, color: "#9CA3AF" }}>
+                  No restaurants found
+                </p>
+              )}
+            </div>
 
             {/* Attractions */}
-            <Card>
-              <CardBody>
-                <h3 className="font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-                  <Landmark className="w-4 h-4" /> Attractions
+            <div className="card" style={{ padding: 24 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 16,
+                }}
+              >
+                <Landmark size={20} style={{ color: "var(--orange)" }} />
+                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
+                  Attractions
                 </h3>
-                {attractions.length > 0 ? (
-                  <div className="space-y-2">
-                    {attractions.map((a, i) => (
-                      <div
-                        key={i}
-                        className="py-1.5 border-b border-neutral-100 last:border-0"
-                      >
-                        <p className="text-sm font-medium text-neutral-800">
-                          {a.name}
-                        </p>
-                        <p className="text-xs text-neutral-500 capitalize">
-                          {a.type}
-                        </p>
-                      </div>
-                    ))}
+              </div>
+              {attractions.length > 0 ? (
+                attractions.map((a, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "10px 0",
+                      borderBottom:
+                        i < attractions.length - 1
+                          ? "1px solid #F0F0F0"
+                          : "none",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#0A0A0A",
+                      }}
+                    >
+                      {a.name}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "#9CA3AF",
+                        textTransform: "capitalize",
+                      }}
+                    >
+                      {a.type}
+                    </p>
                   </div>
-                ) : (
-                  <p className="text-sm text-neutral-500">
-                    No attractions found nearby
-                  </p>
-                )}
-              </CardBody>
-            </Card>
+                ))
+              ) : (
+                <p style={{ fontSize: 14, color: "#9CA3AF" }}>
+                  No attractions found
+                </p>
+              )}
+            </div>
           </div>
+
+          <button
+            onClick={() => {
+              setResult(null);
+              setQuery("");
+            }}
+            style={{
+              display: "block",
+              margin: "32px auto 0",
+              color: "var(--orange)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 15,
+              fontWeight: 600,
+              fontFamily: "inherit",
+            }}
+          >
+            ← Back to all destinations
+          </button>
         </div>
       )}
-    </Container>
+
+      {/* Destination Grid — beautiful cards with images */}
+      {!result && !loading && (
+        <>
+          {/* Featured (first 3 — large cards) */}
+          <div style={{ marginBottom: 40 }}>
+            <h2
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: "#0A0A0A",
+                marginBottom: 20,
+              }}
+            >
+              ✨ Featured Destinations
+            </h2>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+                gap: 20,
+              }}
+            >
+              {DESTINATIONS.slice(0, 3).map((d) => (
+                <div
+                  key={d.name}
+                  onClick={() => {
+                    setQuery(d.name);
+                    searchDestination(d.name);
+                  }}
+                  className="card"
+                  style={{
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    position: "relative",
+                  }}
+                >
+                  <div style={{ height: 260, position: "relative" }}>
+                    <Image
+                      src={d.img}
+                      alt={d.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                      sizes="400px"
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(transparent 40%, rgba(0,0,0,0.7))",
+                      }}
+                    />
+                    <div style={{ position: "absolute", top: 16, left: 16 }}>
+                      <span
+                        style={{
+                          background: "rgba(255,255,255,0.9)",
+                          padding: "5px 14px",
+                          borderRadius: 50,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "#0A0A0A",
+                        }}
+                      >
+                        {d.flag} {d.country}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 16,
+                        left: 16,
+                        right: 16,
+                      }}
+                    >
+                      <h3
+                        style={{
+                          fontSize: 24,
+                          fontWeight: 800,
+                          color: "#FFF",
+                          margin: 0,
+                        }}
+                      >
+                        {d.name}
+                      </h3>
+                      <p
+                        style={{
+                          fontSize: 14,
+                          color: "rgba(255,255,255,0.8)",
+                          margin: "4px 0 0",
+                        }}
+                      >
+                        {d.tagline}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      padding: "14px 16px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {d.tags.map((t) => (
+                        <span
+                          key={t}
+                          style={{
+                            fontSize: 11,
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                            background: "var(--orange-bg)",
+                            color: "var(--orange)",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <ArrowRight size={18} style={{ color: "var(--orange)" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* All destinations — smaller cards */}
+          <div>
+            <h2
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: "#0A0A0A",
+                marginBottom: 20,
+              }}
+            >
+              🌍 All Destinations
+            </h2>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {DESTINATIONS.slice(3).map((d) => (
+                <div
+                  key={d.name}
+                  onClick={() => {
+                    setQuery(d.name);
+                    searchDestination(d.name);
+                  }}
+                  className="card"
+                  style={{
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <div style={{ height: 180, position: "relative" }}>
+                    <Image
+                      src={d.img}
+                      alt={d.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                      sizes="300px"
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(transparent 50%, rgba(0,0,0,0.6))",
+                      }}
+                    />
+                    <div style={{ position: "absolute", top: 12, left: 12 }}>
+                      <span
+                        style={{
+                          background: "rgba(255,255,255,0.85)",
+                          padding: "3px 10px",
+                          borderRadius: 50,
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {d.flag} {d.country}
+                      </span>
+                    </div>
+                    <div style={{ position: "absolute", bottom: 12, left: 12 }}>
+                      <h3
+                        style={{
+                          fontSize: 18,
+                          fontWeight: 700,
+                          color: "#FFF",
+                          margin: 0,
+                        }}
+                      >
+                        {d.name}
+                      </h3>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      padding: "12px 14px",
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "#6B7280",
+                        lineHeight: 1.5,
+                        marginBottom: 10,
+                      }}
+                    >
+                      {d.tagline}
+                    </p>
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                      {d.tags.map((t) => (
+                        <span
+                          key={t}
+                          style={{
+                            fontSize: 10,
+                            padding: "2px 8px",
+                            borderRadius: 99,
+                            background: "#F5F5F5",
+                            color: "#6B7280",
+                            fontWeight: 600,
+                          }}
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA */}
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: 48,
+              padding: "40px 24px",
+              background: "var(--orange-bg)",
+              borderRadius: 24,
+            }}
+          >
+            <h3
+              style={{
+                fontSize: 24,
+                fontWeight: 800,
+                color: "#0A0A0A",
+                marginBottom: 8,
+              }}
+            >
+              Can't find your destination?
+            </h3>
+            <p style={{ fontSize: 15, color: "#6B7280", marginBottom: 20 }}>
+              Search any city in the world — our AI knows them all
+            </p>
+            <button
+              onClick={() => document.querySelector("input")?.focus()}
+              className="btn-orange"
+              style={{ padding: "14px 32px", fontSize: 15 }}
+            >
+              Search Now
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }
