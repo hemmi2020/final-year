@@ -19,6 +19,7 @@ import {
   Globe,
 } from "lucide-react";
 import FlatMap from "@/components/map/FlatMap";
+import TripTrail from "@/components/map/TripTrail";
 
 export default function TripDetailPage() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function TripDetailPage() {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [expandedDay, setExpandedDay] = useState(0);
+  const [showTrail, setShowTrail] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -435,22 +437,59 @@ export default function TripDetailPage() {
         </div>
       </div>
 
-      {/* ─── RIGHT PANEL — Mapbox Street Map ─── */}
+      {/* ─── RIGHT PANEL — Map / Trip Trail ─── */}
       <div
         className="hidden lg:block"
         style={{ flex: 1, position: "relative" }}
       >
-        <FlatMap
-          destination={trip.destination}
-          activities={(trip.itinerary || []).flatMap((day) =>
-            (day.activities || []).map((act) => ({
-              name: act.name,
-              description: act.description,
-              time: act.time,
-              location: act.location,
-            })),
-          )}
-        />
+        {showTrail ? (
+          <TripTrail
+            pins={(trip.itinerary || []).flatMap((day, di) =>
+              (day.activities || [])
+                .filter((a) => a.location?.lat)
+                .map((act, ai) => ({
+                  id: di * 100 + ai + 1,
+                  name: act.name,
+                  lat: act.location.lat,
+                  lng: act.location.lng,
+                  day: di + 1,
+                })),
+            )}
+            tripName={trip.title}
+          />
+        ) : (
+          <FlatMap
+            destination={trip.destination}
+            activities={(trip.itinerary || []).flatMap((day) =>
+              (day.activities || []).map((act) => ({
+                name: act.name,
+                description: act.description,
+                time: act.time,
+                location: act.location,
+              })),
+            )}
+          />
+        )}
+        <button
+          onClick={() => setShowTrail(!showTrail)}
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            zIndex: 10,
+            background: "#FFF",
+            border: "1.5px solid var(--border)",
+            borderRadius: 50,
+            padding: "8px 18px",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+          }}
+        >
+          {showTrail ? "← Back to Map" : "▶ Play Trip Trail"}
+        </button>
       </div>
     </div>
   );

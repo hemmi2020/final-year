@@ -7,6 +7,7 @@ import { chatAPI } from "@/lib/api";
 import { Send, Globe, Sparkles, Save, Download } from "lucide-react";
 import { MessageRenderer } from "@/components/chat/GenerativeUI";
 import GlobeMap from "@/components/map/GlobeMap";
+import { extractDestinationFromText } from "@/lib/extractDestination";
 
 function ChatContent() {
   const router = useRouter();
@@ -49,33 +50,12 @@ function ChatContent() {
         ...prev,
         { id: Date.now() + 1, role: "assistant", content: data.data.message },
       ]);
-      // Detect destination in AI response for globe fly-to
-      const cities = [
-        "Tokyo",
-        "Istanbul",
-        "Paris",
-        "Dubai",
-        "London",
-        "New York",
-        "Bali",
-        "Rome",
-        "Barcelona",
-        "Sydney",
-        "Melbourne",
-        "Bangkok",
-        "Singapore",
-        "Cairo",
-        "Marrakech",
-        "Maldives",
-        "Santorini",
-        "Amsterdam",
-        "Prague",
-        "Vienna",
-      ];
-      const found = cities.find(
-        (c) => data.data.message.includes(c) || text.includes(c),
+      // Detect destination via Mapbox geocoding
+      extractDestinationFromText(data.data.message + " " + text).then(
+        (dest) => {
+          if (dest) setCurrentDestination(dest);
+        },
       );
-      if (found) setCurrentDestination(found);
     } catch (err) {
       setMessages((prev) => [
         ...prev,

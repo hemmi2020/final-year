@@ -1,37 +1,35 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MAPBOX_TOKEN, MAPBOX_STYLES } from "@/lib/mapbox";
 
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-
-export default function GlobeMap({ destination, markers = [] }) {
-  const mapContainer = useRef(null);
+export default function GlobeMap({ destination, amenityMarkers = [] }) {
+  const containerRef = useRef(null);
   const mapRef = useRef(null);
+  const markersRef = useRef([]);
   const [loaded, setLoaded] = useState(false);
+  const animRef = useRef(null);
 
   useEffect(() => {
-    if (!mapContainer.current || !MAPBOX_TOKEN) return;
-
+    if (!containerRef.current || !MAPBOX_TOKEN) return;
     let map;
-    const initMap = async () => {
+
+    const init = async () => {
       const mapboxgl = (await import("mapbox-gl")).default;
       await import("mapbox-gl/dist/mapbox-gl.css");
-
       mapboxgl.accessToken = MAPBOX_TOKEN;
 
       map = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: "mapbox://styles/mapbox/standard",
-        center: [28.97, 41.01], // Istanbul default
-        zoom: 1.5,
+        container: containerRef.current,
+        style: MAPBOX_STYLES.globe,
         projection: "globe",
-        attributionControl: false,
+        center: [28.97, 41.01],
+        zoom: 1.8,
+        pitch: 0,
+        antialias: true,
       });
 
-      map.addControl(
-        new mapboxgl.AttributionControl({ compact: true }),
-        "bottom-right",
-      );
+      mapRef.current = map;
 
       map.on("style.load", () => {
         map.setFog({
@@ -42,135 +40,155 @@ export default function GlobeMap({ destination, markers = [] }) {
           "star-intensity": 0.6,
         });
         setLoaded(true);
+
+        // Auto-rotation
+        let angle = 0;
+        const rotate = () => {
+          if (!map.isMoving()) {
+            angle = (angle + 0.3) % 360;
+            map.rotateTo(angle, { duration: 0 });
+          }
+          animRef.current = requestAnimationFrame(rotate);
+        };
+        animRef.current = requestAnimationFrame(rotate);
+        map.on("mousedown", () => cancelAnimationFrame(animRef.current));
+        map.on("touchstart", () => cancelAnimationFrame(animRef.current));
       });
 
-      // Slow auto-rotation
-      const spinGlobe = () => {
-        if (!map || map.isMoving()) return;
-        const center = map.getCenter();
-        center.lng += 0.3;
-        map.easeTo({ center, duration: 1000, easing: (t) => t });
-      };
-      const spinInterval = setInterval(spinGlobe, 1000);
-
-      // Stop rotation on interaction
-      map.on("mousedown", () => clearInterval(spinInterval));
-      map.on("touchstart", () => clearInterval(spinInterval));
-
-      mapRef.current = map;
+      // Resize observer
+      const observer = new ResizeObserver(() => map?.resize());
+      observer.observe(containerRef.current);
     };
 
-    initMap();
-
+    init();
     return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+      markersRef.current.forEach((m) => m.remove());
       if (map) map.remove();
     };
   }, []);
 
-  // Fly to destination when it changes
+  // Fly to destination
   useEffect(() => {
-    if (!mapRef.current || !destination || !loaded) return;
+    if (!destination || !mapRef.current || !loaded) return;
 
-    const flyToDestination = async () => {
-      try {
-        const res = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(destination)}.json?access_token=${MAPBOX_TOKEN}&limit=1`,
-        );
-        const data = await res.json();
-        if (data.features?.[0]) {
-          const [lng, lat] = data.features[0].center;
-          mapRef.current.flyTo({
-            center: [lng, lat],
-            zoom: 5,
-            duration: 3000,
-            essential: true,
-          });
+    const flyTo = async () => {
+      const mapboxgl = (await import("mapbox-gl")).default;
+      const map = mapRef.current;
 
-          // Add glowing pin
-          const mapboxgl = (await import("mapbox-gl")).default;
+      // Stop rotation
+      if (animRef.current) cancelAnimationFrame(animRef.current);
 
-          // Remove old markers
-          document.querySelectorAll(".mapbox-pin").forEach((el) => el.remove());
+      // Clear old markers
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
 
-          const el = document.createElement("div");
-          el.className = "mapbox-pin";
-          el.style.cssText = `
-            width: 20px; height: 20px; border-radius: 50%;
-            background: #FF4500; border: 3px solid #FFF;
-            box-shadow: 0 0 12px rgba(255,69,0,0.6), 0 0 24px rgba(255,69,0,0.3);
-            animation: pinPulse 2s infinite;
-          `;
+      map.flyTo({
+        center: [destination.lng, destination.lat],
+        zoom: 5,
+        pitch: 45,
+        bearing: -12,
+        duration: 3000,
+        easing: (t) => t * (2 - t),
+      });
 
-          new mapboxgl.Marker(el).setLngLat([lng, lat]).addTo(mapRef.current);
-        }
-      } catch (err) {
-        console.warn("Fly-to error:", err.message);
-      }
+      // Glowing pulse marker
+      const el = document.createElement("div");
+      el.innerHTML = `
+        <div style="position:relative;display:flex;align-items:center;justify-content:center">
+          <div style="position:absolute;width:40px;height:40px;border-radius:50%;border:2px solid #FF4500;animation:pulseRing 1.5s ease-out infinite"></div>
+          <div style="width:14px;height:14px;background:#FF4500;border-radius:50%;border:2.5px solid #FFF;box-shadow:0 2px 8px rgba(255,69,0,0.5);position:relative;z-index:1"></div>
+          <div style="position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0A0A0A;color:#FFF;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${destination.name}</div>
+        </div>`;
+
+      const marker = new mapboxgl.Marker({ element: el, anchor: "center" })
+        .setLngLat([destination.lng, destination.lat])
+        .addTo(map);
+      markersRef.current.push(marker);
     };
 
-    flyToDestination();
+    flyTo();
   }, [destination, loaded]);
 
-  // Add markers when they change
+  // Amenity markers
   useEffect(() => {
-    if (!mapRef.current || !loaded || markers.length === 0) return;
+    if (!mapRef.current || !loaded || amenityMarkers.length === 0) return;
 
-    const addMarkers = async () => {
+    const addAmenities = async () => {
       const mapboxgl = (await import("mapbox-gl")).default;
-      markers.forEach((m, i) => {
-        if (!m.lat || !m.lng) return;
+      const colors = {
+        restaurant: "#FF6B35",
+        hotel: "#6366F1",
+        hospital: "#EF4444",
+        atm: "#22C55E",
+        shopping: "#F59E0B",
+        cafe: "#92400E",
+        mosque: "#10B981",
+        transport: "#3B82F6",
+        attraction: "#EC4899",
+        pharmacy: "#8B5CF6",
+      };
+
+      amenityMarkers.forEach((a) => {
+        const color = colors[a.category] || "#888";
         const el = document.createElement("div");
-        el.style.cssText = `
-          width: 28px; height: 28px; border-radius: 50%;
-          background: ${m.color || "#FF4500"}; color: #FFF;
-          display: flex; align-items: center; justify-content: center;
-          font-size: 12px; font-weight: 700; border: 2px solid #FFF;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        `;
-        el.textContent = String(i + 1);
-        new mapboxgl.Marker(el).setLngLat([m.lng, m.lat]).addTo(mapRef.current);
+        el.style.cssText = `width:28px;height:28px;background:${color};border-radius:50%;border:2.5px solid #FFF;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;transition:transform 0.2s`;
+        el.textContent = a.icon || "📍";
+        el.onmouseenter = () => (el.style.transform = "scale(1.2)");
+        el.onmouseleave = () => (el.style.transform = "scale(1)");
+
+        const popup = new mapboxgl.Popup({
+          offset: 16,
+          closeButton: false,
+        }).setHTML(
+          `<div style="padding:10px 14px;font-family:inherit"><div style="font-weight:600;font-size:14px">${a.name}</div><div style="font-size:12px;color:#6B7280;margin-top:4px">⭐ ${a.rating || "N/A"} · ${a.distance || ""}</div></div>`,
+        );
+
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([a.lng, a.lat])
+          .setPopup(popup)
+          .addTo(mapRef.current);
+        markersRef.current.push(marker);
       });
     };
 
-    addMarkers();
-  }, [markers, loaded]);
+    addAmenities();
+  }, [amenityMarkers, loaded]);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
-      <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
+      <div ref={containerRef} style={{ width: "100%", height: "100%" }} />
       {!loaded && (
         <div
           style={{
             position: "absolute",
             inset: 0,
-            background: "var(--navy)",
+            background: "#1B2B4B",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
           <div
-            className="skeleton"
-            style={{ width: 120, height: 120, borderRadius: "50%" }}
+            style={{
+              width: 200,
+              height: 200,
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #1e3a5f, #2a5298)",
+              animation: "pulse 2s ease-in-out infinite",
+            }}
           />
         </div>
       )}
       <style jsx global>{`
-        @keyframes pinPulse {
+        @keyframes pulseRing {
           0% {
-            box-shadow:
-              0 0 12px rgba(255, 69, 0, 0.6),
-              0 0 24px rgba(255, 69, 0, 0.3);
-          }
-          50% {
-            box-shadow:
-              0 0 20px rgba(255, 69, 0, 0.8),
-              0 0 40px rgba(255, 69, 0, 0.4);
+            transform: scale(0.5);
+            opacity: 1;
           }
           100% {
-            box-shadow:
-              0 0 12px rgba(255, 69, 0, 0.6),
-              0 0 24px rgba(255, 69, 0, 0.3);
+            transform: scale(2.5);
+            opacity: 0;
           }
         }
       `}</style>
