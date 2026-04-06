@@ -50,6 +50,13 @@ function LoginContent() {
       setUser(data.data.user, data.data.token);
       router.push(returnUrl);
     } catch (err) {
+      if (
+        err.response?.status === 403 &&
+        err.response?.data?.requiresVerification
+      ) {
+        router.push(`/verify?email=${encodeURIComponent(form.email)}`);
+        return;
+      }
       setBanner(
         err.response?.data?.error ||
           "Invalid email or password. Please try again.",

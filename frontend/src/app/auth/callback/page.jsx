@@ -18,6 +18,11 @@ function CallbackContent() {
 
     if (token && name && email) {
       setUser({ id, name, email, role: "user" }, token);
+      // Sync preferences after login
+      try {
+        const ps =
+          require("@/store/preferenceStore").usePreferenceStore.getState();
+      } catch {}
       router.push("/chat");
     } else {
       router.push("/login?error=google_failed");

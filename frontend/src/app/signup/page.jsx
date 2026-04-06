@@ -106,8 +106,12 @@ export default function SignupPage() {
         email: form.email,
         password: form.password,
       });
-      setUser(data.data.user, data.data.token);
-      router.push("/chat");
+      if (data.data.requiresVerification) {
+        router.push(`/verify?email=${encodeURIComponent(form.email)}`);
+      } else {
+        setUser(data.data.user, data.data.token);
+        router.push("/chat");
+      }
     } catch (err) {
       setServerError(
         err.response?.data?.error ||

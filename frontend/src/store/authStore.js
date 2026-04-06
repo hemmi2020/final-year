@@ -15,12 +15,6 @@ export const useAuthStore = create(
             // Set user and token after login
             setUser: (user, token) => {
                 set({ user, token, isAuthenticated: true });
-                // Sync preferences to global preference store
-                try {
-                    const prefStore = require("@/store/preferenceStore").usePreferenceStore.getState();
-                    if (user?.preferences?.preferredCurrency) prefStore.setCurrency(user.preferences.preferredCurrency);
-                    if (user?.preferences?.temperatureUnit) prefStore.setTempUnit(user.preferences.temperatureUnit === "imperial" ? "F" : "C");
-                } catch { }
             },
 
             // Update user profile
