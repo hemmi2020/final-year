@@ -43,8 +43,8 @@ export default function Navigation() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
   const [currDropdown, setCurrDropdown] = useState(false);
-  const [tempUnit, setTempUnit] = useState("C");
-  const [currency, setCurrency] = useState("USD");
+  const { currency, tempUnit, setCurrency, setTempUnit } =
+    require("@/store/preferenceStore").usePreferenceStore();
   const scrollY = useScrollPosition();
   const isScrolled = scrollY > 10;
   const { user, isAuthenticated, logout, updateUser } = useAuthStore();

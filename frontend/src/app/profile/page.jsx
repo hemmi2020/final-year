@@ -109,6 +109,13 @@ export default function ProfilePage() {
     try {
       await usersAPI.updatePreferences(prefs);
       updateUser({ preferences: prefs });
+      // Sync with global preference store
+      const prefStore =
+        require("@/store/preferenceStore").usePreferenceStore.getState();
+      if (prefs.preferredCurrency)
+        prefStore.setCurrency(prefs.preferredCurrency);
+      if (prefs.temperatureUnit)
+        prefStore.setTempUnit(prefs.temperatureUnit === "imperial" ? "F" : "C");
     } catch {}
     setSaving(false);
   };

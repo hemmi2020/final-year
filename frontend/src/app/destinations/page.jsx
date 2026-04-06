@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { externalAPI } from "@/lib/api";
+import { usePreferenceStore, CURRENCY_SYMBOLS } from "@/store/preferenceStore";
 import {
   Search,
   MapPin,
@@ -116,6 +117,7 @@ const DESTINATIONS = [
 
 export default function DestinationsPage() {
   const router = useRouter();
+  const { currency, tempUnit } = usePreferenceStore();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -320,7 +322,10 @@ export default function DestinationsPage() {
                   style={{ color: "var(--orange)", margin: "0 auto 12px" }}
                 />
                 <p style={{ fontSize: 40, fontWeight: 800, color: "#0A0A0A" }}>
-                  {Math.round(weather.temp)}°C
+                  {tempUnit === "F"
+                    ? Math.round((weather.temp * 9) / 5 + 32)
+                    : Math.round(weather.temp)}
+                  °{tempUnit}
                 </p>
                 <p
                   style={{

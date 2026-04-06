@@ -21,6 +21,7 @@ import {
 import FlatMap from "@/components/map/FlatMap";
 import TripTrail from "@/components/map/TripTrail";
 import { exportTripPDF } from "@/lib/exportPDF";
+import { usePreferenceStore } from "@/store/preferenceStore";
 
 export default function TripDetailPage() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [expandedDay, setExpandedDay] = useState(0);
   const [showTrail, setShowTrail] = useState(false);
+  const { tempUnit, currency } = usePreferenceStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -249,7 +251,10 @@ export default function TripDetailPage() {
               }}
             >
               <Cloud size={16} style={{ color: "var(--orange)" }} />{" "}
-              {Math.round(weather.temp)}° — {weather.description}
+              {Math.round(
+                tempUnit === "F" ? (weather.temp * 9) / 5 + 32 : weather.temp,
+              )}
+              °{tempUnit} — {weather.description}
             </div>
             <div
               style={{
