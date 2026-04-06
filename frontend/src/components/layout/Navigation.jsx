@@ -117,16 +117,14 @@ export default function Navigation() {
                 key={link.href}
                 href={link.href}
                 style={{
-                  color: "var(--text-body)",
+                  color: "#374151",
                   textDecoration: "none",
                   fontSize: 15,
                   fontWeight: 500,
                   transition: "color 0.2s",
                 }}
-                onMouseEnter={(e) => (e.target.style.color = "var(--orange)")}
-                onMouseLeave={(e) =>
-                  (e.target.style.color = "var(--text-body)")
-                }
+                onMouseEnter={(e) => (e.target.style.color = "#FF4500")}
+                onMouseLeave={(e) => (e.target.style.color = "#374151")}
               >
                 {link.label}
               </Link>
@@ -153,7 +151,7 @@ export default function Navigation() {
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: "pointer",
-                  color: "var(--text-body)",
+                  color: "#374151",
                   fontFamily: "inherit",
                 }}
               >
@@ -196,7 +194,7 @@ export default function Navigation() {
                         cursor: "pointer",
                         fontSize: 13,
                         fontWeight: 500,
-                        color: "var(--text-primary)",
+                        color: "#0A0A0A",
                         fontFamily: "inherit",
                       }}
                     >
@@ -209,29 +207,6 @@ export default function Navigation() {
                 </div>
               )}
             </div>
-
-            {/* Dark mode toggle */}
-            <button
-              onClick={() => {
-                const { toggle } =
-                  require("@/store/themeStore").useThemeStore.getState();
-                toggle();
-              }}
-              style={{
-                padding: "6px 12px",
-                border: "1px solid var(--border)",
-                borderRadius: 50,
-                background: "#FFF",
-                fontSize: 16,
-                cursor: "pointer",
-                lineHeight: 1,
-              }}
-            >
-              {typeof document !== "undefined" &&
-              document.documentElement.getAttribute("data-theme") === "dark"
-                ? "☀️"
-                : "🌙"}
-            </button>
 
             {/* Country flag pill */}
             <button
@@ -322,12 +297,12 @@ export default function Navigation() {
                           style={{
                             fontSize: 14,
                             fontWeight: 700,
-                            color: "var(--text-primary)",
+                            color: "#0A0A0A",
                           }}
                         >
                           {user?.name}
                         </p>
-                        <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                        <p style={{ fontSize: 12, color: "#9CA3AF" }}>
                           {user?.email}
                         </p>
                       </div>
@@ -348,7 +323,7 @@ export default function Navigation() {
                           cursor: "pointer",
                           fontSize: 13,
                           fontWeight: 500,
-                          color: "var(--text-body)",
+                          color: "#374151",
                           fontFamily: "inherit",
                         }}
                       >
@@ -371,7 +346,7 @@ export default function Navigation() {
                           cursor: "pointer",
                           fontSize: 13,
                           fontWeight: 500,
-                          color: "var(--text-body)",
+                          color: "#374151",
                           fontFamily: "inherit",
                         }}
                       >
@@ -394,7 +369,7 @@ export default function Navigation() {
                           cursor: "pointer",
                           fontSize: 13,
                           fontWeight: 500,
-                          color: "var(--text-body)",
+                          color: "#374151",
                           fontFamily: "inherit",
                         }}
                       >
@@ -425,7 +400,7 @@ export default function Navigation() {
                             cursor: "pointer",
                             fontSize: 13,
                             fontWeight: 500,
-                            color: "var(--error)",
+                            color: "#EF4444",
                             fontFamily: "inherit",
                           }}
                         >
@@ -450,7 +425,7 @@ export default function Navigation() {
                           cursor: "pointer",
                           fontSize: 14,
                           fontWeight: 600,
-                          color: "var(--text-primary)",
+                          color: "#0A0A0A",
                           textAlign: "left",
                           fontFamily: "inherit",
                         }}
@@ -536,7 +511,7 @@ export default function Navigation() {
                     href="/profile"
                     onClick={() => setMobileOpen(false)}
                     style={{
-                      color: "var(--text-body)",
+                      color: "#374151",
                       textDecoration: "none",
                       fontSize: 15,
                     }}
@@ -549,7 +524,7 @@ export default function Navigation() {
                       setMobileOpen(false);
                     }}
                     style={{
-                      color: "var(--error)",
+                      color: "#EF4444",
                       background: "none",
                       border: "none",
                       fontSize: 15,
@@ -567,7 +542,7 @@ export default function Navigation() {
                       setMobileOpen(false);
                     }}
                     style={{
-                      color: "var(--text-body)",
+                      color: "#374151",
                       background: "none",
                       border: "none",
                       fontSize: 15,
