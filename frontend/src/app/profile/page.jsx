@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { usersAPI, tripsAPI } from "@/lib/api";
+import { communityAPI } from "@/lib/api";
 import Image from "next/image";
 import {
   User,
@@ -16,6 +17,7 @@ import {
   Globe,
   Edit3,
   Save,
+  Share2,
 } from "lucide-react";
 
 const INTERESTS = [
@@ -81,6 +83,15 @@ export default function ProfilePage() {
     try {
       await tripsAPI.delete(id);
       setTrips((t) => t.filter((x) => x._id !== id));
+    } catch {}
+  };
+
+  const handleShareTrip = async (id) => {
+    try {
+      await communityAPI.publish(id, { tags: ["shared"] });
+      setTrips((t) =>
+        t.map((x) => (x._id === id ? { ...x, isPublic: true } : x)),
+      );
     } catch {}
   };
 
@@ -409,6 +420,34 @@ export default function ProfilePage() {
                           style={{ padding: "8px 18px", fontSize: 13, flex: 1 }}
                         >
                           View Trip
+                        </button>
+                        <button
+                          onClick={() => handleShareTrip(trip._id)}
+                          title={
+                            trip.isPublic
+                              ? "Already shared"
+                              : "Share to Community"
+                          }
+                          style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 10,
+                            border: trip.isPublic
+                              ? "1.5px solid var(--orange)"
+                              : "1px solid var(--border)",
+                            background: trip.isPublic
+                              ? "var(--orange-bg)"
+                              : "#FFF",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: trip.isPublic
+                              ? "var(--orange)"
+                              : "var(--text-muted)",
+                          }}
+                        >
+                          <Share2 size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteTrip(trip._id)}

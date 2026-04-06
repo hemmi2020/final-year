@@ -105,3 +105,13 @@ export const adminAPI = {
 export const shareAPI = {
     shareTrip: (id) => api.put(`/api/trips/${id}`, { isPublic: true }),
 };
+
+// ─── Community ───
+export const communityAPI = {
+    getTrips: (params) => api.get('/api/community/trips', { params }),
+    getTrip: (id) => api.get(`/api/community/trips/${id}`),
+    publish: (id, data) => api.post(`/api/community/trips/${id}/publish`, data),
+    unpublish: (id) => api.post(`/api/community/trips/${id}/unpublish`),
+    clone: (id) => api.post(`/api/community/trips/${id}/clone`),
+    like: (id) => api.post(`/api/community/trips/${id}/like`),
+};

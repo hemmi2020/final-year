@@ -22,6 +22,7 @@ const locationRoutes = require('./routes/locations');
 const groupRoutes = require('./routes/groups');
 const externalRoutes = require('./routes/external');
 const adminRoutes = require('./routes/admin');
+const communityRoutes = require('./routes/community');
 
 const app = express();
 const server = http.createServer(app);
@@ -50,6 +51,7 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/external', externalRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/community', communityRoutes);
 
 // Error handling
 app.use(notFound);

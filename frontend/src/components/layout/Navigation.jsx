@@ -22,6 +22,7 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/planner", label: "Trip Planner" },
   { href: "/chat", label: "AI Chat" },
+  { href: "/community", label: "Community" },
   { href: "/destinations", label: "Destinations" },
   { href: "/about", label: "About" },
 ];
