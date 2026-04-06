@@ -5,6 +5,7 @@ import Footer from "@/components/layout/Footer";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import LoadingBar from "@/components/ui/LoadingBar";
+import ScrollToTop from "@/components/ui/ScrollToTop";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,7 +17,27 @@ export const metadata = {
   title: "TravelAI - AI-Powered Travel Planning",
   description:
     "Discover your perfect journey with AI-powered travel planning tailored to your unique style and preferences.",
-  keywords: ["travel", "AI", "trip planning", "destinations", "itinerary"],
+  keywords: [
+    "travel",
+    "AI",
+    "trip planning",
+    "destinations",
+    "itinerary",
+    "halal",
+    "budget",
+  ],
+  openGraph: {
+    title: "TravelAI - AI-Powered Travel Planning",
+    description:
+      "Plan your dream trip in seconds with AI that understands your dietary needs, budget, and style.",
+    type: "website",
+    siteName: "TravelAI",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TravelAI",
+    description: "AI-powered travel planning tailored to your style.",
+  },
 };
 
 export const viewport = {
@@ -36,6 +57,7 @@ export default function RootLayout({ children }) {
               {children}
             </main>
             <Footer />
+            <ScrollToTop />
           </SmoothScrollProvider>
         </ToastProvider>
       </body>

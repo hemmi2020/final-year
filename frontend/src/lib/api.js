@@ -100,3 +100,8 @@ export const adminAPI = {
     getStats: () => api.get('/api/admin/stats'),
     getTrips: (params) => api.get('/api/admin/trips', { params }),
 };
+
+// ─── Sharing ───
+export const shareAPI = {
+    shareTrip: (id) => api.put(`/api/trips/${id}`, { isPublic: true }),
+};

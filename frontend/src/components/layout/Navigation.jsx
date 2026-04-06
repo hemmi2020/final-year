@@ -209,6 +209,29 @@ export default function Navigation() {
               )}
             </div>
 
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => {
+                const { toggle } =
+                  require("@/store/themeStore").useThemeStore.getState();
+                toggle();
+              }}
+              style={{
+                padding: "6px 12px",
+                border: "1px solid var(--border)",
+                borderRadius: 50,
+                background: "#FFF",
+                fontSize: 16,
+                cursor: "pointer",
+                lineHeight: 1,
+              }}
+            >
+              {typeof document !== "undefined" &&
+              document.documentElement.getAttribute("data-theme") === "dark"
+                ? "☀️"
+                : "🌙"}
+            </button>
+
             {/* Country flag pill */}
             <button
               style={{

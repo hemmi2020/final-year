@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import FlatMap from "@/components/map/FlatMap";
 import TripTrail from "@/components/map/TripTrail";
+import { exportTripPDF } from "@/lib/exportPDF";
 
 export default function TripDetailPage() {
   const router = useRouter();
@@ -115,6 +116,7 @@ export default function TripDetailPage() {
           </button>
           <div style={{ display: "flex", gap: 8 }}>
             <button
+              onClick={() => trip && exportTripPDF(trip)}
               style={{
                 width: 36,
                 height: 36,
@@ -131,6 +133,10 @@ export default function TripDetailPage() {
               <Download size={16} />
             </button>
             <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                alert("Link copied!");
+              }}
               style={{
                 width: 36,
                 height: 36,
