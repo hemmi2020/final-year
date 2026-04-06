@@ -4,6 +4,7 @@ import Navigation from "@/components/layout/Navigation";
 import Footer from "@/components/layout/Footer";
 import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import { ToastProvider } from "@/components/ui/Toast";
+import LoadingBar from "@/components/ui/LoadingBar";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={inter.variable}>
       <body style={{ fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif" }}>
         <ToastProvider>
+          <LoadingBar />
           <SmoothScrollProvider>
             <Navigation />
             <main style={{ paddingTop: 64, minHeight: "100vh" }}>

@@ -249,3 +249,55 @@
 .strength-weak { background: var(--error); width: 33%; }
 .strength-fair { background: var(--warning); width: 66%; }
 .strength-strong { background: var(--success); width: 100%; }
+
+/* ─── Micro-interactions ─── */
+@keyframes slideInUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes scaleIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes staggerIn {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-slide-up { animation: slideInUp 0.4s ease forwards; }
+.animate-scale-in { animation: scaleIn 0.3s ease forwards; }
+.animate-fade { animation: fadeIn 0.3s ease forwards; }
+
+.stagger-1 { animation: staggerIn 0.4s ease forwards; animation-delay: 0ms; }
+.stagger-2 { animation: staggerIn 0.4s ease forwards; animation-delay: 150ms; opacity: 0; }
+.stagger-3 { animation: staggerIn 0.4s ease forwards; animation-delay: 300ms; opacity: 0; }
+.stagger-4 { animation: staggerIn 0.4s ease forwards; animation-delay: 450ms; opacity: 0; }
+
+/* Chat message animations */
+.msg-ai { animation: slideInUp 0.3s ease forwards; }
+.msg-user { animation: scaleIn 0.25s ease forwards; }
+
+/* Skeleton for trip cards */
+.skeleton-card {
+  border-radius: 16px;
+  overflow: hidden;
+}
+.skeleton-card .skeleton-img {
+  height: 180px;
+  background: linear-gradient(90deg, #F0F0F0 25%, #E5E5E5 50%, #F0F0F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-card .skeleton-text {
+  height: 14px;
+  margin: 12px 20px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #F0F0F0 25%, #E5E5E5 50%, #F0F0F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.skeleton-card .skeleton-text.short { width: 60%; }

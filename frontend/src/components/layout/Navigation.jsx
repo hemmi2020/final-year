@@ -209,6 +209,21 @@ export default function Navigation() {
               )}
             </div>
 
+            {/* Country flag pill */}
+            <button
+              style={{
+                padding: "6px 12px",
+                border: "1px solid var(--border)",
+                borderRadius: 50,
+                background: "#FFF",
+                fontSize: 16,
+                cursor: "pointer",
+                lineHeight: 1,
+              }}
+            >
+              🇺🇸
+            </button>
+
             {/* Temp toggle */}
             <button
               onClick={() => setTempUnit(tempUnit === "C" ? "F" : "C")}

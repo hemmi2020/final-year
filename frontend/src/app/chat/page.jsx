@@ -150,10 +150,11 @@ function ChatContent() {
                 { icon: "✈️", label: "Inspire me where to go" },
                 { icon: "🏛️", label: "Discover Hidden gems" },
                 { icon: "🌍", label: "Adventure Destination" },
-              ].map((a) => (
+              ].map((a, idx) => (
                 <button
                   key={a.label}
                   onClick={() => handleQuickAction(a.label)}
+                  className={`stagger-${idx + 1}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -195,6 +196,7 @@ function ChatContent() {
                     justifyContent:
                       msg.role === "user" ? "flex-end" : "flex-start",
                   }}
+                  className={msg.role === "user" ? "msg-user" : "msg-ai"}
                 >
                   {msg.role === "user" ? (
                     <span
