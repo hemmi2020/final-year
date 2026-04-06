@@ -283,9 +283,9 @@ export default function AboutPage() {
               <Button
                 variant="outline"
                 size="lg"
-                onClick={() => router.push("/quiz")}
+                onClick={() => router.push("/planner")}
               >
-                Take Travel Quiz
+                Plan a Trip
               </Button>
             </div>
           </div>
