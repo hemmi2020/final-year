@@ -37,7 +37,7 @@ exports.upsertContent = async (id, text, metadata = {}) => {
         await index.upsert([{ id, values: embedding, metadata }]);
         return true;
     } catch (error) {
-        console.warn('Vector upsert error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Vector upsert error:', error.message);
         return false;
     }
 };
@@ -66,7 +66,7 @@ exports.semanticSearch = async (query, topK = 5, filter = {}) => {
             ...match.metadata,
         }));
     } catch (error) {
-        console.warn('Vector search error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Vector search error:', error.message);
         return [];
     }
 };

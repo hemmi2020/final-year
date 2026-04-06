@@ -19,7 +19,7 @@ exports.convertCurrency = async (from, to, amount = 1) => {
             rate: data.conversion_rate,
         };
     } catch (error) {
-        console.warn('Currency API error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Currency API error:', error.message);
         return null;
     }
 };
@@ -37,7 +37,7 @@ exports.getExchangeRate = async (from, to) => {
 
         return { from, to, rate: data.conversion_rate };
     } catch (error) {
-        console.warn('Exchange rate error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Exchange rate error:', error.message);
         return null;
     }
 };

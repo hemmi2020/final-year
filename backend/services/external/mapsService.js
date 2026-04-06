@@ -22,7 +22,7 @@ exports.geocode = async (placeName) => {
             type: data[0].type,
         };
     } catch (error) {
-        console.warn('Geocode error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Geocode error:', error.message);
         return null;
     }
 };
@@ -43,7 +43,7 @@ exports.reverseGeocode = async (lat, lng) => {
             displayName: data.display_name,
         };
     } catch (error) {
-        console.warn('Reverse geocode error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Reverse geocode error:', error.message);
         return null;
     }
 };
@@ -111,7 +111,7 @@ exports.searchPlaces = async (query, lat, lng, options = {}) => {
 
         return results;
     } catch (error) {
-        console.warn('Places search error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Places search error:', error.message);
         return [];
     }
 };
@@ -148,7 +148,7 @@ exports.findAttractions = async (lat, lng, radius = 10000) => {
             website: el.tags?.website || '',
         }));
     } catch (error) {
-        console.warn('Attractions search error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Attractions search error:', error.message);
         return [];
     }
 };

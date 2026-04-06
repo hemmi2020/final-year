@@ -14,7 +14,7 @@ exports.getConversation = async (userId) => {
         const data = await redis.get(`chat:${userId}`);
         return data ? JSON.parse(data) : [];
     } catch (error) {
-        console.warn('Memory get error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Memory get error:', error.message);
         return [];
     }
 };
@@ -32,7 +32,7 @@ exports.addMessage = async (userId, role, content) => {
         const trimmed = conversation.slice(-MAX_MESSAGES);
         await redis.set(`chat:${userId}`, JSON.stringify(trimmed), 'EX', CONVERSATION_TTL);
     } catch (error) {
-        console.warn('Memory add error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Memory add error:', error.message);
     }
 };
 
@@ -45,7 +45,7 @@ exports.clearConversation = async (userId) => {
         if (!redis) return;
         await redis.del(`chat:${userId}`);
     } catch (error) {
-        console.warn('Memory clear error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Memory clear error:', error.message);
     }
 };
 
@@ -75,7 +75,7 @@ exports.trackInteraction = async (userId, type, value) => {
             { upsert: true }
         );
     } catch (error) {
-        console.warn('Track interaction error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Track interaction error:', error.message);
     }
 };
 
@@ -93,7 +93,7 @@ exports.getPatterns = async (userId, limit = 10) => {
         }
         return result;
     } catch (error) {
-        console.warn('Get patterns error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Get patterns error:', error.message);
         return [];
     }
 };
@@ -113,7 +113,7 @@ exports.saveTripToMemory = async (userId, destination, satisfaction, notes) => {
             { upsert: true }
         );
     } catch (error) {
-        console.warn('Save trip memory error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Save trip memory error:', error.message);
     }
 };
 
@@ -132,7 +132,7 @@ exports.addInsight = async (userId, insight, confidence, source) => {
             { upsert: true }
         );
     } catch (error) {
-        console.warn('Add insight error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Add insight error:', error.message);
     }
 };
 
@@ -144,7 +144,7 @@ exports.getLongTermMemory = async (userId) => {
         const memory = await UserMemory.findOne({ userId });
         return memory || null;
     } catch (error) {
-        console.warn('Get long-term memory error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Get long-term memory error:', error.message);
         return null;
     }
 };
@@ -160,6 +160,6 @@ exports.updateLearnedPreferences = async (userId, preferences) => {
             { upsert: true }
         );
     } catch (error) {
-        console.warn('Update learned prefs error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Update learned prefs error:', error.message);
     }
 };

@@ -27,7 +27,7 @@ exports.getCurrentWeather = async (lat, lng, units = 'metric') => {
             units,
         };
     } catch (error) {
-        console.warn('Weather API error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Weather API error:', error.message);
         return null;
     }
 };
@@ -55,7 +55,7 @@ exports.getForecast = async (lat, lng, days = 7, units = 'metric') => {
             icon: item.weather[0].icon,
         }));
     } catch (error) {
-        console.warn('Weather forecast error:', error.message);
+        process.env.NODE_ENV !== "production" && console.warn('Weather forecast error:', error.message);
         return null;
     }
 };
