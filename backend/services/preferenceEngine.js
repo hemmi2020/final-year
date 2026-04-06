@@ -1,4 +1,4 @@
-const { getRedisClient } = require('./config/../config/redis');
+const { getRedisClient } = require('../config/redis');
 const { convertCurrency, getExchangeRate } = require('./external/currencyService');
 const { getCurrentWeather } = require('./external/weatherService');
 
