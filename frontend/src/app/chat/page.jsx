@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { chatAPI } from "@/lib/api";
 import { Send, Globe, Sparkles, Save, Download } from "lucide-react";
 import { MessageRenderer } from "@/components/chat/GenerativeUI";
+import GlobeMap from "@/components/map/GlobeMap";
 
 function ChatContent() {
   const router = useRouter();
@@ -15,6 +16,7 @@ function ChatContent() {
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const [showInitial, setShowInitial] = useState(true);
+  const [currentDestination, setCurrentDestination] = useState(null);
   const messagesEnd = useRef(null);
   const inputRef = useRef(null);
 
@@ -47,6 +49,33 @@ function ChatContent() {
         ...prev,
         { id: Date.now() + 1, role: "assistant", content: data.data.message },
       ]);
+      // Detect destination in AI response for globe fly-to
+      const cities = [
+        "Tokyo",
+        "Istanbul",
+        "Paris",
+        "Dubai",
+        "London",
+        "New York",
+        "Bali",
+        "Rome",
+        "Barcelona",
+        "Sydney",
+        "Melbourne",
+        "Bangkok",
+        "Singapore",
+        "Cairo",
+        "Marrakech",
+        "Maldives",
+        "Santorini",
+        "Amsterdam",
+        "Prague",
+        "Vienna",
+      ];
+      const found = cities.find(
+        (c) => data.data.message.includes(c) || text.includes(c),
+      );
+      if (found) setCurrentDestination(found);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -303,26 +332,12 @@ function ChatContent() {
         </div>
       </div>
 
-      {/* ─── RIGHT PANEL — Globe/Map placeholder ─── */}
+      {/* ─── RIGHT PANEL — Mapbox Globe ─── */}
       <div
-        className="hidden lg:flex"
-        style={{
-          flex: 1,
-          background: "var(--navy)",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
+        className="hidden lg:block"
+        style={{ flex: 1, position: "relative" }}
       >
-        <div style={{ textAlign: "center", color: "rgba(255,255,255,0.5)" }}>
-          <Globe size={120} strokeWidth={0.5} />
-          <p style={{ marginTop: 16, fontSize: 16, fontWeight: 500 }}>
-            Interactive Globe
-          </p>
-          <p style={{ fontSize: 13, marginTop: 4, maxWidth: 280 }}>
-            Destinations will appear here as you plan your trip
-          </p>
-        </div>
+        <GlobeMap destination={currentDestination} />
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ import {
   Cloud,
   Globe,
 } from "lucide-react";
+import FlatMap from "@/components/map/FlatMap";
 
 export default function TripDetailPage() {
   const router = useRouter();
@@ -434,25 +435,22 @@ export default function TripDetailPage() {
         </div>
       </div>
 
-      {/* ─── RIGHT PANEL — Map placeholder ─── */}
+      {/* ─── RIGHT PANEL — Mapbox Street Map ─── */}
       <div
-        className="hidden lg:flex"
-        style={{
-          flex: 1,
-          background: "#F0F0F0",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        className="hidden lg:block"
+        style={{ flex: 1, position: "relative" }}
       >
-        <div style={{ textAlign: "center", color: "var(--text-muted)" }}>
-          <Globe size={80} strokeWidth={0.5} />
-          <p style={{ marginTop: 12, fontSize: 15, fontWeight: 500 }}>
-            Map View
-          </p>
-          <p style={{ fontSize: 13, maxWidth: 240 }}>
-            Activity pins will appear here
-          </p>
-        </div>
+        <FlatMap
+          destination={trip.destination}
+          activities={(trip.itinerary || []).flatMap((day) =>
+            (day.activities || []).map((act) => ({
+              name: act.name,
+              description: act.description,
+              time: act.time,
+              location: act.location,
+            })),
+          )}
+        />
       </div>
     </div>
   );
