@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { chatAPI } from "@/lib/api";
 import { Send, Globe, Sparkles, Save, Download } from "lucide-react";
+import { MessageRenderer } from "@/components/chat/GenerativeUI";
 
 function ChatContent() {
   const router = useRouter();
@@ -215,27 +216,12 @@ function ChatContent() {
                       style={{
                         padding: "14px 18px",
                         maxWidth: "90%",
-                        fontSize: 15,
-                        lineHeight: 1.6,
-                        whiteSpace: "pre-wrap",
                       }}
                     >
-                      {msg.content}
-                      {/* Save/Download buttons after AI response */}
-                      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                        <button
-                          className="pill-action"
-                          style={{ fontSize: 12, padding: "6px 14px" }}
-                        >
-                          <Save size={14} /> Save Trip
-                        </button>
-                        <button
-                          className="pill-action"
-                          style={{ fontSize: 12, padding: "6px 14px" }}
-                        >
-                          <Download size={14} /> Download PDF
-                        </button>
-                      </div>
+                      <MessageRenderer
+                        content={msg.content}
+                        onSendMessage={sendMessage}
+                      />
                     </div>
                   )}
                 </div>
