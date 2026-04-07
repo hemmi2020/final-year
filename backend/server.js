@@ -26,6 +26,7 @@ const adminRoutes = require('./routes/admin');
 const communityRoutes = require('./routes/community');
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // Middleware

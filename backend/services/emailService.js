@@ -6,9 +6,12 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
  * Send OTP verification email
  */
 exports.sendVerificationEmail = async (email, otp, name) => {
-    if (!resend) return false;
+    if (!resend) {
+        console.log('⚠️ Resend not configured — OTP:', otp, 'for', email);
+        return false;
+    }
     try {
-        await resend.emails.send({
+        const result = await resend.emails.send({
             from: 'TravelAI <onboarding@resend.dev>',
             to: email,
             subject: `${otp} is your TravelAI verification code`,
@@ -30,9 +33,10 @@ exports.sendVerificationEmail = async (email, otp, name) => {
                 </div>
             `,
         });
+        console.log('✅ Email sent to', email, 'result:', result?.data?.id || 'ok');
         return true;
     } catch (error) {
-        if (process.env.NODE_ENV !== 'production') console.warn('Email send error:', error.message);
+        console.log('❌ Email send error:', error.message);
         return false;
     }
 };
