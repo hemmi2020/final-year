@@ -22,6 +22,8 @@ import FlatMap from "@/components/map/FlatMap";
 import TripTrail from "@/components/map/TripTrail";
 import { exportTripPDF } from "@/lib/exportPDF";
 import { usePreferenceStore } from "@/store/preferenceStore";
+import LoginModal from "@/components/auth/LoginModal";
+import RegisterModal from "@/components/auth/RegisterModal";
 
 export default function TripDetailPage() {
   const router = useRouter();
@@ -34,9 +36,12 @@ export default function TripDetailPage() {
   const [showTrail, setShowTrail] = useState(false);
   const { tempUnit, currency } = usePreferenceStore();
 
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login?returnUrl=/trips/" + id);
+      setLoginOpen(true);
       return;
     }
     fetchTrip();
@@ -502,6 +507,23 @@ export default function TripDetailPage() {
           {showTrail ? "← Back to Map" : "▶ Play Trip Trail"}
         </button>
       </div>
+
+      <LoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSwitchToRegister={() => {
+          setLoginOpen(false);
+          setRegisterOpen(true);
+        }}
+      />
+      <RegisterModal
+        isOpen={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSwitchToLogin={() => {
+          setRegisterOpen(false);
+          setLoginOpen(true);
+        }}
+      />
     </div>
   );
 }

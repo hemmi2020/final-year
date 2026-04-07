@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { usersAPI, tripsAPI } from "@/lib/api";
 import { communityAPI } from "@/lib/api";
+import LoginModal from "@/components/auth/LoginModal";
+import RegisterModal from "@/components/auth/RegisterModal";
 import Image from "next/image";
 import {
   User,
@@ -36,6 +38,8 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, updateUser } = useAuthStore();
   const [tab, setTab] = useState("trips");
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const [profile, setProfile] = useState(null);
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +56,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login?returnUrl=/profile");
+      setLoginOpen(true);
       return;
     }
     Promise.all([
@@ -123,7 +127,33 @@ export default function ProfilePage() {
   const toggleArr = (arr, val) =>
     arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated)
+    return (
+      <>
+        <LoginModal
+          isOpen={loginOpen}
+          onClose={() => {
+            setLoginOpen(false);
+            router.push("/");
+          }}
+          onSwitchToRegister={() => {
+            setLoginOpen(false);
+            setRegisterOpen(true);
+          }}
+        />
+        <RegisterModal
+          isOpen={registerOpen}
+          onClose={() => {
+            setRegisterOpen(false);
+            router.push("/");
+          }}
+          onSwitchToLogin={() => {
+            setRegisterOpen(false);
+            setLoginOpen(true);
+          }}
+        />
+      </>
+    );
   if (loading)
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: 80 }}>

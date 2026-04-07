@@ -8,6 +8,8 @@ import { Send, Globe, Sparkles, Save, Download } from "lucide-react";
 import { MessageRenderer } from "@/components/chat/GenerativeUI";
 import GlobeMap from "@/components/map/GlobeMap";
 import { extractDestinationFromText } from "@/lib/extractDestination";
+import LoginModal from "@/components/auth/LoginModal";
+import RegisterModal from "@/components/auth/RegisterModal";
 
 function ChatContent() {
   const router = useRouter();
@@ -18,12 +20,14 @@ function ChatContent() {
   const [typing, setTyping] = useState(false);
   const [showInitial, setShowInitial] = useState(true);
   const [currentDestination, setCurrentDestination] = useState(null);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const messagesEnd = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login?returnUrl=/chat");
+      setLoginOpen(true);
       return;
     }
     const q = searchParams.get("q");
@@ -319,6 +323,23 @@ function ChatContent() {
       >
         <GlobeMap destination={currentDestination} />
       </div>
+
+      <LoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onSwitchToRegister={() => {
+          setLoginOpen(false);
+          setRegisterOpen(true);
+        }}
+      />
+      <RegisterModal
+        isOpen={registerOpen}
+        onClose={() => setRegisterOpen(false)}
+        onSwitchToLogin={() => {
+          setRegisterOpen(false);
+          setLoginOpen(true);
+        }}
+      />
     </div>
   );
 }

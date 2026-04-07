@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plane, Mail, ArrowLeft, Check } from "lucide-react";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,7 +14,6 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
-    // Simulate sending reset email (backend endpoint can be added later)
     setTimeout(() => {
       setSent(true);
       setLoading(false);
@@ -77,17 +77,20 @@ export default function ForgotPasswordPage() {
               <span style={{ fontWeight: 600, color: "#0A0A0A" }}>{email}</span>
               , we've sent password reset instructions.
             </p>
-            <Link
-              href="/login"
+            <button
+              onClick={() => router.push("/")}
               style={{
                 color: "var(--orange)",
                 fontWeight: 600,
-                textDecoration: "none",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
                 fontSize: 15,
+                fontFamily: "inherit",
               }}
             >
-              ← Back to Sign In
-            </Link>
+              ← Back to Home
+            </button>
           </div>
         ) : (
           <>
@@ -104,7 +107,6 @@ export default function ForgotPasswordPage() {
             <p style={{ fontSize: 15, color: "#6B7280", marginBottom: 32 }}>
               Enter your email and we'll send you reset instructions.
             </p>
-
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: 20 }}>
                 <label
@@ -141,21 +143,23 @@ export default function ForgotPasswordPage() {
                 {loading ? "Sending..." : "Send Reset Link"}
               </button>
             </form>
-
-            <Link
-              href="/login"
+            <button
+              onClick={() => router.push("/")}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
                 color: "#6B7280",
-                textDecoration: "none",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
                 fontSize: 14,
-                justifyContent: "center",
+                margin: "0 auto",
+                fontFamily: "inherit",
               }}
             >
-              <ArrowLeft size={16} /> Back to Sign In
-            </Link>
+              <ArrowLeft size={16} /> Back to Home
+            </button>
           </>
         )}
       </div>
