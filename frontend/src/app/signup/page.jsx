@@ -190,13 +190,14 @@ export default function SignupPage() {
         style={{
           flex: 1,
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "center",
           padding: "40px 24px",
           overflowY: "auto",
+          maxHeight: "calc(100vh - 64px)",
         }}
       >
-        <div style={{ width: "100%", maxWidth: 440 }}>
+        <div style={{ width: "100%", maxWidth: 440, margin: "auto 0" }}>
           <div
             style={{
               display: "flex",
