@@ -11,19 +11,22 @@ const getHtml = (otp, name) => `
         <p style="font-size:13px;color:#9CA3AF">Code expires in 10 minutes.</p>
     </div>`;
 
-/**
- * Send OTP email via Gmail SMTP with OAuth2 transport
- * Uses nodemailer with Gmail — works locally, may timeout on some hosts
- * Non-blocking: caller should NOT await this
- */
-exports.sendVerificationEmail = async (email, otp, name) => {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.log('⚠️ Email not configured — OTP:', otp, 'for', email);
-        return false;
+function createTransporter() {
+    // Brevo SMTP relay (HTTP-based, works on Render)
+    if (process.env.BREVO_USER && process.env.BREVO_PASS) {
+        return nodemailer.createTransport({
+            host: 'smtp-relay.brevo.com',
+            port: 587,
+            secure: false,
+            auth: { user: process.env.BREVO_USER, pass: process.env.BREVO_PASS },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000,
+        });
     }
-
-    try {
-        const transporter = nodemailer.createTransport({
+    // Gmail SMTP fallback (works locally)
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+        return nodemailer.createTransport({
             host: 'smtp.gmail.com',
             port: 465,
             secure: true,
@@ -32,9 +35,20 @@ exports.sendVerificationEmail = async (email, otp, name) => {
             greetingTimeout: 8000,
             socketTimeout: 8000,
         });
+    }
+    return null;
+}
 
+exports.sendVerificationEmail = async (email, otp, name) => {
+    const transporter = createTransporter();
+    if (!transporter) {
+        console.log('⚠️ No email configured — OTP:', otp, 'for', email);
+        return false;
+    }
+    try {
+        const fromEmail = process.env.BREVO_USER ? process.env.EMAIL_FROM || 'travelfypai@gmail.com' : process.env.EMAIL_USER;
         await transporter.sendMail({
-            from: `"TravelAI" <${process.env.EMAIL_USER}>`,
+            from: `"TravelAI" <${fromEmail}>`,
             to: email,
             subject: `${otp} is your TravelAI verification code`,
             html: getHtml(otp, name),
@@ -42,8 +56,7 @@ exports.sendVerificationEmail = async (email, otp, name) => {
         console.log('✅ Email sent to', email);
         return true;
     } catch (error) {
-        console.log('❌ SMTP failed:', error.message);
-        // Log OTP to console as fallback so user can still verify
+        console.log('❌ Email failed:', error.message);
         console.log('📧 FALLBACK — OTP for', email, 'is:', otp);
         return false;
     }
