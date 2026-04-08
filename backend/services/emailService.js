@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 const getHtml = (otp, name) => `
     <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:40px 24px">
@@ -11,52 +11,33 @@ const getHtml = (otp, name) => `
         <p style="font-size:13px;color:#9CA3AF">Code expires in 10 minutes.</p>
     </div>`;
 
-function createTransporter() {
-    // Brevo SMTP relay (HTTP-based, works on Render)
-    if (process.env.BREVO_USER && process.env.BREVO_PASS) {
-        return nodemailer.createTransport({
-            host: 'smtp-relay.brevo.com',
-            port: 587,
-            secure: false,
-            auth: { user: process.env.BREVO_USER, pass: process.env.BREVO_PASS },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 10000,
-        });
-    }
-    // Gmail SMTP fallback (works locally)
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        return nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-            connectionTimeout: 8000,
-            greetingTimeout: 8000,
-            socketTimeout: 8000,
-        });
-    }
-    return null;
-}
-
+/**
+ * Send OTP email via Brevo HTTP API (no SMTP ports needed — works on Render)
+ */
 exports.sendVerificationEmail = async (email, otp, name) => {
-    const transporter = createTransporter();
-    if (!transporter) {
-        console.log('⚠️ No email configured — OTP:', otp, 'for', email);
+    const apiKey = process.env.BREVO_API_KEY;
+    if (!apiKey) {
+        console.log('⚠️ BREVO_API_KEY not set — OTP:', otp, 'for', email);
         return false;
     }
+
     try {
-        const fromEmail = process.env.BREVO_USER ? process.env.EMAIL_FROM || 'travelfypai@gmail.com' : process.env.EMAIL_USER;
-        await transporter.sendMail({
-            from: `"TravelAI" <${fromEmail}>`,
-            to: email,
+        await axios.post('https://api.brevo.com/v3/smtp/email', {
+            sender: { name: 'TravelAI', email: process.env.EMAIL_FROM || 'travelfypai@gmail.com' },
+            to: [{ email }],
             subject: `${otp} is your TravelAI verification code`,
-            html: getHtml(otp, name),
+            htmlContent: getHtml(otp, name),
+        }, {
+            headers: {
+                'api-key': apiKey,
+                'Content-Type': 'application/json',
+            },
+            timeout: 8000,
         });
-        console.log('✅ Email sent to', email);
+        console.log('✅ Email sent to', email, 'via Brevo API');
         return true;
     } catch (error) {
-        console.log('❌ Email failed:', error.message);
+        console.log('❌ Brevo API failed:', error.response?.data?.message || error.message);
         console.log('📧 FALLBACK — OTP for', email, 'is:', otp);
         return false;
     }
