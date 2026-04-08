@@ -68,6 +68,7 @@ export const usersAPI = {
 // ─── External APIs ───
 export const externalAPI = {
     geocode: (q) => api.get('/api/external/geocode', { params: { q } }),
+    reverseGeocode: (lat, lng) => api.get('/api/external/reverse-geocode', { params: { lat, lng } }),
     weather: (lat, lng) => api.get('/api/external/weather', { params: { lat, lng } }),
     forecast: (lat, lng, days) => api.get('/api/external/forecast', { params: { lat, lng, days } }),
     places: (query, lat, lng, type) => api.get('/api/external/places', { params: { query, lat, lng, type } }),

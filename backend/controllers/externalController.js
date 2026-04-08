@@ -1,5 +1,5 @@
 const { getCurrentWeather, getForecast } = require('../services/external/weatherService');
-const { searchPlaces, geocode, findAttractions } = require('../services/external/mapsService');
+const { searchPlaces, geocode, findAttractions, reverseGeocode: reverseGeocodeService } = require('../services/external/mapsService');
 const { convertCurrency, getExchangeRate } = require('../services/external/currencyService');
 
 // GET /api/external/weather?lat=&lng=
@@ -88,6 +88,19 @@ exports.currency = async (req, res, next) => {
         if (!from) return res.status(400).json({ success: false, error: 'from currency required' });
 
         const data = await convertCurrency(from, targetCurrency, parseFloat(amount) || 1);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// GET /api/external/reverse-geocode?lat=&lng=
+exports.reverseGeocode = async (req, res, next) => {
+    try {
+        const { lat, lng } = req.query;
+        if (!lat || !lng) return res.status(400).json({ success: false, error: 'lat and lng required' });
+
+        const data = await reverseGeocodeService(parseFloat(lat), parseFloat(lng));
         res.json({ success: true, data });
     } catch (error) {
         next(error);

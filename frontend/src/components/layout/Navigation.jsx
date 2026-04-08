@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
+import { useLocation } from "@/hooks/useLocation";
+import { useWeather } from "@/hooks/useWeather";
+import { useCurrency } from "@/hooks/useCurrency";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -49,6 +52,15 @@ export default function Navigation() {
   const isScrolled = scrollY > 10;
   const { user, isAuthenticated, logout, updateUser } = useAuthStore();
   const dropRef = useRef(null);
+
+  // Live data hooks
+  const { lat, lng, city, flag, loading: locLoading } = useLocation();
+  const {
+    temp,
+    icon: weatherIcon,
+    loading: weatherLoading,
+  } = useWeather(lat, lng, tempUnit);
+  const { rate, loading: rateLoading } = useCurrency("USD", currency);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -157,6 +169,19 @@ export default function Navigation() {
               >
                 {currSymbol}
               </button>
+              {/* Exchange rate display */}
+              {rate && currency !== "USD" && !rateLoading && (
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: "#6B7280",
+                    marginLeft: 4,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  1$={rate.toFixed(2)}
+                </span>
+              )}
               {currDropdown && (
                 <div
                   style={{
@@ -208,22 +233,55 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* Country flag pill */}
+            {/* Location + Country flag pill */}
             <button
               style={{
                 padding: "6px 12px",
                 border: "1px solid var(--border)",
                 borderRadius: 50,
                 background: "#FFF",
-                fontSize: 16,
+                fontSize: 13,
                 cursor: "pointer",
                 lineHeight: 1,
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
               }}
+              title={city || "Detecting location..."}
             >
-              🇺🇸
+              <span style={{ fontSize: 16 }}>{locLoading ? "🌍" : flag}</span>
+              <span
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  color: "#374151",
+                  maxWidth: 80,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {locLoading ? "..." : city || "—"}
+              </span>
             </button>
 
-            {/* Temp toggle */}
+            {/* Weather + Temp toggle */}
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+              }}
+            >
+              {weatherLoading
+                ? "..."
+                : temp !== null
+                  ? `${weatherIcon} ${temp}°`
+                  : ""}
+            </span>
             <button
               onClick={() => setTempUnit(tempUnit === "C" ? "F" : "C")}
               style={{

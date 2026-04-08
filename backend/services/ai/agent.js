@@ -7,6 +7,7 @@ const { getExchangeRate } = require('../external/currencyService');
 const { geocode } = require('../external/mapsService');
 const { getPreferences, buildSearchTags, cacheAIResponse, getCachedAIResponse, generateCacheKey } = require('../preferenceEngine');
 const { itineraryPrompt, chatPrompt } = require('./prompts');
+const { searchNearbyPlaces } = require('./tools');
 
 let openai = null;
 const getOpenAI = () => {
@@ -130,7 +131,7 @@ exports.generateItinerary = async (user, params) => {
 };
 
 /**
- * AI Chat — conversational with memory
+ * AI Chat — conversational with memory + function calling for restaurant search
  */
 exports.chat = async (user, message) => {
     const client = getOpenAI();
@@ -147,18 +148,75 @@ exports.chat = async (user, message) => {
         contextParts.push(`User preferences: dietary=${prefs.dietary.join(',')}, budget=${prefs.budget}, style=${prefs.travelStyle}`);
     }
 
-    const messages = [
+    const tools = [{
+        type: "function",
+        function: {
+            name: "searchNearbyPlaces",
+            description: "Search for restaurants, cafes, hotels, and other places near a travel destination. Use this when the user asks about food, restaurants, halal food, cafes, or places to eat/stay near a destination.",
+            parameters: {
+                type: "object",
+                properties: {
+                    destination: { type: "string", description: "Place name or city to search near" },
+                    type: { type: "string", enum: ["restaurant", "cafe", "hotel", "museum", "attraction", "park"], description: "Type of place to search for" },
+                    dietary: { type: "array", items: { type: "string" }, description: "Dietary preferences like halal, vegan, vegetarian" }
+                },
+                required: ["destination"]
+            }
+        }
+    }];
+
+    let messages = [
         { role: 'system', content: chatPrompt(message, contextParts.join('\n\n')) },
         { role: 'user', content: message },
     ];
 
-    const response = await client.chat.completions.create({
+    let response = await client.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
+        tools,
         max_tokens: 1500,
     });
 
-    const reply = response.choices[0].message.content;
+    let assistantMsg = response.choices[0].message;
+
+    // Handle tool calls (function calling loop)
+    if (assistantMsg.tool_calls && assistantMsg.tool_calls.length > 0) {
+        messages.push(assistantMsg);
+
+        for (const toolCall of assistantMsg.tool_calls) {
+            if (toolCall.function.name === 'searchNearbyPlaces') {
+                try {
+                    const args = JSON.parse(toolCall.function.arguments);
+                    const places = await searchNearbyPlaces(
+                        args.destination,
+                        args.type || 'restaurant',
+                        args.dietary || []
+                    );
+                    messages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: JSON.stringify(places.slice(0, 10)),
+                    });
+                } catch (err) {
+                    messages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: JSON.stringify({ error: 'Failed to search places' }),
+                    });
+                }
+            }
+        }
+
+        // Second LLM call with tool results
+        response = await client.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages,
+            max_tokens: 1500,
+        });
+        assistantMsg = response.choices[0].message;
+    }
+
+    const reply = assistantMsg.content;
 
     // Save to memory
     if (user) {
