@@ -32,7 +32,7 @@ exports.register = async (req, res, next) => {
         }
 
         // Send OTP email
-        await sendVerificationEmail(email, otp, name);
+        sendVerificationEmail(email, otp, name);
 
         res.status(201).json({
             success: true,
@@ -105,7 +105,7 @@ exports.resendOTP = async (req, res, next) => {
         user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
         await user.save();
 
-        await sendVerificationEmail(email, otp, user.name);
+        sendVerificationEmail(email, otp, user.name);
         res.json({ success: true, data: { message: 'New verification code sent' } });
     } catch (error) {
         next(error);
@@ -128,7 +128,7 @@ exports.login = async (req, res, next) => {
             user.otp = otp;
             user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
             await user.save();
-            await sendVerificationEmail(email, otp, user.name);
+            sendVerificationEmail(email, otp, user.name);
             return res.status(403).json({ success: false, error: 'Email not verified. New code sent.', requiresVerification: true, email });
         }
 
