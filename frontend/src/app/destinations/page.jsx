@@ -117,7 +117,7 @@ const DESTINATIONS = [
 
 export default function DestinationsPage() {
   const router = useRouter();
-  const { currency, tempUnit } = usePreferenceStore();
+  const { destinationCurrency, tempUnit } = usePreferenceStore();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);

@@ -4,13 +4,11 @@ import { persist } from "zustand/middleware";
 export const usePreferenceStore = create(
     persist(
         (set) => ({
-            currency: "USD",
+            destinationCurrency: "USD",
             tempUnit: "C",
-            country: "🇺🇸",
 
-            setCurrency: (currency) => set({ currency }),
+            setDestinationCurrency: (destinationCurrency) => set({ destinationCurrency }),
             setTempUnit: (tempUnit) => set({ tempUnit }),
-            setCountry: (country) => set({ country }),
         }),
         { name: "preference-storage" }
     )

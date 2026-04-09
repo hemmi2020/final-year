@@ -34,7 +34,7 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [expandedDay, setExpandedDay] = useState(0);
   const [showTrail, setShowTrail] = useState(false);
-  const { tempUnit, currency } = usePreferenceStore();
+  const { tempUnit, destinationCurrency } = usePreferenceStore();
 
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);

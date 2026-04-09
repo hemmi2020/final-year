@@ -3,7 +3,7 @@
 - [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** — Missing Frontend Hooks and AI Function Calling
   - **CRITICAL**: This test MUST FAIL on unfixed code — failure confirms the bug exists
-  - **DO NOT attempt to fix the test or the code when it fails**
+  - **DO NOT attempt to fix the test or the code when it fails** 
   - **NOTE**: This test encodes the expected behavior — it will validate the fix when it passes after implementation
   - **GOAL**: Surface counterexamples that demonstrate the bug exists
   - **Scoped PBT Approach**: Scope the property to the concrete failing cases:

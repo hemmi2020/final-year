@@ -117,7 +117,7 @@ export default function ProfilePage() {
       const prefStore =
         require("@/store/preferenceStore").usePreferenceStore.getState();
       if (prefs.preferredCurrency)
-        prefStore.setCurrency(prefs.preferredCurrency);
+        prefStore.setDestinationCurrency(prefs.preferredCurrency);
       if (prefs.temperatureUnit)
         prefStore.setTempUnit(prefs.temperatureUnit === "imperial" ? "F" : "C");
     } catch {}

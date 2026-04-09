@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { useAuthStore } from "@/store/authStore";
 import {
   Menu,
@@ -46,21 +45,39 @@ export default function Navigation() {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
   const [currDropdown, setCurrDropdown] = useState(false);
-  const { currency, tempUnit, setCurrency, setTempUnit } =
+  const [flagTooltip, setFlagTooltip] = useState(false);
+  const [tempPopover, setTempPopover] = useState(false);
+  const { destinationCurrency, tempUnit, setDestinationCurrency, setTempUnit } =
     require("@/store/preferenceStore").usePreferenceStore();
-  const scrollY = useScrollPosition();
-  const isScrolled = scrollY > 10;
   const { user, isAuthenticated, logout, updateUser } = useAuthStore();
   const dropRef = useRef(null);
 
+  const [currInput, setCurrInput] = useState("");
+
   // Live data hooks
-  const { lat, lng, city, flag, loading: locLoading } = useLocation();
+  const {
+    lat,
+    lng,
+    city,
+    country,
+    currency: homeCurrency,
+    flag,
+    loading: locLoading,
+  } = useLocation();
   const {
     temp,
+    feelsLike,
+    humidity,
+    windSpeed,
+    condition,
+    city: weatherCity,
     icon: weatherIcon,
     loading: weatherLoading,
   } = useWeather(lat, lng, tempUnit);
-  const { rate, loading: rateLoading } = useCurrency("USD", currency);
+  const { rate, loading: rateLoading } = useCurrency(
+    homeCurrency,
+    destinationCurrency,
+  );
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -68,13 +85,12 @@ export default function Navigation() {
       if (dropRef.current && !dropRef.current.contains(e.target)) {
         setUserDropdown(false);
         setCurrDropdown(false);
+        setTempPopover(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  const currSymbol = CURRENCIES.find((c) => c.code === currency)?.symbol || "$";
 
   return (
     <>
@@ -84,8 +100,8 @@ export default function Navigation() {
           top: 0,
           zIndex: 1000,
           background: "#FFFFFF",
-          borderBottom: `1px solid ${isScrolled ? "#F0F0F0" : "transparent"}`,
-          boxShadow: isScrolled ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
+          borderBottom: "1px solid #F0F0F0",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           transition: "all 0.3s ease",
           height: 64,
         }}
@@ -148,7 +164,7 @@ export default function Navigation() {
             className="hidden md:flex"
             style={{ alignItems: "center", gap: 4 }}
           >
-            {/* Currency pill */}
+            {/* Currency display + dropdown */}
             <div style={{ position: "relative" }}>
               <button
                 onClick={() => {
@@ -165,23 +181,15 @@ export default function Navigation() {
                   cursor: "pointer",
                   color: "#374151",
                   fontFamily: "inherit",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {currSymbol}
+                {rateLoading || !homeCurrency
+                  ? "—"
+                  : rate !== null
+                    ? `${homeCurrency} 1 = ${destinationCurrency} ${rate.toFixed(4)}`
+                    : "—"}
               </button>
-              {/* Exchange rate display */}
-              {rate && currency !== "USD" && !rateLoading && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "#6B7280",
-                    marginLeft: 4,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  1$={rate.toFixed(2)}
-                </span>
-              )}
               {currDropdown && (
                 <div
                   style={{
@@ -193,15 +201,60 @@ export default function Navigation() {
                     borderRadius: 12,
                     boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
                     padding: 8,
-                    minWidth: 160,
+                    minWidth: 200,
                     zIndex: 100,
                   }}
                 >
+                  {/* Text input for destination currency */}
+                  <div style={{ padding: "4px 4px 8px" }}>
+                    <input
+                      type="text"
+                      placeholder="e.g. EUR"
+                      maxLength={3}
+                      value={currInput}
+                      onChange={(e) => {
+                        const val = e.target.value
+                          .toUpperCase()
+                          .replace(/[^A-Z]/g, "");
+                        setCurrInput(val);
+                        if (val.length === 3) {
+                          setDestinationCurrency(val);
+                        }
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "8px 12px",
+                        border: "1px solid var(--border)",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontFamily: "inherit",
+                        outline: "none",
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                      }}
+                    />
+                  </div>
+                  {/* Live conversion result */}
+                  {homeCurrency && rate !== null && !rateLoading && (
+                    <div
+                      style={{
+                        padding: "6px 12px",
+                        fontSize: 12,
+                        color: "#6B7280",
+                        borderBottom: "1px solid var(--border-light)",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {homeCurrency} 1 = {destinationCurrency} {rate.toFixed(4)}
+                    </div>
+                  )}
+                  {/* Preset currency quick-select buttons */}
                   {CURRENCIES.map((c) => (
                     <button
                       key={c.code}
                       onClick={() => {
-                        setCurrency(c.code);
+                        setDestinationCurrency(c.code);
+                        setCurrInput(c.code);
                         setCurrDropdown(false);
                       }}
                       style={{
@@ -212,7 +265,7 @@ export default function Navigation() {
                         padding: "8px 12px",
                         border: "none",
                         background:
-                          currency === c.code
+                          destinationCurrency === c.code
                             ? "var(--orange-bg)"
                             : "transparent",
                         borderRadius: 8,
@@ -226,7 +279,7 @@ export default function Navigation() {
                       <span style={{ fontWeight: 700, width: 24 }}>
                         {c.symbol}
                       </span>{" "}
-                      {c.label}
+                      {c.label} ({c.code})
                     </button>
                   ))}
                 </div>
@@ -234,54 +287,114 @@ export default function Navigation() {
             </div>
 
             {/* Location + Country flag pill */}
-            <button
-              style={{
-                padding: "6px 12px",
-                border: "1px solid var(--border)",
-                borderRadius: 50,
-                background: "#FFF",
-                fontSize: 13,
-                cursor: "pointer",
-                lineHeight: 1,
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-              title={city || "Detecting location..."}
-            >
-              <span style={{ fontSize: 16 }}>{locLoading ? "🌍" : flag}</span>
-              <span
+            <div style={{ position: "relative" }}>
+              <button
+                onMouseEnter={() => setFlagTooltip(true)}
+                onMouseLeave={() => setFlagTooltip(false)}
                 style={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: "#374151",
-                  maxWidth: 80,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
+                  padding: "6px 12px",
+                  border: "1px solid var(--border)",
+                  borderRadius: 50,
+                  background: "#FFF",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  lineHeight: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
                 }}
+                title={city || "Detecting location..."}
               >
-                {locLoading ? "..." : city || "—"}
-              </span>
-            </button>
+                <span style={{ fontSize: 16 }}>{locLoading ? "🌐" : flag}</span>
+              </button>
+              {flagTooltip && !locLoading && (city || country) && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "#FFF",
+                    borderRadius: 10,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    padding: "10px 16px",
+                    whiteSpace: "nowrap",
+                    zIndex: 100,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "#374151",
+                  }}
+                >
+                  {city && <span>📍 {city}</span>}
+                  {country && <span>🌍 {country}</span>}
+                </div>
+              )}
+            </div>
 
             {/* Weather + Temp toggle */}
-            <span
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "#374151",
-                display: "flex",
-                alignItems: "center",
-                gap: 2,
-              }}
-            >
-              {weatherLoading
-                ? "..."
-                : temp !== null
-                  ? `${weatherIcon} ${temp}°`
-                  : ""}
-            </span>
+            <div style={{ position: "relative" }}>
+              <button
+                onClick={() => setTempPopover(!tempPopover)}
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "#374151",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "6px 8px",
+                  fontFamily: "inherit",
+                }}
+              >
+                {weatherLoading
+                  ? "—"
+                  : temp !== null
+                    ? `${temp}°${tempUnit}`
+                    : ""}
+              </button>
+              {tempPopover && !weatherLoading && temp !== null && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "#FFF",
+                    borderRadius: 10,
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+                    padding: "10px 16px",
+                    whiteSpace: "nowrap",
+                    zIndex: 100,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "#374151",
+                  }}
+                >
+                  {feelsLike !== null && (
+                    <span>
+                      🌡️ Feels like {feelsLike}°{tempUnit}
+                    </span>
+                  )}
+                  {humidity !== null && <span>💧 Humidity {humidity}%</span>}
+                  {windSpeed !== null && (
+                    <span>
+                      🌬️ Wind {windSpeed} {tempUnit === "F" ? "mph" : "m/s"}
+                    </span>
+                  )}
+                  {condition && <span>☁️ {condition}</span>}
+                  {weatherCity && <span>📍 {weatherCity}</span>}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => setTempUnit(tempUnit === "C" ? "F" : "C")}
               style={{

@@ -17,6 +17,11 @@ const ICON_MAP = {
 export function useWeather(lat, lng, unit = "C") {
     const [state, setState] = useState({
         temp: null,
+        feelsLike: null,
+        humidity: null,
+        windSpeed: null,
+        condition: null,
+        city: null,
         description: null,
         icon: null,
         loading: false,
@@ -44,11 +49,16 @@ export function useWeather(lat, lng, unit = "C") {
             .then((data) => {
                 if (cancelled) return;
                 if (data.cod !== 200) {
-                    setState({ temp: null, description: null, icon: null, loading: false, error: "Weather unavailable" });
+                    setState({ temp: null, feelsLike: null, humidity: null, windSpeed: null, condition: null, city: null, description: null, icon: null, loading: false, error: "Weather unavailable" });
                     return;
                 }
                 setState({
                     temp: Math.round(data.main.temp),
+                    feelsLike: data.main.feels_like,
+                    humidity: data.main.humidity,
+                    windSpeed: data.wind.speed,
+                    condition: data.weather[0].description,
+                    city: data.name,
                     description: data.weather[0].description,
                     icon: ICON_MAP[data.weather[0].icon] || "🌡️",
                     loading: false,
