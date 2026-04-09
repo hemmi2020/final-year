@@ -67,12 +67,12 @@ export const usersAPI = {
 
 // ─── External APIs ───
 export const externalAPI = {
-    geocode: (q) => api.get('/api/external/geocode', { params: { q } }),
+    geocode: (q, config) => api.get('/api/external/geocode', { params: { q }, ...config }),
     reverseGeocode: (lat, lng) => api.get('/api/external/reverse-geocode', { params: { lat, lng } }),
-    weather: (lat, lng) => api.get('/api/external/weather', { params: { lat, lng } }),
+    weather: (lat, lng, config) => api.get('/api/external/weather', { params: { lat, lng }, ...config }),
     forecast: (lat, lng, days) => api.get('/api/external/forecast', { params: { lat, lng, days } }),
-    places: (query, lat, lng, type) => api.get('/api/external/places', { params: { query, lat, lng, type } }),
-    attractions: (lat, lng) => api.get('/api/external/attractions', { params: { lat, lng } }),
+    places: (query, lat, lng, type, config) => api.get('/api/external/places', { params: { query, lat, lng, type }, ...config }),
+    attractions: (lat, lng, config) => api.get('/api/external/attractions', { params: { lat, lng }, ...config }),
     currency: (from, to, amount) => api.get('/api/external/currency', { params: { from, to, amount } }),
 };
 

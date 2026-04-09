@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { externalAPI } from "@/lib/api";
 import { usePreferenceStore, CURRENCY_SYMBOLS } from "@/store/preferenceStore";
+import { useDestinationStore } from "@/store/destinationStore";
 import {
   Search,
   MapPin,
@@ -125,31 +126,55 @@ export default function DestinationsPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [attractions, setAttractions] = useState([]);
 
+  useEffect(() => {
+    return () => {
+      useDestinationStore.getState().clearDestination();
+    };
+  }, []);
+
   const searchDestination = async (name) => {
     setLoading(true);
     setResult(null);
     setWeather(null);
     setRestaurants([]);
     setAttractions([]);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
     try {
-      const geo = await externalAPI.geocode(name);
+      const geo = await externalAPI.geocode(name, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       if (!geo.data.data) {
         setLoading(false);
         return;
       }
       const loc = geo.data.data;
       setResult(loc);
+      useDestinationStore.getState().setDestination({
+        city: loc.displayName?.split(",")[0],
+        country: loc.country || null,
+        currency: loc.currency || null,
+      });
       const [wx, rest, attr] = await Promise.allSettled([
-        externalAPI.weather(loc.lat, loc.lng),
-        externalAPI.places(name, loc.lat, loc.lng, "restaurant"),
-        externalAPI.attractions(loc.lat, loc.lng),
+        externalAPI.weather(loc.lat, loc.lng, { signal: controller.signal }),
+        externalAPI.places(name, loc.lat, loc.lng, "restaurant", {
+          signal: controller.signal,
+        }),
+        externalAPI.attractions(loc.lat, loc.lng, {
+          signal: controller.signal,
+        }),
       ]);
       if (wx.status === "fulfilled") setWeather(wx.value.data.data);
       if (rest.status === "fulfilled")
         setRestaurants(rest.value.data.data?.slice(0, 8) || []);
       if (attr.status === "fulfilled")
         setAttractions(attr.value.data.data?.slice(0, 8) || []);
-    } catch {}
+    } catch {
+      // Abort/timeout or network error — leave result as null so fallback DESTINATIONS grid renders
+    } finally {
+      clearTimeout(timeout);
+    }
     setLoading(false);
   };
 
@@ -497,6 +522,7 @@ export default function DestinationsPage() {
             onClick={() => {
               setResult(null);
               setQuery("");
+              useDestinationStore.getState().clearDestination();
             }}
             style={{
               display: "block",

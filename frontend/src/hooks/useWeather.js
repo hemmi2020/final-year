@@ -14,7 +14,31 @@ const ICON_MAP = {
     "50d": "🌫️", "50n": "🌫️",
 };
 
-export function useWeather(lat, lng, unit = "C") {
+const WEATHER_CACHE_TTL = 600000; // 10 minutes in ms
+
+function getCachedWeather(cacheKey) {
+    try {
+        const raw = localStorage.getItem(cacheKey);
+        if (!raw) return null;
+        const cached = JSON.parse(raw);
+        if (Date.now() - cached.timestamp < WEATHER_CACHE_TTL) {
+            return cached.data;
+        }
+    } catch {
+        // Ignore parse errors or localStorage unavailability
+    }
+    return null;
+}
+
+function setCachedWeather(cacheKey, data) {
+    try {
+        localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
+    } catch {
+        // Ignore quota errors
+    }
+}
+
+export function useWeather({ lat, lng, city, unit = "C" } = {}) {
     const [state, setState] = useState({
         temp: null,
         feelsLike: null,
@@ -29,7 +53,8 @@ export function useWeather(lat, lng, unit = "C") {
     });
 
     useEffect(() => {
-        if (!lat || !lng) return;
+        // If neither city nor lat/lng are provided, return early
+        if (!city && (!lat || !lng)) return;
 
         const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
         if (!apiKey) {
@@ -38,21 +63,35 @@ export function useWeather(lat, lng, unit = "C") {
         }
 
         let cancelled = false;
-        setState((s) => ({ ...s, loading: true, error: null }));
-
         const units = unit === "F" ? "imperial" : "metric";
+        const cacheKey = `weather_${city || `${lat},${lng}`}_${unit}`;
 
-        fetch(
-            `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=${units}`
-        )
+        // Build URL: city mode takes priority
+        const queryParam = city ? `q=${city}` : `lat=${lat}&lon=${lng}`;
+        const url = `https://api.openweathermap.org/data/2.5/weather?${queryParam}&appid=${apiKey}&units=${units}`;
+
+        // Check localStorage cache
+        const cached = getCachedWeather(cacheKey);
+        if (cached) {
+            // Serve cached data immediately (stale-while-revalidate)
+            setState({ ...cached, loading: false, error: null });
+        } else {
+            setState((s) => ({ ...s, loading: true, error: null }));
+        }
+
+        // Always fetch in background to revalidate
+        fetch(url)
             .then((res) => res.json())
             .then((data) => {
                 if (cancelled) return;
                 if (data.cod !== 200) {
-                    setState({ temp: null, feelsLike: null, humidity: null, windSpeed: null, condition: null, city: null, description: null, icon: null, loading: false, error: "Weather unavailable" });
+                    // Only set error if we had no cached data
+                    if (!cached) {
+                        setState({ temp: null, feelsLike: null, humidity: null, windSpeed: null, condition: null, city: null, description: null, icon: null, loading: false, error: "Weather unavailable" });
+                    }
                     return;
                 }
-                setState({
+                const freshData = {
                     temp: Math.round(data.main.temp),
                     feelsLike: data.main.feels_like,
                     humidity: data.main.humidity,
@@ -61,16 +100,21 @@ export function useWeather(lat, lng, unit = "C") {
                     city: data.name,
                     description: data.weather[0].description,
                     icon: ICON_MAP[data.weather[0].icon] || "🌡️",
-                    loading: false,
-                    error: null,
-                });
+                };
+                setCachedWeather(cacheKey, freshData);
+                setState({ ...freshData, loading: false, error: null });
             })
             .catch(() => {
-                if (!cancelled) setState((s) => ({ ...s, loading: false, error: "Weather fetch failed" }));
+                if (!cancelled) {
+                    // Only set error if we had no cached data
+                    if (!cached) {
+                        setState((s) => ({ ...s, loading: false, error: "Weather fetch failed" }));
+                    }
+                }
             });
 
         return () => { cancelled = true; };
-    }, [lat, lng, unit]);
+    }, [lat, lng, city, unit]);
 
     return state;
 }

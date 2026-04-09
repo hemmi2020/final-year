@@ -19,6 +19,7 @@ import RegisterModal from "@/components/auth/RegisterModal";
 import { useLocation } from "@/hooks/useLocation";
 import { useWeather } from "@/hooks/useWeather";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useDestinationStore } from "@/store/destinationStore";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -27,15 +28,6 @@ const NAV_LINKS = [
   { href: "/community", label: "Community" },
   { href: "/destinations", label: "Destinations" },
   { href: "/about", label: "About" },
-];
-
-const CURRENCIES = [
-  { code: "USD", symbol: "$", label: "US Dollar" },
-  { code: "EUR", symbol: "€", label: "Euro" },
-  { code: "GBP", symbol: "£", label: "Pound" },
-  { code: "PKR", symbol: "Rs", label: "Rupee" },
-  { code: "AED", symbol: "د.إ", label: "Dirham" },
-  { code: "INR", symbol: "₹", label: "Rupee" },
 ];
 
 export default function Navigation() {
@@ -49,9 +41,11 @@ export default function Navigation() {
   const [tempPopover, setTempPopover] = useState(false);
   const { destinationCurrency, tempUnit, setDestinationCurrency, setTempUnit } =
     require("@/store/preferenceStore").usePreferenceStore();
+  const { city: destCity, currency: destCurrency } = useDestinationStore();
   const { user, isAuthenticated, logout, updateUser } = useAuthStore();
   const dropRef = useRef(null);
 
+  const effectiveCurrency = destCurrency || destinationCurrency;
   const [currInput, setCurrInput] = useState("");
 
   // Live data hooks
@@ -73,10 +67,14 @@ export default function Navigation() {
     city: weatherCity,
     icon: weatherIcon,
     loading: weatherLoading,
-  } = useWeather(lat, lng, tempUnit);
+  } = useWeather(
+    destCity
+      ? { city: destCity, unit: tempUnit }
+      : { lat, lng, unit: tempUnit },
+  );
   const { rate, loading: rateLoading } = useCurrency(
     homeCurrency,
-    destinationCurrency,
+    effectiveCurrency,
   );
 
   // Close dropdowns on outside click
@@ -187,8 +185,8 @@ export default function Navigation() {
                 {rateLoading || !homeCurrency
                   ? "—"
                   : rate !== null
-                    ? `${homeCurrency} 1 = ${destinationCurrency} ${rate.toFixed(4)}`
-                    : "—"}
+                    ? `${homeCurrency} 1 = ${effectiveCurrency} ${rate.toFixed(4)}`
+                    : homeCurrency}
               </button>
               {currDropdown && (
                 <div
@@ -245,43 +243,9 @@ export default function Navigation() {
                         marginBottom: 4,
                       }}
                     >
-                      {homeCurrency} 1 = {destinationCurrency} {rate.toFixed(4)}
+                      {homeCurrency} 1 = {effectiveCurrency} {rate.toFixed(4)}
                     </div>
                   )}
-                  {/* Preset currency quick-select buttons */}
-                  {CURRENCIES.map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => {
-                        setDestinationCurrency(c.code);
-                        setCurrInput(c.code);
-                        setCurrDropdown(false);
-                      }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        width: "100%",
-                        padding: "8px 12px",
-                        border: "none",
-                        background:
-                          destinationCurrency === c.code
-                            ? "var(--orange-bg)"
-                            : "transparent",
-                        borderRadius: 8,
-                        cursor: "pointer",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        color: "#0A0A0A",
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      <span style={{ fontWeight: 700, width: 24 }}>
-                        {c.symbol}
-                      </span>{" "}
-                      {c.label} ({c.code})
-                    </button>
-                  ))}
                 </div>
               )}
             </div>
