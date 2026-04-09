@@ -46,6 +46,24 @@
     outline: 2px solid var(--orange);
     outline-offset: 2px;
   }
+
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  select,
+  label[for],
+  .card,
+  .btn-orange,
+  .btn-outline,
+  .btn-ghost {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
 }
 
 /* ─── Buttons ─── */

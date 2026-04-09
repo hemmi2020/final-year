@@ -17,6 +17,43 @@ import {
   Plane,
 } from "lucide-react";
 
+async function fetchWithRetry(fn, retries = 3, delay = 1000) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === retries - 1) throw err;
+      await new Promise((r) => setTimeout(r, delay));
+    }
+  }
+}
+
+function getCached(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, expiry } = JSON.parse(raw);
+    if (Date.now() > expiry) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function setCache(key, data, ttl = 30 * 60 * 1000) {
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify({ data, expiry: Date.now() + ttl }),
+    );
+  } catch {
+    // localStorage full or unavailable — silently ignore
+  }
+}
+
 const DESTINATIONS = [
   {
     name: "Tokyo",
@@ -138,6 +175,17 @@ export default function DestinationsPage() {
     setWeather(null);
     setRestaurants([]);
     setAttractions([]);
+
+    const cityKey = name.toLowerCase().replace(/\s+/g, "_");
+
+    // Check caches and show cached data immediately
+    const cachedWeather = getCached(`dest_weather_${cityKey}`);
+    const cachedRestaurants = getCached(`dest_restaurants_${cityKey}`);
+    const cachedAttractions = getCached(`dest_attractions_${cityKey}`);
+    if (cachedWeather) setWeather(cachedWeather);
+    if (cachedRestaurants) setRestaurants(cachedRestaurants);
+    if (cachedAttractions) setAttractions(cachedAttractions);
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
     try {
@@ -157,19 +205,35 @@ export default function DestinationsPage() {
         currency: loc.currency || null,
       });
       const [wx, rest, attr] = await Promise.allSettled([
-        externalAPI.weather(loc.lat, loc.lng, { signal: controller.signal }),
-        externalAPI.places(name, loc.lat, loc.lng, "restaurant", {
-          signal: controller.signal,
-        }),
-        externalAPI.attractions(loc.lat, loc.lng, {
-          signal: controller.signal,
-        }),
+        fetchWithRetry(() =>
+          externalAPI.weather(loc.lat, loc.lng, { signal: controller.signal }),
+        ),
+        fetchWithRetry(() =>
+          externalAPI.places(name, loc.lat, loc.lng, "restaurant", {
+            signal: controller.signal,
+          }),
+        ),
+        fetchWithRetry(() =>
+          externalAPI.attractions(loc.lat, loc.lng, {
+            signal: controller.signal,
+          }),
+        ),
       ]);
-      if (wx.status === "fulfilled") setWeather(wx.value.data.data);
-      if (rest.status === "fulfilled")
-        setRestaurants(rest.value.data.data?.slice(0, 8) || []);
-      if (attr.status === "fulfilled")
-        setAttractions(attr.value.data.data?.slice(0, 8) || []);
+      if (wx.status === "fulfilled") {
+        const weatherData = wx.value.data.data;
+        setWeather(weatherData);
+        setCache(`dest_weather_${cityKey}`, weatherData);
+      }
+      if (rest.status === "fulfilled") {
+        const restaurantData = rest.value.data.data?.slice(0, 8) || [];
+        setRestaurants(restaurantData);
+        setCache(`dest_restaurants_${cityKey}`, restaurantData);
+      }
+      if (attr.status === "fulfilled") {
+        const attractionData = attr.value.data.data?.slice(0, 8) || [];
+        setAttractions(attractionData);
+        setCache(`dest_attractions_${cityKey}`, attractionData);
+      }
     } catch {
       // Abort/timeout or network error — leave result as null so fallback DESTINATIONS grid renders
     } finally {
@@ -480,15 +544,29 @@ export default function DestinationsPage() {
               </div>
               {attractions.length > 0 ? (
                 attractions.map((a, i) => (
-                  <div
+                  <a
                     key={i}
+                    href={`https://www.google.com/maps/search/${encodeURIComponent(a.name + " " + (result.displayName?.split(",")[0] || ""))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
+                      display: "block",
                       padding: "10px 0",
                       borderBottom:
                         i < attractions.length - 1
                           ? "1px solid #F0F0F0"
                           : "none",
+                      cursor: "pointer",
+                      textDecoration: "none",
+                      color: "inherit",
+                      borderRadius: 6,
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#F9FAFB")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.backgroundColor = "transparent")
+                    }
                   >
                     <p
                       style={{
@@ -508,7 +586,7 @@ export default function DestinationsPage() {
                     >
                       {a.type}
                     </p>
-                  </div>
+                  </a>
                 ))
               ) : (
                 <p style={{ fontSize: 14, color: "#9CA3AF" }}>
