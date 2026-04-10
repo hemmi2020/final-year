@@ -38,6 +38,8 @@ export const authAPI = {
     logout: () => api.post('/api/auth/logout'),
     refreshToken: () => api.post('/api/auth/refresh'),
     getProfile: () => api.get('/api/auth/profile'),
+    forgotPassword: (email) => api.post('/api/auth/forgot-password', { email }),
+    resetPassword: (token, password) => api.post('/api/auth/reset-password', { token, password }),
 };
 
 // ─── Trips ───
@@ -60,9 +62,8 @@ export const usersAPI = {
     getProfile: () => api.get('/api/users/profile'),
     updateProfile: (data) => api.put('/api/users/profile', data),
     updatePreferences: (prefs) => api.put('/api/users/preferences', prefs),
-    uploadAvatar: (formData) => api.post('/api/users/avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    uploadAvatar: (data) => api.post('/api/users/avatar', data),
+    changePassword: (data) => api.put('/api/users/change-password', data),
 };
 
 // ─── External APIs ───

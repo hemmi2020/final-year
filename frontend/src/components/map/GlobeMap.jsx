@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { MAPBOX_TOKEN, MAPBOX_STYLES } from "@/lib/mapbox";
 
-export default function GlobeMap({ destination, amenityMarkers = [] }) {
+export default function GlobeMap({
+  destination,
+  amenityMarkers = [],
+  userLocation,
+}) {
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -19,12 +23,18 @@ export default function GlobeMap({ destination, amenityMarkers = [] }) {
       await import("mapbox-gl/dist/mapbox-gl.css");
       mapboxgl.accessToken = MAPBOX_TOKEN;
 
+      const initialCenter =
+        userLocation?.lat && userLocation?.lng
+          ? [userLocation.lng, userLocation.lat]
+          : [0, 20];
+      const initialZoom = userLocation?.lat && userLocation?.lng ? 3 : 2;
+
       map = new mapboxgl.Map({
         container: containerRef.current,
         style: MAPBOX_STYLES.globe,
         projection: "globe",
-        center: [28.97, 41.01],
-        zoom: 1.8,
+        center: initialCenter,
+        zoom: initialZoom,
         pitch: 0,
         antialias: true,
       });
@@ -83,9 +93,14 @@ export default function GlobeMap({ destination, amenityMarkers = [] }) {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
 
+      // Determine zoom based on placeType
+      let zoom = 8; // default
+      if (destination.placeType === "place") zoom = 11;
+      else if (destination.placeType === "country") zoom = 5;
+
       map.flyTo({
         center: [destination.lng, destination.lat],
-        zoom: 5,
+        zoom,
         pitch: 45,
         bearing: -12,
         duration: 3000,

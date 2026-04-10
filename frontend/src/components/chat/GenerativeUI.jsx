@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import {
   MapPin,
   ChevronRight,
@@ -11,6 +12,12 @@ import {
   Calendar,
   Plane,
 } from "lucide-react";
+import { detectQuestion } from "@/lib/questionDetector";
+import DestinationSearch from "@/components/chat/inputs/DestinationSearch";
+import DurationSelector from "@/components/chat/inputs/DurationSelector";
+import InputBudgetSelector from "@/components/chat/inputs/BudgetSelector";
+import PreferenceChips from "@/components/chat/inputs/PreferenceChips";
+import CompanionSelector from "@/components/chat/inputs/CompanionSelector";
 
 // ─── PARSER ───
 export function parseAIMessage(rawText) {
@@ -43,6 +50,15 @@ export function parseAIMessage(rawText) {
   return blocks.length > 0 ? blocks : [{ type: "text", content: rawText }];
 }
 
+// ─── QUESTION TYPE → INTERACTIVE INPUT COMPONENT MAP ───
+const QUESTION_COMPONENT_MAP = {
+  destination: DestinationSearch,
+  duration: DurationSelector,
+  budget: InputBudgetSelector,
+  preferences: PreferenceChips,
+  companions: CompanionSelector,
+};
+
 // ─── RENDERER ───
 export function MessageRenderer({ content, onSendMessage }) {
   const blocks = parseAIMessage(content);
@@ -50,17 +66,58 @@ export function MessageRenderer({ content, onSendMessage }) {
     <div>
       {blocks.map((block, i) =>
         block.type === "text" ? (
-          <p
-            key={i}
-            style={{
-              fontSize: 15,
-              lineHeight: 1.6,
-              whiteSpace: "pre-wrap",
-              margin: "8px 0",
-            }}
-          >
-            {block.content.trim()}
-          </p>
+          <div key={i} style={{ margin: "8px 0" }}>
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => (
+                  <p style={{ fontSize: 15, lineHeight: 1.6, margin: "8px 0" }}>
+                    {children}
+                  </p>
+                ),
+                ul: ({ children }) => (
+                  <ul
+                    style={{
+                      fontSize: 15,
+                      lineHeight: 1.6,
+                      margin: "8px 0",
+                      paddingLeft: 20,
+                    }}
+                  >
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol
+                    style={{
+                      fontSize: 15,
+                      lineHeight: 1.6,
+                      margin: "8px 0",
+                      paddingLeft: 20,
+                    }}
+                  >
+                    {children}
+                  </ol>
+                ),
+                strong: ({ children }) => (
+                  <strong style={{ fontWeight: 700 }}>{children}</strong>
+                ),
+                em: ({ children }) => <em>{children}</em>,
+              }}
+            >
+              {block.content.trim()}
+            </ReactMarkdown>
+            {(() => {
+              const detected = detectQuestion(block.content);
+              if (!detected) return null;
+              const InputComponent = QUESTION_COMPONENT_MAP[detected.type];
+              if (!InputComponent) return null;
+              return (
+                <div style={{ marginTop: 8 }}>
+                  <InputComponent onSend={onSendMessage} />
+                </div>
+              );
+            })()}
+          </div>
         ) : (
           <div
             key={i}

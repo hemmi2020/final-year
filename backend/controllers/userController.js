@@ -13,13 +13,40 @@ exports.getProfile = async (req, res, next) => {
 // PUT /api/users/profile
 exports.updateProfile = async (req, res, next) => {
     try {
-        const { name, avatar } = req.body;
+        const { name, avatar, bio, phone } = req.body;
         const updates = {};
         if (name) updates.name = name;
         if (avatar) updates.avatar = avatar;
+        if (bio !== undefined) updates.bio = bio;
+        if (phone !== undefined) updates.phone = phone;
 
         const user = await User.findByIdAndUpdate(req.user._id, updates, { returnDocument: 'after', runValidators: true });
         res.json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// PUT /api/users/change-password
+exports.changePassword = async (req, res, next) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ success: false, error: 'Current password and new password are required' });
+        }
+
+        const user = await User.findById(req.user._id).select('+password');
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+
+        const isMatch = await user.comparePassword(currentPassword);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, error: 'Current password is incorrect' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.json({ success: true, data: { message: 'Password changed successfully' } });
     } catch (error) {
         next(error);
     }

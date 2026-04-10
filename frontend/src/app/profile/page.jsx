@@ -7,7 +7,8 @@ import { usersAPI, tripsAPI } from "@/lib/api";
 import { communityAPI } from "@/lib/api";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
-import Image from "next/image";
+import AvatarUploader from "@/components/profile/AvatarUploader";
+import PasswordChanger from "@/components/profile/PasswordChanger";
 import {
   User,
   Mail,
@@ -20,6 +21,8 @@ import {
   Edit3,
   Save,
   Share2,
+  Phone,
+  X,
 } from "lucide-react";
 
 const INTERESTS = [
@@ -45,6 +48,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settingsForm, setSettingsForm] = useState({ name: "", email: "" });
+  const [editMode, setEditMode] = useState(false);
+  const [originalValues, setOriginalValues] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", bio: "", phone: "" });
   const [prefs, setPrefs] = useState({
     dietary: [],
     budget: "moderate",
@@ -65,6 +71,11 @@ export default function ProfilePage() {
         setSettingsForm({
           name: data.data.name || "",
           email: data.data.email || "",
+        });
+        setEditForm({
+          name: data.data.name || "",
+          bio: data.data.bio || "",
+          phone: data.data.phone || "",
         });
         const p = data.data.preferences || {};
         setPrefs({
@@ -106,6 +117,52 @@ export default function ProfilePage() {
       updateUser(settingsForm);
     } catch {}
     setSaving(false);
+  };
+
+  const handleAvatarUpload = async (base64) => {
+    await usersAPI.uploadAvatar({ avatar: base64 });
+    updateUser({ avatar: base64 });
+    setProfile((p) => ({ ...p, avatar: base64 }));
+  };
+
+  const enterEditMode = () => {
+    const snapshot = {
+      name: profile?.name || "",
+      bio: profile?.bio || "",
+      phone: profile?.phone || "",
+    };
+    setOriginalValues(snapshot);
+    setEditForm(snapshot);
+    setEditMode(true);
+  };
+
+  const handleSaveEdit = async () => {
+    setSaving(true);
+    try {
+      await usersAPI.updateProfile({
+        name: editForm.name,
+        bio: editForm.bio,
+        phone: editForm.phone,
+      });
+      updateUser({
+        name: editForm.name,
+        bio: editForm.bio,
+        phone: editForm.phone,
+      });
+      setProfile((p) => ({
+        ...p,
+        name: editForm.name,
+        bio: editForm.bio,
+        phone: editForm.phone,
+      }));
+      setEditMode(false);
+    } catch {}
+    setSaving(false);
+  };
+
+  const handleCancelEdit = () => {
+    if (originalValues) setEditForm(originalValues);
+    setEditMode(false);
   };
 
   const handleSavePrefs = async () => {
@@ -183,35 +240,38 @@ export default function ProfilePage() {
             flexWrap: "wrap",
           }}
         >
-          <div
-            style={{
-              width: 96,
-              height: 96,
-              borderRadius: "50%",
-              background: "#FFF",
-              border: "4px solid #FFF",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 36,
-              fontWeight: 800,
-              color: "var(--orange)",
-            }}
-          >
-            {profile?.name?.[0]?.toUpperCase() || "U"}
-          </div>
+          <AvatarUploader
+            currentAvatar={profile?.avatar}
+            userName={profile?.name}
+            onUpload={handleAvatarUpload}
+          />
           <div style={{ flex: 1, paddingBottom: 8 }}>
-            <h1
-              style={{
-                fontSize: 24,
-                fontWeight: 800,
-                color: "var(--text-primary)",
-                margin: 0,
-              }}
-            >
-              {profile?.name}
-            </h1>
+            {editMode ? (
+              <input
+                className="input-field"
+                value={editForm.name}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
+                style={{
+                  fontSize: 20,
+                  fontWeight: 800,
+                  marginBottom: 4,
+                  maxWidth: 300,
+                }}
+              />
+            ) : (
+              <h1
+                style={{
+                  fontSize: 24,
+                  fontWeight: 800,
+                  color: "var(--text-primary)",
+                  margin: 0,
+                }}
+              >
+                {profile?.name}
+              </h1>
+            )}
             <p
               style={{
                 fontSize: 14,
@@ -224,6 +284,66 @@ export default function ProfilePage() {
             >
               <Mail size={14} /> {profile?.email}
             </p>
+            {editMode ? (
+              <input
+                className="input-field"
+                value={editForm.bio}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, bio: e.target.value })
+                }
+                placeholder="Write a short bio..."
+                maxLength={200}
+                style={{ fontSize: 13, marginTop: 6, maxWidth: 400 }}
+              />
+            ) : (
+              profile?.bio && (
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--text-secondary)",
+                    margin: "6px 0 0",
+                  }}
+                >
+                  {profile.bio}
+                </p>
+              )
+            )}
+            {editMode ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  marginTop: 4,
+                }}
+              >
+                <Phone size={13} style={{ color: "var(--text-muted)" }} />
+                <input
+                  className="input-field"
+                  value={editForm.phone}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, phone: e.target.value })
+                  }
+                  placeholder="Phone number"
+                  style={{ fontSize: 13, maxWidth: 200 }}
+                />
+              </div>
+            ) : (
+              profile?.phone && (
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--text-muted)",
+                    margin: "2px 0 0",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Phone size={13} /> {profile.phone}
+                </p>
+              )
+            )}
             <p
               style={{
                 fontSize: 13,
@@ -238,13 +358,34 @@ export default function ProfilePage() {
               })}
             </p>
           </div>
-          <button
-            onClick={() => setTab("settings")}
-            className="btn-outline"
-            style={{ padding: "8px 20px", fontSize: 13 }}
-          >
-            <Edit3 size={14} style={{ marginRight: 6 }} /> Edit Profile
-          </button>
+          {editMode ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={handleSaveEdit}
+                className="btn-orange"
+                disabled={saving}
+                style={{ padding: "8px 20px", fontSize: 13 }}
+              >
+                <Save size={14} style={{ marginRight: 6 }} />{" "}
+                {saving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className="btn-outline"
+                style={{ padding: "8px 20px", fontSize: 13 }}
+              >
+                <X size={14} style={{ marginRight: 6 }} /> Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={enterEditMode}
+              className="btn-outline"
+              style={{ padding: "8px 20px", fontSize: 13 }}
+            >
+              <Edit3 size={14} style={{ marginRight: 6 }} /> Edit Profile
+            </button>
+          )}
         </div>
 
         {/* Stats */}
@@ -572,6 +713,10 @@ export default function ProfilePage() {
               <Save size={16} style={{ marginRight: 6 }} />{" "}
               {saving ? "Saving..." : "Save Changes"}
             </button>
+
+            <PasswordChanger
+              isOAuthUser={!profile?.password && !!profile?.googleId}
+            />
           </div>
         )}
 

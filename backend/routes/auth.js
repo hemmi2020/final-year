@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const passport = require('../config/passport');
-const { register, login, logout, refresh, getProfile, verifyOTP, resendOTP } = require('../controllers/authController');
+const { register, login, logout, refresh, getProfile, verifyOTP, resendOTP, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { registerRules, loginRules, handleValidation } = require('../middleware/validate');
 const { authLimiter } = require('../middleware/rateLimiter');
@@ -14,6 +14,10 @@ router.post('/login', authLimiter, ...loginRules, handleValidation, login);
 router.post('/logout', protect, logout);
 router.post('/refresh', refresh);
 router.get('/profile', protect, getProfile);
+
+// Password reset
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 
 // Google OAuth
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));

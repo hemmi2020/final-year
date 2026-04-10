@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { authAPI } from "@/lib/api";
 import { Plane, Mail, ArrowLeft, Check } from "lucide-react";
 
 export default function ForgotPasswordPage() {
@@ -9,15 +10,24 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
-    setTimeout(() => {
+    setError("");
+    try {
+      await authAPI.forgotPassword(email);
       setSent(true);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Something went wrong. Please try again.",
+      );
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -129,6 +139,11 @@ export default function ForgotPasswordPage() {
                   required
                 />
               </div>
+              {error && (
+                <p style={{ color: "#EF4444", fontSize: 14, marginBottom: 12 }}>
+                  {error}
+                </p>
+              )}
               <button
                 type="submit"
                 className="btn-orange"

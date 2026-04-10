@@ -43,8 +43,10 @@ export async function extractDestinationFromText(text) {
         );
         const data = await res.json();
         if (data.features?.[0]) {
-            const [lng, lat] = data.features[0].center;
-            const result = { name: cityName, lat, lng };
+            const feature = data.features[0];
+            const [lng, lat] = feature.center;
+            const placeType = feature.place_type?.[0] || "place";
+            const result = { name: cityName, lat, lng, placeType };
             cache[cityName] = result;
             return result;
         }

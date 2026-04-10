@@ -10,6 +10,7 @@ import GlobeMap from "@/components/map/GlobeMap";
 import { extractDestinationFromText } from "@/lib/extractDestination";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
+import { useLocation } from "@/hooks/useLocation";
 
 function ChatContent() {
   const router = useRouter();
@@ -22,6 +23,11 @@ function ChatContent() {
   const [currentDestination, setCurrentDestination] = useState(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const location = useLocation();
+  const userLocation =
+    location.lat && location.lng
+      ? { lat: location.lat, lng: location.lng }
+      : null;
   const messagesEnd = useRef(null);
   const inputRef = useRef(null);
 
@@ -321,7 +327,10 @@ function ChatContent() {
         className="hidden lg:block"
         style={{ flex: 1, position: "relative" }}
       >
-        <GlobeMap destination={currentDestination} />
+        <GlobeMap
+          destination={currentDestination}
+          userLocation={userLocation}
+        />
       </div>
 
       <LoginModal
