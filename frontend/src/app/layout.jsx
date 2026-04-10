@@ -53,7 +53,9 @@ export default function RootLayout({ children }) {
           <LoadingBar />
           <SmoothScrollProvider>
             <Navigation />
-            <main style={{ minHeight: "100vh" }}>{children}</main>
+            <main style={{ minHeight: "100vh", margin: 0, padding: 0 }}>
+              {children}
+            </main>
             <Footer />
             <ScrollToTop />
           </SmoothScrollProvider>
