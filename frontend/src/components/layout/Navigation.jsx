@@ -61,6 +61,12 @@ export default function Navigation() {
   } = useLocation();
 
   // Temperature: changes based on destination CITY (even within same country)
+  // Use city name when available (more reliable than lat/lng for weather)
+  const weatherQuery = destCity
+    ? { city: destCity, unit: "C" }
+    : city
+      ? { city: city, unit: "C" }
+      : { lat, lng, unit: "C" };
   const {
     temp,
     feelsLike,
@@ -70,11 +76,7 @@ export default function Navigation() {
     city: weatherCity,
     icon: weatherIcon,
     loading: weatherLoading,
-  } = useWeather(
-    destCity
-      ? { city: destCity, unit: tempUnit }
-      : { lat, lng, unit: tempUnit },
-  );
+  } = useWeather(weatherQuery);
 
   // Currency: only changes when destination is a DIFFERENT COUNTRY
   const effectiveCurrency =
@@ -196,18 +198,29 @@ export default function Navigation() {
                 onMouseEnter={() => setFlagTooltip(true)}
                 onMouseLeave={() => setFlagTooltip(false)}
                 style={{
-                  padding: "6px 12px",
+                  padding: "6px 10px",
                   border: "1px solid var(--border)",
                   borderRadius: 50,
                   background: "#FFF",
-                  fontSize: 16,
                   cursor: "default",
                   lineHeight: 1,
                   display: "flex",
                   alignItems: "center",
                 }}
               >
-                {locLoading ? "..." : flag || "🌍"}
+                {locLoading ? (
+                  <span style={{ fontSize: 13 }}>...</span>
+                ) : countryCode ? (
+                  <img
+                    src={`https://flagcdn.com/24x18/${countryCode.toLowerCase()}.png`}
+                    alt={country || countryCode}
+                    width={24}
+                    height={18}
+                    style={{ display: "block", borderRadius: 2 }}
+                  />
+                ) : (
+                  <span style={{ fontSize: 16 }}>🌍</span>
+                )}
               </button>
               {flagTooltip && !locLoading && (city || country) && (
                 <div
@@ -257,7 +270,7 @@ export default function Navigation() {
                 {weatherLoading
                   ? "..."
                   : temp !== null
-                    ? `${weatherIcon || ""} ${temp}°${tempUnit}`
+                    ? `${weatherIcon || ""} ${temp}°C`
                     : "--°C"}
               </button>
               {tempPopover && !weatherLoading && temp !== null && (
@@ -297,24 +310,6 @@ export default function Navigation() {
                 </div>
               )}
             </div>
-
-            {/* °C/°F toggle */}
-            <button
-              onClick={() => setTempUnit(tempUnit === "C" ? "F" : "C")}
-              style={{
-                padding: "6px 14px",
-                border: "1px solid var(--border)",
-                borderRadius: 50,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                background: tempUnit === "C" ? "var(--orange)" : "#FFF",
-                color: tempUnit === "C" ? "#FFF" : "var(--text-body)",
-              }}
-            >
-              °{tempUnit}
-            </button>
 
             {/* User dropdown */}
             <div style={{ position: "relative", marginLeft: 8 }}>
