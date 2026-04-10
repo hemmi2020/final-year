@@ -3,97 +3,74 @@
 import { useState, useEffect } from "react";
 
 const ICON_MAP = {
-    "01d": "☀️", "01n": "🌙",
-    "02d": "⛅", "02n": "☁️",
-    "03d": "☁️", "03n": "☁️",
-    "04d": "☁️", "04n": "☁️",
-    "09d": "🌧️", "09n": "🌧️",
-    "10d": "🌦️", "10n": "🌧️",
-    "11d": "⛈️", "11n": "⛈️",
-    "13d": "❄️", "13n": "❄️",
+    "01d": "☀️", "01n": "🌙", "02d": "⛅", "02n": "☁️",
+    "03d": "☁️", "03n": "☁️", "04d": "☁️", "04n": "☁️",
+    "09d": "🌧️", "09n": "🌧️", "10d": "🌦️", "10n": "🌧️",
+    "11d": "⛈️", "11n": "⛈️", "13d": "❄️", "13n": "❄️",
     "50d": "🌫️", "50n": "🌫️",
 };
 
-const WEATHER_CACHE_TTL = 600000; // 10 minutes in ms
+const CACHE_TTL = 600000; // 10 minutes
 
-function getCachedWeather(cacheKey) {
+function getCache(key) {
     try {
-        const raw = localStorage.getItem(cacheKey);
+        const raw = localStorage.getItem(key);
         if (!raw) return null;
-        const cached = JSON.parse(raw);
-        if (Date.now() - cached.timestamp < WEATHER_CACHE_TTL) {
-            return cached.data;
-        }
-    } catch {
-        // Ignore parse errors or localStorage unavailability
-    }
-    return null;
+        const { data, ts } = JSON.parse(raw);
+        return Date.now() - ts < CACHE_TTL ? data : null;
+    } catch { return null; }
 }
 
-function setCachedWeather(cacheKey, data) {
-    try {
-        localStorage.setItem(cacheKey, JSON.stringify({ data, timestamp: Date.now() }));
-    } catch {
-        // Ignore quota errors
-    }
+function setCache(key, data) {
+    try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch { }
 }
 
 export function useWeather({ lat, lng, city, unit = "C" } = {}) {
     const [state, setState] = useState({
-        temp: null,
-        feelsLike: null,
-        humidity: null,
-        windSpeed: null,
-        condition: null,
-        city: null,
-        description: null,
-        icon: null,
-        loading: false,
-        error: null,
+        temp: null, feelsLike: null, humidity: null, windSpeed: null,
+        condition: null, city: null, description: null, icon: null,
+        loading: false, error: null,
     });
 
     useEffect(() => {
-        // If neither city nor lat/lng are provided, return early
         if (!city && (!lat || !lng)) return;
 
         const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
         if (!apiKey) {
-            setState((s) => ({ ...s, error: "No weather API key" }));
+            console.log("[useWeather] No API key set");
+            setState(s => ({ ...s, error: "No weather API key" }));
             return;
         }
 
         let cancelled = false;
+        // ALWAYS use metric for °C, imperial for °F
         const units = unit === "F" ? "imperial" : "metric";
-        const cacheKey = `weather_${city || `${lat},${lng}`}_${unit}`;
-
-        // Build URL: city mode takes priority
-        const queryParam = city ? `q=${city}` : `lat=${lat}&lon=${lng}`;
+        const queryParam = city ? `q=${encodeURIComponent(city)}` : `lat=${lat}&lon=${lng}`;
+        const cacheKey = `weather_${city || `${lat},${lng}`}_${units}`;
         const url = `https://api.openweathermap.org/data/2.5/weather?${queryParam}&appid=${apiKey}&units=${units}`;
 
-        // Check localStorage cache
-        const cached = getCachedWeather(cacheKey);
+        // Check cache first
+        const cached = getCache(cacheKey);
         if (cached) {
-            // Serve cached data immediately (stale-while-revalidate)
             setState({ ...cached, loading: false, error: null });
         } else {
-            setState((s) => ({ ...s, loading: true, error: null }));
+            setState(s => ({ ...s, loading: true, error: null }));
         }
 
-        // Always fetch in background to revalidate
+        console.log("[useWeather] Fetching:", city || `${lat},${lng}`, "units:", units);
+
         fetch(url)
-            .then((res) => res.json())
-            .then((data) => {
+            .then(res => res.json())
+            .then(data => {
                 if (cancelled) return;
                 if (data.cod !== 200) {
-                    // Only set error if we had no cached data
-                    if (!cached) {
-                        setState({ temp: null, feelsLike: null, humidity: null, windSpeed: null, condition: null, city: null, description: null, icon: null, loading: false, error: "Weather unavailable" });
-                    }
+                    console.log("[useWeather] API error:", data.message);
+                    if (!cached) setState(s => ({ ...s, loading: false, error: "Weather unavailable" }));
                     return;
                 }
-                const freshData = {
+                const fresh = {
                     temp: Math.round(data.main.temp),
-                    feelsLike: data.main.feels_like,
+                    feelsLike: Math.round(data.main.feels_like),
                     humidity: data.main.humidity,
                     windSpeed: data.wind.speed,
                     condition: data.weather[0].description,
@@ -101,15 +78,14 @@ export function useWeather({ lat, lng, city, unit = "C" } = {}) {
                     description: data.weather[0].description,
                     icon: ICON_MAP[data.weather[0].icon] || "🌡️",
                 };
-                setCachedWeather(cacheKey, freshData);
-                setState({ ...freshData, loading: false, error: null });
+                console.log("[useWeather] Success:", fresh.city, fresh.temp + "°");
+                setCache(cacheKey, fresh);
+                setState({ ...fresh, loading: false, error: null });
             })
-            .catch(() => {
-                if (!cancelled) {
-                    // Only set error if we had no cached data
-                    if (!cached) {
-                        setState((s) => ({ ...s, loading: false, error: "Weather fetch failed" }));
-                    }
+            .catch(err => {
+                if (!cancelled && !cached) {
+                    console.log("[useWeather] Fetch failed:", err.message);
+                    setState(s => ({ ...s, loading: false, error: "Weather fetch failed" }));
                 }
             });
 

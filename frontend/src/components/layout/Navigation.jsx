@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
-import { useLocation } from "@/hooks/useLocation";
+import { useLocation, getCurrencySymbol } from "@/hooks/useLocation";
 import { useWeather } from "@/hooks/useWeather";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useDestinationStore } from "@/store/destinationStore";
@@ -170,7 +170,7 @@ export default function Navigation() {
             className="hidden md:flex"
             style={{ alignItems: "center", gap: 6 }}
           >
-            {/* Currency — auto-detected, no dropdown */}
+            {/* Currency — auto-detected, shows symbol */}
             <span
               style={{
                 padding: "6px 14px",
@@ -183,11 +183,11 @@ export default function Navigation() {
                 whiteSpace: "nowrap",
               }}
             >
-              {rateLoading || !homeCurrency
-                ? "—"
+              {locLoading
+                ? "..."
                 : showConversion && rate !== null
-                  ? `${homeCurrency} 1 = ${effectiveCurrency} ${rate.toFixed(2)}`
-                  : homeCurrency}
+                  ? `${getCurrencySymbol(homeCurrency)} → ${getCurrencySymbol(effectiveCurrency)}`
+                  : getCurrencySymbol(homeCurrency || "USD")}
             </span>
 
             {/* Country flag — hover shows city/country */}
@@ -207,7 +207,7 @@ export default function Navigation() {
                   alignItems: "center",
                 }}
               >
-                {locLoading ? "🌐" : flag}
+                {locLoading ? "..." : flag || "🌍"}
               </button>
               {flagTooltip && !locLoading && (city || country) && (
                 <div
@@ -255,10 +255,10 @@ export default function Navigation() {
                 }}
               >
                 {weatherLoading
-                  ? "—"
+                  ? "..."
                   : temp !== null
                     ? `${weatherIcon || ""} ${temp}°${tempUnit}`
-                    : "—"}
+                    : "--°C"}
               </button>
               {tempPopover && !weatherLoading && temp !== null && (
                 <div
@@ -321,7 +321,6 @@ export default function Navigation() {
               <button
                 onClick={() => {
                   setUserDropdown(!userDropdown);
-                  setCurrDropdown(false);
                 }}
                 style={{
                   width: 36,
