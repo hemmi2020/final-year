@@ -36,29 +36,31 @@ export default function Navigation() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
-  const [currDropdown, setCurrDropdown] = useState(false);
   const [flagTooltip, setFlagTooltip] = useState(false);
   const [tempPopover, setTempPopover] = useState(false);
-  const { destinationCurrency, tempUnit, setDestinationCurrency, setTempUnit } =
+  const { tempUnit, setTempUnit } =
     require("@/store/preferenceStore").usePreferenceStore();
-  const { city: destCity, currency: destCurrency } = useDestinationStore();
-  const { user, isAuthenticated, logout, updateUser, hasHydrated } =
-    useAuthStore();
+  const {
+    city: destCity,
+    country: destCountry,
+    currency: destCurrency,
+  } = useDestinationStore();
+  const { user, isAuthenticated, logout, updateUser } = useAuthStore();
   const dropRef = useRef(null);
 
-  const effectiveCurrency = destCurrency || destinationCurrency;
-  const [currInput, setCurrInput] = useState("");
-
-  // Live data hooks
+  // Live data hooks — all auto-detected
   const {
     lat,
     lng,
     city,
     country,
+    countryCode,
     currency: homeCurrency,
     flag,
     loading: locLoading,
   } = useLocation();
+
+  // Temperature: changes based on destination CITY (even within same country)
   const {
     temp,
     feelsLike,
@@ -73,17 +75,22 @@ export default function Navigation() {
       ? { city: destCity, unit: tempUnit }
       : { lat, lng, unit: tempUnit },
   );
+
+  // Currency: only changes when destination is a DIFFERENT COUNTRY
+  const effectiveCurrency =
+    destCurrency && destCurrency !== homeCurrency ? destCurrency : null;
   const { rate, loading: rateLoading } = useCurrency(
     homeCurrency,
-    effectiveCurrency,
+    effectiveCurrency || "USD",
   );
+  const showConversion =
+    effectiveCurrency && effectiveCurrency !== homeCurrency;
 
   // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (dropRef.current && !dropRef.current.contains(e.target)) {
         setUserDropdown(false);
-        setCurrDropdown(false);
         setTempPopover(false);
       }
     };
@@ -161,138 +168,29 @@ export default function Navigation() {
           {/* Right controls (desktop) */}
           <div
             className="hidden md:flex"
-            style={{ alignItems: "center", gap: 4 }}
+            style={{ alignItems: "center", gap: 6 }}
           >
-            {/* Currency display + dropdown */}
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => {
-                  setCurrDropdown(!currDropdown);
-                  setUserDropdown(false);
-                }}
-                style={{
-                  padding: "6px 14px",
-                  border: "1px solid var(--border)",
-                  borderRadius: 50,
-                  background: "#FFF",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  color: "#374151",
-                  fontFamily: "inherit",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {rateLoading || !homeCurrency
-                  ? "—"
-                  : rate !== null
-                    ? `${homeCurrency} 1 = ${effectiveCurrency} ${rate.toFixed(4)}`
-                    : homeCurrency}
-              </button>
-              {currDropdown && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 44,
-                    right: 0,
-                    background: "#FFF",
-                    border: "1px solid var(--border-light)",
-                    borderRadius: 12,
-                    boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
-                    padding: 8,
-                    minWidth: 200,
-                    zIndex: 100,
-                  }}
-                >
-                  {/* Text input for destination currency */}
-                  <div style={{ padding: "4px 4px 8px" }}>
-                    <input
-                      type="text"
-                      placeholder="e.g. EUR"
-                      maxLength={3}
-                      value={currInput}
-                      onChange={(e) => {
-                        const val = e.target.value
-                          .toUpperCase()
-                          .replace(/[^A-Z]/g, "");
-                        setCurrInput(val);
-                        if (val.length === 3) {
-                          setDestinationCurrency(val);
-                        }
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "8px 12px",
-                        border: "1px solid var(--border)",
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontFamily: "inherit",
-                        outline: "none",
-                        textTransform: "uppercase",
-                        letterSpacing: 1,
-                      }}
-                    />
-                  </div>
-                  {/* Live conversion result */}
-                  {homeCurrency && rate !== null && !rateLoading && (
-                    <div
-                      style={{
-                        padding: "6px 12px",
-                        fontSize: 12,
-                        color: "#6B7280",
-                        borderBottom: "1px solid var(--border-light)",
-                        marginBottom: 4,
-                      }}
-                    >
-                      {homeCurrency} 1 = {effectiveCurrency} {rate.toFixed(4)}
-                    </div>
-                  )}
-                  {/* Quick-select popular currencies */}
-                  {[
-                    { code: "USD", symbol: "$", label: "US Dollar" },
-                    { code: "EUR", symbol: "€", label: "Euro" },
-                    { code: "GBP", symbol: "£", label: "Pound" },
-                    { code: "PKR", symbol: "Rs", label: "Rupee" },
-                    { code: "AED", symbol: "د.إ", label: "Dirham" },
-                    { code: "INR", symbol: "₹", label: "Rupee" },
-                  ].map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => {
-                        setDestinationCurrency(c.code);
-                        setCurrInput(c.code);
-                        setCurrDropdown(false);
-                      }}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        width: "100%",
-                        padding: "8px 12px",
-                        border: "none",
-                        background:
-                          effectiveCurrency === c.code
-                            ? "var(--orange-bg)"
-                            : "transparent",
-                        borderRadius: 8,
-                        cursor: "pointer",
-                        fontSize: 13,
-                        fontWeight: 500,
-                        color: "#0A0A0A",
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      <span style={{ fontWeight: 700, width: 24 }}>
-                        {c.symbol}
-                      </span>{" "}
-                      {c.label} ({c.code})
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Currency — auto-detected, no dropdown */}
+            <span
+              style={{
+                padding: "6px 14px",
+                border: "1px solid var(--border)",
+                borderRadius: 50,
+                background: "#FFF",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#374151",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {rateLoading || !homeCurrency
+                ? "—"
+                : showConversion && rate !== null
+                  ? `${homeCurrency} 1 = ${effectiveCurrency} ${rate.toFixed(2)}`
+                  : homeCurrency}
+            </span>
 
-            {/* Location + Country flag pill */}
+            {/* Country flag — hover shows city/country */}
             <div style={{ position: "relative" }}>
               <button
                 onMouseEnter={() => setFlagTooltip(true)}
@@ -302,16 +200,14 @@ export default function Navigation() {
                   border: "1px solid var(--border)",
                   borderRadius: 50,
                   background: "#FFF",
-                  fontSize: 13,
-                  cursor: "pointer",
+                  fontSize: 16,
+                  cursor: "default",
                   lineHeight: 1,
                   display: "flex",
                   alignItems: "center",
-                  gap: 4,
                 }}
-                title={city || "Detecting location..."}
               >
-                <span style={{ fontSize: 16 }}>{locLoading ? "🌐" : flag}</span>
+                {locLoading ? "🌐" : flag}
               </button>
               {flagTooltip && !locLoading && (city || country) && (
                 <div
@@ -340,7 +236,7 @@ export default function Navigation() {
               )}
             </div>
 
-            {/* Weather + Temp toggle */}
+            {/* Temperature — click for details, shows destination city weather */}
             <div style={{ position: "relative" }}>
               <button
                 onClick={() => setTempPopover(!tempPopover)}
@@ -361,8 +257,8 @@ export default function Navigation() {
                 {weatherLoading
                   ? "—"
                   : temp !== null
-                    ? `${temp}°${tempUnit}`
-                    : ""}
+                    ? `${weatherIcon || ""} ${temp}°${tempUnit}`
+                    : "—"}
               </button>
               {tempPopover && !weatherLoading && temp !== null && (
                 <div
@@ -387,7 +283,7 @@ export default function Navigation() {
                 >
                   {feelsLike !== null && (
                     <span>
-                      🌡️ Feels like {feelsLike}°{tempUnit}
+                      🌡️ Feels like {Math.round(feelsLike)}°{tempUnit}
                     </span>
                   )}
                   {humidity !== null && <span>💧 Humidity {humidity}%</span>}
@@ -401,6 +297,8 @@ export default function Navigation() {
                 </div>
               )}
             </div>
+
+            {/* °C/°F toggle */}
             <button
               onClick={() => setTempUnit(tempUnit === "C" ? "F" : "C")}
               style={{
