@@ -247,6 +247,47 @@ export default function Navigation() {
                       {homeCurrency} 1 = {effectiveCurrency} {rate.toFixed(4)}
                     </div>
                   )}
+                  {/* Quick-select popular currencies */}
+                  {[
+                    { code: "USD", symbol: "$", label: "US Dollar" },
+                    { code: "EUR", symbol: "€", label: "Euro" },
+                    { code: "GBP", symbol: "£", label: "Pound" },
+                    { code: "PKR", symbol: "Rs", label: "Rupee" },
+                    { code: "AED", symbol: "د.إ", label: "Dirham" },
+                    { code: "INR", symbol: "₹", label: "Rupee" },
+                  ].map((c) => (
+                    <button
+                      key={c.code}
+                      onClick={() => {
+                        setDestinationCurrency(c.code);
+                        setCurrInput(c.code);
+                        setCurrDropdown(false);
+                      }}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        width: "100%",
+                        padding: "8px 12px",
+                        border: "none",
+                        background:
+                          effectiveCurrency === c.code
+                            ? "var(--orange-bg)"
+                            : "transparent",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                        fontSize: 13,
+                        fontWeight: 500,
+                        color: "#0A0A0A",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, width: 24 }}>
+                        {c.symbol}
+                      </span>{" "}
+                      {c.label} ({c.code})
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
