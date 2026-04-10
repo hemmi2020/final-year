@@ -379,36 +379,32 @@ export default function Navigation() {
 
             {/* User dropdown */}
             <div style={{ position: "relative", marginLeft: 8 }}>
-              {!hasHydrated ? (
-                <div style={{ width: 36, height: 36 }} />
-              ) : (
-                <button
-                  onClick={() => {
-                    setUserDropdown(!userDropdown);
-                    setCurrDropdown(false);
-                  }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: "50%",
-                    border: "1px solid var(--border)",
-                    background: isAuthenticated ? "var(--orange)" : "#F5F5F5",
-                    color: isAuthenticated ? "#FFF" : "var(--text-secondary)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    fontSize: 14,
-                    fontWeight: 700,
-                  }}
-                >
-                  {isAuthenticated ? (
-                    user?.name?.[0]?.toUpperCase() || "U"
-                  ) : (
-                    <User size={16} />
-                  )}
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setUserDropdown(!userDropdown);
+                  setCurrDropdown(false);
+                }}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  border: "1px solid var(--border)",
+                  background: isAuthenticated ? "var(--orange)" : "#F5F5F5",
+                  color: isAuthenticated ? "#FFF" : "var(--text-secondary)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 700,
+                }}
+              >
+                {isAuthenticated ? (
+                  user?.name?.[0]?.toUpperCase() || "U"
+                ) : (
+                  <User size={16} />
+                )}
+              </button>
               {userDropdown && (
                 <div
                   style={{
