@@ -170,7 +170,6 @@ export default function ProfilePage() {
     try {
       await usersAPI.updatePreferences(prefs);
       updateUser({ preferences: prefs });
-      // Sync with global preference store
       const prefStore =
         require("@/store/preferenceStore").usePreferenceStore.getState();
       if (prefs.preferredCurrency)
@@ -211,6 +210,7 @@ export default function ProfilePage() {
         />
       </>
     );
+
   if (loading)
     return (
       <div style={{ display: "flex", justifyContent: "center", padding: 80 }}>
@@ -218,26 +218,51 @@ export default function ProfilePage() {
       </div>
     );
 
+  const uniqueDestinations = [...new Set(trips.map((t) => t.destination))]
+    .length;
+
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-      {/* Cover photo */}
+    <div style={{ maxWidth: 1100, margin: "0 auto", paddingBottom: 60 }}>
+      {/* ─── COVER BANNER ─── */}
       <div
         style={{
-          height: 200,
-          background: "linear-gradient(135deg, #FF4500, #FF6B35, #F7C948)",
-          borderRadius: "0 0 20px 20px",
+          height: 220,
+          background:
+            "linear-gradient(135deg, #FF4500 0%, #FF6B35 50%, #F7C948 100%)",
+          borderRadius: "0 0 24px 24px",
           position: "relative",
         }}
-      />
+      >
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "0 0 24px 24px",
+            background:
+              "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%)",
+          }}
+        />
+      </div>
 
-      {/* Profile info */}
-      <div style={{ padding: "0 24px", marginTop: -48 }}>
+      {/* ─── PROFILE HEADER CARD ─── */}
+      <div
+        style={{
+          margin: "-64px 24px 0",
+          background: "#FFFFFF",
+          borderRadius: 20,
+          boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+          padding: "0 32px 32px",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        {/* Avatar centered at top */}
         <div
           style={{
             display: "flex",
-            alignItems: "end",
-            gap: 20,
-            flexWrap: "wrap",
+            flexDirection: "column",
+            alignItems: "center",
+            marginTop: -48,
           }}
         >
           <AvatarUploader
@@ -245,7 +270,9 @@ export default function ProfilePage() {
             userName={profile?.name}
             onUpload={handleAvatarUpload}
           />
-          <div style={{ flex: 1, paddingBottom: 8 }}>
+
+          {/* Name */}
+          <div style={{ textAlign: "center", marginTop: 16, width: "100%" }}>
             {editMode ? (
               <input
                 className="input-field"
@@ -254,36 +281,70 @@ export default function ProfilePage() {
                   setEditForm({ ...editForm, name: e.target.value })
                 }
                 style={{
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: 800,
-                  marginBottom: 4,
-                  maxWidth: 300,
+                  textAlign: "center",
+                  maxWidth: 340,
+                  margin: "0 auto",
+                  display: "block",
                 }}
               />
             ) : (
               <h1
                 style={{
-                  fontSize: 24,
+                  fontSize: 26,
                   fontWeight: 800,
                   color: "var(--text-primary)",
                   margin: 0,
+                  letterSpacing: "-0.02em",
                 }}
               >
                 {profile?.name}
               </h1>
             )}
-            <p
+
+            {/* Email + Member since */}
+            <div
               style={{
-                fontSize: 14,
-                color: "var(--text-secondary)",
-                margin: "4px 0 0",
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
+                justifyContent: "center",
+                gap: 20,
+                marginTop: 8,
+                flexWrap: "wrap",
               }}
             >
-              <Mail size={14} /> {profile?.email}
-            </p>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 14,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <Mail size={14} style={{ color: "var(--orange)" }} />
+                {profile?.email}
+              </span>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 14,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <Calendar size={14} style={{ color: "var(--orange)" }} />
+                Member since{" "}
+                {new Date(profile?.createdAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </span>
+            </div>
+
+            {/* Bio */}
             {editMode ? (
               <input
                 className="input-field"
@@ -293,31 +354,45 @@ export default function ProfilePage() {
                 }
                 placeholder="Write a short bio..."
                 maxLength={200}
-                style={{ fontSize: 13, marginTop: 6, maxWidth: 400 }}
+                style={{
+                  fontSize: 14,
+                  marginTop: 10,
+                  maxWidth: 440,
+                  margin: "10px auto 0",
+                  display: "block",
+                  textAlign: "center",
+                }}
               />
             ) : (
               profile?.bio && (
                 <p
                   style={{
-                    fontSize: 13,
+                    fontSize: 14,
                     color: "var(--text-secondary)",
-                    margin: "6px 0 0",
+                    margin: "10px 0 0",
+                    lineHeight: 1.5,
+                    maxWidth: 500,
+                    marginLeft: "auto",
+                    marginRight: "auto",
                   }}
                 >
                   {profile.bio}
                 </p>
               )
             )}
+
+            {/* Phone */}
             {editMode ? (
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "center",
                   gap: 6,
-                  marginTop: 4,
+                  marginTop: 8,
                 }}
               >
-                <Phone size={13} style={{ color: "var(--text-muted)" }} />
+                <Phone size={14} style={{ color: "var(--text-muted)" }} />
                 <input
                   className="input-field"
                   value={editForm.phone}
@@ -325,182 +400,281 @@ export default function ProfilePage() {
                     setEditForm({ ...editForm, phone: e.target.value })
                   }
                   placeholder="Phone number"
-                  style={{ fontSize: 13, maxWidth: 200 }}
+                  style={{ fontSize: 14, maxWidth: 220 }}
                 />
               </div>
             ) : (
               profile?.phone && (
                 <p
                   style={{
-                    fontSize: 13,
+                    fontSize: 14,
                     color: "var(--text-muted)",
-                    margin: "2px 0 0",
+                    margin: "6px 0 0",
                     display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Phone size={14} style={{ color: "var(--orange)" }} />
+                  {profile.phone}
+                </p>
+              )
+            )}
+
+            {/* Edit / Save / Cancel buttons */}
+            <div style={{ marginTop: 16 }}>
+              {editMode ? (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    justifyContent: "center",
+                  }}
+                >
+                  <button
+                    onClick={handleSaveEdit}
+                    className="btn-orange"
+                    disabled={saving}
+                    style={{
+                      padding: "10px 24px",
+                      fontSize: 14,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Save size={15} />
+                    {saving ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="btn-outline"
+                    style={{
+                      padding: "10px 24px",
+                      fontSize: 14,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <X size={15} />
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={enterEditMode}
+                  className="btn-outline"
+                  style={{
+                    padding: "10px 24px",
+                    fontSize: 14,
+                    display: "inline-flex",
                     alignItems: "center",
                     gap: 6,
                   }}
                 >
-                  <Phone size={13} /> {profile.phone}
-                </p>
-              )
-            )}
-            <p
-              style={{
-                fontSize: 13,
-                color: "var(--text-muted)",
-                margin: "2px 0 0",
-              }}
-            >
-              Member since{" "}
-              {new Date(profile?.createdAt).toLocaleDateString("en-US", {
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-          {editMode ? (
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={handleSaveEdit}
-                className="btn-orange"
-                disabled={saving}
-                style={{ padding: "8px 20px", fontSize: 13 }}
-              >
-                <Save size={14} style={{ marginRight: 6 }} />{" "}
-                {saving ? "Saving..." : "Save"}
-              </button>
-              <button
-                onClick={handleCancelEdit}
-                className="btn-outline"
-                style={{ padding: "8px 20px", fontSize: 13 }}
-              >
-                <X size={14} style={{ marginRight: 6 }} /> Cancel
-              </button>
+                  <Edit3 size={15} />
+                  Edit Profile
+                </button>
+              )}
             </div>
-          ) : (
-            <button
-              onClick={enterEditMode}
-              className="btn-outline"
-              style={{ padding: "8px 20px", fontSize: 13 }}
-            >
-              <Edit3 size={14} style={{ marginRight: 6 }} /> Edit Profile
-            </button>
-          )}
+          </div>
         </div>
 
-        {/* Stats */}
+        {/* ─── STATS ROW ─── */}
         <div
-          style={{ display: "flex", gap: 16, marginTop: 24, flexWrap: "wrap" }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, 1fr)",
+            gap: 16,
+            marginTop: 28,
+          }}
         >
           {[
             {
-              icon: <Plane size={18} />,
+              icon: <Plane size={22} />,
               value: trips.length,
               label: "Trips Planned",
             },
             {
-              icon: <Globe size={18} />,
-              value: [...new Set(trips.map((t) => t.destination))].length,
+              icon: <Globe size={22} />,
+              value: uniqueDestinations,
               label: "Destinations",
             },
-            { icon: <Calendar size={18} />, value: "Active", label: "Member" },
+            {
+              icon: <User size={22} />,
+              value: "Active",
+              label: "Member Status",
+            },
           ].map((s) => (
             <div
               key={s.label}
-              className="card"
               style={{
-                padding: "16px 24px",
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                flex: 1,
-                minWidth: 160,
+                background: "var(--bg-warm)",
+                borderRadius: 16,
+                padding: "20px 16px",
+                textAlign: "center",
+                transition: "all 0.2s ease",
               }}
             >
-              <div style={{ color: "var(--orange)" }}>{s.icon}</div>
-              <div>
-                <p
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 800,
-                    color: "var(--text-primary)",
-                    margin: 0,
-                  }}
-                >
-                  {s.value}
-                </p>
-                <p
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    margin: 0,
-                  }}
-                >
-                  {s.label}
-                </p>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: "var(--orange-bg)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto 10px",
+                  color: "var(--orange)",
+                }}
+              >
+                {s.icon}
               </div>
+              <p
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: "var(--text-primary)",
+                  margin: 0,
+                }}
+              >
+                {s.value}
+              </p>
+              <p
+                style={{
+                  fontSize: 13,
+                  color: "var(--text-muted)",
+                  margin: "2px 0 0",
+                  fontWeight: 500,
+                }}
+              >
+                {s.label}
+              </p>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Tabs */}
+      {/* ─── TAB BAR ─── */}
+      <div style={{ margin: "32px 24px 0" }}>
         <div
           style={{
             display: "flex",
             gap: 0,
-            marginTop: 32,
             borderBottom: "2px solid var(--border-light)",
           }}
         >
-          {["trips", "settings", "preferences"].map((t) => (
+          {[
+            { key: "trips", label: "My Trips", icon: <Plane size={16} /> },
+            {
+              key: "settings",
+              label: "Settings",
+              icon: <Settings size={16} />,
+            },
+            {
+              key: "preferences",
+              label: "Preferences",
+              icon: <Globe size={16} />,
+            },
+          ].map((t) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={t.key}
+              onClick={() => setTab(t.key)}
               style={{
-                padding: "12px 24px",
+                padding: "14px 28px",
                 fontSize: 15,
                 fontWeight: 600,
                 border: "none",
                 background: "none",
                 cursor: "pointer",
                 fontFamily: "inherit",
-                color: tab === t ? "var(--orange)" : "var(--text-secondary)",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                color:
+                  tab === t.key ? "var(--orange)" : "var(--text-secondary)",
                 borderBottom:
-                  tab === t
-                    ? "2px solid var(--orange)"
-                    : "2px solid transparent",
+                  tab === t.key
+                    ? "2.5px solid var(--orange)"
+                    : "2.5px solid transparent",
                 marginBottom: -2,
+                transition: "color 0.2s ease",
               }}
             >
-              {t === "trips"
-                ? "My Trips"
-                : t === "settings"
-                  ? "Settings"
-                  : "Preferences"}
+              {t.icon}
+              {t.label}
             </button>
           ))}
         </div>
+      </div>
 
+      {/* ─── TAB CONTENT ─── */}
+      <div style={{ margin: "0 24px" }}>
         {/* ─── MY TRIPS TAB ─── */}
         {tab === "trips" && (
           <div style={{ padding: "32px 0" }}>
             {trips.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px 0" }}>
-                <MapPin
-                  size={48}
-                  style={{ color: "#D1D5DB", margin: "0 auto 16px" }}
-                />
-                <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "64px 24px",
+                  background: "var(--bg-warm)",
+                  borderRadius: 20,
+                }}
+              >
+                <div
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "50%",
+                    background: "var(--orange-bg)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 20px",
+                  }}
+                >
+                  <MapPin size={36} style={{ color: "var(--orange)" }} />
+                </div>
+                <h3
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 700,
+                    marginBottom: 8,
+                    color: "var(--text-primary)",
+                  }}
+                >
                   No trips yet
                 </h3>
-                <p style={{ color: "var(--text-secondary)", marginBottom: 24 }}>
-                  Start planning your first adventure!
+                <p
+                  style={{
+                    color: "var(--text-secondary)",
+                    marginBottom: 28,
+                    fontSize: 15,
+                    maxWidth: 360,
+                    marginLeft: "auto",
+                    marginRight: "auto",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Start planning your first adventure and explore amazing
+                  destinations around the world.
                 </p>
                 <button
                   onClick={() => router.push("/planner")}
                   className="btn-orange"
-                  style={{ padding: "12px 28px", fontSize: 15 }}
+                  style={{
+                    padding: "14px 32px",
+                    fontSize: 15,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
                 >
+                  <Plane size={18} />
                   Start Planning
                 </button>
               </div>
@@ -508,66 +682,129 @@ export default function ProfilePage() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-                  gap: 20,
+                  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+                  gap: 24,
                 }}
               >
                 {trips.map((trip) => (
                   <div
                     key={trip._id}
-                    className="card"
-                    style={{ overflow: "hidden" }}
+                    style={{
+                      background: "#FFFFFF",
+                      borderRadius: 18,
+                      overflow: "hidden",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      minHeight: 340,
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow =
+                        "0 12px 40px rgba(0,0,0,0.12)";
+                      e.currentTarget.style.transform = "translateY(-4px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 12px rgba(0,0,0,0.06)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
                   >
+                    {/* Card header gradient */}
                     <div
                       style={{
-                        height: 180,
-                        background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                        height: 140,
+                        background:
+                          "linear-gradient(135deg, #FF4500 0%, #FF6B35 60%, #F7C948 100%)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        position: "relative",
                       }}
                     >
-                      <MapPin
-                        size={40}
-                        style={{ color: "rgba(255,255,255,0.3)" }}
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          background:
+                            "radial-gradient(circle at 30% 70%, rgba(255,255,255,0.12) 0%, transparent 50%)",
+                        }}
+                      />
+                      <Globe
+                        size={48}
+                        style={{
+                          color: "rgba(255,255,255,0.25)",
+                          position: "relative",
+                        }}
                       />
                     </div>
-                    <div style={{ padding: 20 }}>
+
+                    {/* Card body */}
+                    <div
+                      style={{
+                        padding: "20px 22px 22px",
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                      }}
+                    >
                       <h3
                         style={{
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: 700,
                           color: "var(--text-primary)",
-                          marginBottom: 4,
+                          marginBottom: 6,
+                          lineHeight: 1.3,
                         }}
                       >
                         {trip.title}
                       </h3>
                       <p
                         style={{
-                          fontSize: 13,
+                          fontSize: 14,
                           color: "var(--text-secondary)",
                           marginBottom: 4,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
                         }}
                       >
                         <MapPin
-                          size={12}
-                          style={{ display: "inline", marginRight: 4 }}
+                          size={14}
+                          style={{ color: "var(--orange)", flexShrink: 0 }}
                         />
                         {trip.destination}
                       </p>
                       {trip.startDate && (
-                        <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                        <p
+                          style={{
+                            fontSize: 13,
+                            color: "var(--text-muted)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <Calendar size={13} style={{ flexShrink: 0 }} />
                           {new Date(trip.startDate).toLocaleDateString()}
                           {trip.endDate &&
                             ` – ${new Date(trip.endDate).toLocaleDateString()}`}
                         </p>
                       )}
-                      <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+
+                      {/* Badges */}
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          marginTop: 12,
+                          flexWrap: "wrap",
+                        }}
+                      >
                         <span
                           style={{
-                            fontSize: 11,
-                            padding: "3px 10px",
+                            fontSize: 12,
+                            padding: "4px 14px",
                             borderRadius: 99,
                             background: "var(--orange-bg)",
                             color: "var(--orange)",
@@ -579,24 +816,44 @@ export default function ProfilePage() {
                         {trip.aiGenerated && (
                           <span
                             style={{
-                              fontSize: 11,
-                              padding: "3px 10px",
+                              fontSize: 12,
+                              padding: "4px 14px",
                               borderRadius: 99,
                               background: "#E8F5E9",
                               color: "#2E7D32",
                               fontWeight: 600,
                             }}
                           >
-                            AI
+                            ✨ AI Generated
                           </span>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+
+                      {/* Spacer */}
+                      <div style={{ flex: 1, minHeight: 16 }} />
+
+                      {/* Action buttons */}
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 10,
+                          alignItems: "center",
+                        }}
+                      >
                         <button
                           onClick={() => router.push(`/trips/${trip._id}`)}
                           className="btn-orange"
-                          style={{ padding: "8px 18px", fontSize: 13, flex: 1 }}
+                          style={{
+                            padding: "10px 20px",
+                            fontSize: 14,
+                            flex: 1,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 6,
+                          }}
                         >
+                          <Plane size={15} />
                           View Trip
                         </button>
                         <button
@@ -607,12 +864,12 @@ export default function ProfilePage() {
                               : "Share to Community"
                           }
                           style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 10,
+                            width: 40,
+                            height: 40,
+                            borderRadius: 12,
                             border: trip.isPublic
                               ? "1.5px solid var(--orange)"
-                              : "1px solid var(--border)",
+                              : "1.5px solid var(--border)",
                             background: trip.isPublic
                               ? "var(--orange-bg)"
                               : "#FFF",
@@ -623,31 +880,39 @@ export default function ProfilePage() {
                             color: trip.isPublic
                               ? "var(--orange)"
                               : "var(--text-muted)",
+                            transition: "all 0.2s ease",
+                            flexShrink: 0,
                           }}
                         >
                           <Share2 size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteTrip(trip._id)}
+                          title="Delete trip"
                           style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 10,
-                            border: "1px solid var(--border)",
+                            width: 40,
+                            height: 40,
+                            borderRadius: 12,
+                            border: "1.5px solid var(--border)",
                             background: "#FFF",
                             cursor: "pointer",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             color: "var(--text-muted)",
-                            transition: "color 0.2s",
+                            transition: "all 0.2s ease",
+                            flexShrink: 0,
                           }}
-                          onMouseEnter={(e) =>
-                            (e.currentTarget.style.color = "var(--error)")
-                          }
-                          onMouseLeave={(e) =>
-                            (e.currentTarget.style.color = "var(--text-muted)")
-                          }
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#EF4444";
+                            e.currentTarget.style.borderColor = "#FCA5A5";
+                            e.currentTarget.style.background = "#FEF2F2";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color = "var(--text-muted)";
+                            e.currentTarget.style.borderColor = "var(--border)";
+                            e.currentTarget.style.background = "#FFF";
+                          }}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -662,274 +927,408 @@ export default function ProfilePage() {
 
         {/* ─── SETTINGS TAB ─── */}
         {tab === "settings" && (
-          <div style={{ padding: "32px 0", maxWidth: 500 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>
-              Personal Information
-            </h3>
-            <div style={{ marginBottom: 16 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  marginBottom: 6,
-                }}
-              >
-                Full Name
-              </label>
-              <input
-                className="input-field"
-                value={settingsForm.name}
-                onChange={(e) =>
-                  setSettingsForm({ ...settingsForm, name: e.target.value })
-                }
-              />
-            </div>
-            <div style={{ marginBottom: 24 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  marginBottom: 6,
-                }}
-              >
-                Email
-              </label>
-              <input
-                className="input-field"
-                value={settingsForm.email}
-                onChange={(e) =>
-                  setSettingsForm({ ...settingsForm, email: e.target.value })
-                }
-              />
-            </div>
-            <button
-              onClick={handleSaveSettings}
-              className="btn-orange"
-              disabled={saving}
-              style={{ padding: "12px 28px", fontSize: 15 }}
+          <div style={{ padding: "32px 0", maxWidth: 560 }}>
+            {/* Personal Information Section */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 18,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                padding: "28px 28px 32px",
+                marginBottom: 24,
+              }}
             >
-              <Save size={16} style={{ marginRight: 6 }} />{" "}
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 24,
+                }}
+              >
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: "var(--orange-bg)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--orange)",
+                  }}
+                >
+                  <User size={18} />
+                </div>
+                <h3
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    margin: 0,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Personal Information
+                </h3>
+              </div>
 
-            <PasswordChanger
-              isOAuthUser={!profile?.password && !!profile?.googleId}
-            />
+              <div style={{ marginBottom: 20 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    marginBottom: 8,
+                    color: "var(--text-body)",
+                  }}
+                >
+                  Full Name
+                </label>
+                <input
+                  className="input-field"
+                  value={settingsForm.name}
+                  onChange={(e) =>
+                    setSettingsForm({ ...settingsForm, name: e.target.value })
+                  }
+                />
+              </div>
+              <div style={{ marginBottom: 24 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 14,
+                    fontWeight: 600,
+                    marginBottom: 8,
+                    color: "var(--text-body)",
+                  }}
+                >
+                  Email Address
+                </label>
+                <input
+                  className="input-field"
+                  value={settingsForm.email}
+                  onChange={(e) =>
+                    setSettingsForm({ ...settingsForm, email: e.target.value })
+                  }
+                />
+              </div>
+              <button
+                onClick={handleSaveSettings}
+                className="btn-orange"
+                disabled={saving}
+                style={{
+                  padding: "12px 28px",
+                  fontSize: 15,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Save size={16} />
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+
+            {/* Change Password Section */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 18,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                padding: "28px 28px 32px",
+              }}
+            >
+              <PasswordChanger
+                isOAuthUser={!profile?.password && !!profile?.googleId}
+              />
+            </div>
           </div>
         )}
 
         {/* ─── PREFERENCES TAB ─── */}
         {tab === "preferences" && (
-          <div style={{ padding: "32px 0", maxWidth: 600 }}>
-            {/* Dietary */}
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
-              Dietary Preferences
-            </h3>
+          <div style={{ padding: "32px 0", maxWidth: 640 }}>
+            {/* Dietary Preferences */}
             <div
               style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                marginBottom: 28,
+                background: "#FFFFFF",
+                borderRadius: 18,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                padding: "28px 28px 32px",
+                marginBottom: 24,
               }}
             >
-              {DIETARY.map((d) => (
-                <button
-                  key={d}
-                  onClick={() =>
-                    setPrefs({
-                      ...prefs,
-                      dietary: toggleArr(prefs.dietary, d.toLowerCase()),
-                    })
-                  }
-                  style={{
-                    padding: "8px 18px",
-                    borderRadius: 50,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    border: "1.5px solid",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                    transition: "all 0.2s",
-                    background: prefs.dietary.includes(d.toLowerCase())
-                      ? "var(--orange)"
-                      : "#FFF",
-                    color: prefs.dietary.includes(d.toLowerCase())
-                      ? "#FFF"
-                      : "var(--text-body)",
-                    borderColor: prefs.dietary.includes(d.toLowerCase())
-                      ? "var(--orange)"
-                      : "var(--border)",
-                  }}
-                >
-                  {d}
-                </button>
-              ))}
+              <h3
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  marginBottom: 16,
+                  color: "var(--text-primary)",
+                }}
+              >
+                🍽️ Dietary Preferences
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 10,
+                }}
+              >
+                {DIETARY.map((d) => {
+                  const isActive = prefs.dietary.includes(d.toLowerCase());
+                  return (
+                    <button
+                      key={d}
+                      onClick={() =>
+                        setPrefs({
+                          ...prefs,
+                          dietary: toggleArr(prefs.dietary, d.toLowerCase()),
+                        })
+                      }
+                      style={{
+                        padding: "10px 22px",
+                        borderRadius: 50,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        border: "2px solid",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        transition: "all 0.2s ease",
+                        background: isActive ? "var(--orange)" : "#FFF",
+                        color: isActive ? "#FFF" : "var(--text-body)",
+                        borderColor: isActive
+                          ? "var(--orange)"
+                          : "var(--border)",
+                      }}
+                    >
+                      {d}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Budget */}
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
-              Travel Budget
-            </h3>
-            <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
-              {["budget", "moderate", "luxury"].map((b) => (
-                <button
-                  key={b}
-                  onClick={() => setPrefs({ ...prefs, budget: b })}
-                  style={{
-                    padding: "8px 20px",
-                    borderRadius: 50,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    border: "1.5px solid",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                    textTransform: "capitalize",
-                    background: prefs.budget === b ? "var(--orange)" : "#FFF",
-                    color: prefs.budget === b ? "#FFF" : "var(--text-body)",
-                    borderColor:
-                      prefs.budget === b ? "var(--orange)" : "var(--border)",
-                  }}
-                >
-                  {b === "budget"
-                    ? "💰 Budget"
-                    : b === "moderate"
-                      ? "💳 Mid-range"
-                      : "💎 Luxury"}
-                </button>
-              ))}
+            {/* Travel Budget */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 18,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                padding: "28px 28px 32px",
+                marginBottom: 24,
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  marginBottom: 16,
+                  color: "var(--text-primary)",
+                }}
+              >
+                💰 Travel Budget
+              </h3>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {["budget", "moderate", "luxury"].map((b) => {
+                  const isActive = prefs.budget === b;
+                  return (
+                    <button
+                      key={b}
+                      onClick={() => setPrefs({ ...prefs, budget: b })}
+                      style={{
+                        padding: "10px 24px",
+                        borderRadius: 50,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        border: "2px solid",
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        transition: "all 0.2s ease",
+                        background: isActive ? "var(--orange)" : "#FFF",
+                        color: isActive ? "#FFF" : "var(--text-body)",
+                        borderColor: isActive
+                          ? "var(--orange)"
+                          : "var(--border)",
+                      }}
+                    >
+                      {b === "budget"
+                        ? "💰 Budget"
+                        : b === "moderate"
+                          ? "💳 Mid-range"
+                          : "💎 Luxury"}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Interests */}
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
-              Interests
-            </h3>
             <div
               style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 8,
-                marginBottom: 28,
+                background: "#FFFFFF",
+                borderRadius: 18,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                padding: "28px 28px 32px",
+                marginBottom: 24,
               }}
             >
-              {INTERESTS.map((i) => {
-                const val = i.split(" ")[0].toLowerCase();
-                return (
-                  <button
-                    key={i}
-                    onClick={() =>
-                      setPrefs({
-                        ...prefs,
-                        interests: toggleArr(prefs.interests, val),
-                      })
-                    }
-                    style={{
-                      padding: "8px 18px",
-                      borderRadius: 50,
-                      fontSize: 14,
-                      fontWeight: 500,
-                      border: "1.5px solid",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      background: prefs.interests.includes(val)
-                        ? "var(--orange)"
-                        : "#FFF",
-                      color: prefs.interests.includes(val)
-                        ? "#FFF"
-                        : "var(--text-body)",
-                      borderColor: prefs.interests.includes(val)
-                        ? "var(--orange)"
-                        : "var(--border)",
-                    }}
-                  >
-                    {i}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Currency + Temp */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-                marginBottom: 28,
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    marginBottom: 6,
-                  }}
-                >
-                  Currency
-                </label>
-                <select
-                  className="input-field"
-                  value={prefs.preferredCurrency}
-                  onChange={(e) =>
-                    setPrefs({ ...prefs, preferredCurrency: e.target.value })
-                  }
-                  style={{ cursor: "pointer" }}
-                >
-                  {["USD", "EUR", "GBP", "PKR", "AED", "INR", "JPY"].map(
-                    (c) => (
-                      <option key={c}>{c}</option>
-                    ),
-                  )}
-                </select>
-              </div>
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    marginBottom: 6,
-                  }}
-                >
-                  Temperature
-                </label>
-                <div
-                  style={{
-                    display: "flex",
-                    border: "1.5px solid var(--border)",
-                    borderRadius: 50,
-                    overflow: "hidden",
-                    width: "fit-content",
-                  }}
-                >
-                  {["metric", "imperial"].map((u) => (
+              <h3
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  marginBottom: 16,
+                  color: "var(--text-primary)",
+                }}
+              >
+                ✨ Interests
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 10,
+                }}
+              >
+                {INTERESTS.map((i) => {
+                  const val = i.split(" ")[0].toLowerCase();
+                  const isActive = prefs.interests.includes(val);
+                  return (
                     <button
-                      key={u}
-                      type="button"
-                      onClick={() => setPrefs({ ...prefs, temperatureUnit: u })}
+                      key={i}
+                      onClick={() =>
+                        setPrefs({
+                          ...prefs,
+                          interests: toggleArr(prefs.interests, val),
+                        })
+                      }
                       style={{
-                        padding: "10px 20px",
-                        border: "none",
+                        padding: "10px 22px",
+                        borderRadius: 50,
                         fontSize: 14,
                         fontWeight: 600,
+                        border: "2px solid",
                         cursor: "pointer",
                         fontFamily: "inherit",
-                        background:
-                          prefs.temperatureUnit === u
-                            ? "var(--orange)"
-                            : "#FFF",
-                        color:
-                          prefs.temperatureUnit === u
-                            ? "#FFF"
-                            : "var(--text-body)",
+                        transition: "all 0.2s ease",
+                        background: isActive ? "var(--orange)" : "#FFF",
+                        color: isActive ? "#FFF" : "var(--text-body)",
+                        borderColor: isActive
+                          ? "var(--orange)"
+                          : "var(--border)",
                       }}
                     >
-                      {u === "metric" ? "°C" : "°F"}
+                      {i}
                     </button>
-                  ))}
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Currency + Temperature */}
+            <div
+              style={{
+                background: "#FFFFFF",
+                borderRadius: 18,
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                padding: "28px 28px 32px",
+                marginBottom: 28,
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: 17,
+                  fontWeight: 700,
+                  marginBottom: 20,
+                  color: "var(--text-primary)",
+                }}
+              >
+                ⚙️ Display Settings
+              </h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 20,
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      marginBottom: 8,
+                      color: "var(--text-body)",
+                    }}
+                  >
+                    Currency
+                  </label>
+                  <select
+                    className="input-field"
+                    value={prefs.preferredCurrency}
+                    onChange={(e) =>
+                      setPrefs({ ...prefs, preferredCurrency: e.target.value })
+                    }
+                    style={{ cursor: "pointer" }}
+                  >
+                    {["USD", "EUR", "GBP", "PKR", "AED", "INR", "JPY"].map(
+                      (c) => (
+                        <option key={c}>{c}</option>
+                      ),
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      marginBottom: 8,
+                      color: "var(--text-body)",
+                    }}
+                  >
+                    Temperature
+                  </label>
+                  <div
+                    style={{
+                      display: "flex",
+                      border: "2px solid var(--border)",
+                      borderRadius: 50,
+                      overflow: "hidden",
+                      width: "fit-content",
+                    }}
+                  >
+                    {["metric", "imperial"].map((u) => (
+                      <button
+                        key={u}
+                        type="button"
+                        onClick={() =>
+                          setPrefs({ ...prefs, temperatureUnit: u })
+                        }
+                        style={{
+                          padding: "10px 22px",
+                          border: "none",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                          transition: "all 0.2s ease",
+                          background:
+                            prefs.temperatureUnit === u
+                              ? "var(--orange)"
+                              : "#FFF",
+                          color:
+                            prefs.temperatureUnit === u
+                              ? "#FFF"
+                              : "var(--text-body)",
+                        }}
+                      >
+                        {u === "metric" ? "°C" : "°F"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -938,9 +1337,15 @@ export default function ProfilePage() {
               onClick={handleSavePrefs}
               className="btn-orange"
               disabled={saving}
-              style={{ padding: "12px 28px", fontSize: 15 }}
+              style={{
+                padding: "14px 32px",
+                fontSize: 15,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
             >
-              <Save size={16} style={{ marginRight: 6 }} />{" "}
+              <Save size={16} />
               {saving ? "Saving..." : "Save Preferences"}
             </button>
           </div>
