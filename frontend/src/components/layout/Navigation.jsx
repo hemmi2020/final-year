@@ -13,6 +13,7 @@ import {
   Settings,
   LogOut,
   Plane,
+  Globe,
 } from "lucide-react";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
@@ -344,6 +345,29 @@ export default function Navigation() {
                       </div>
                       <button
                         onClick={() => {
+                          router.push("/dashboard");
+                          setUserDropdown(false);
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          width: "100%",
+                          padding: "8px 12px",
+                          border: "none",
+                          background: "transparent",
+                          borderRadius: 8,
+                          cursor: "pointer",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: "#374151",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        <Globe size={15} /> Dashboard
+                      </button>
+                      <button
+                        onClick={() => {
                           router.push("/profile");
                           setUserDropdown(false);
                         }}
@@ -367,7 +391,7 @@ export default function Navigation() {
                       </button>
                       <button
                         onClick={() => {
-                          router.push("/profile");
+                          router.push("/trips");
                           setUserDropdown(false);
                         }}
                         style={{
@@ -390,7 +414,7 @@ export default function Navigation() {
                       </button>
                       <button
                         onClick={() => {
-                          router.push("/profile");
+                          router.push("/settings");
                           setUserDropdown(false);
                         }}
                         style={{
