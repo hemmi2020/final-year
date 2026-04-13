@@ -33,21 +33,32 @@ function getDistance(lat1, lng1, lat2, lng2) {
   return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
 }
 
-async function fetchNearby(lat, lng, query, radius = 3000, limit = 5) {
-  const overpassQuery = `[out:json][timeout:10];${query}(around:${radius},${lat},${lng});out body ${limit};`;
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: overpassQuery,
-    headers: { "Content-Type": "text/plain" },
-  });
-  const data = await res.json();
-  return (data.elements || []).map((el) => ({
-    name: el.tags?.name || "Unknown",
-    lat: el.lat,
-    lng: el.lon,
-    type: el.tags?.amenity || el.tags?.tourism || "",
-    phone: el.tags?.phone || "",
-  }));
+async function fetchNearby(lat, lng, query, radius = 5000, limit = 8) {
+  // Try up to 2 times with increasing radius
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = radius + attempt * 3000; // expand radius on retry
+      const overpassQuery = `[out:json][timeout:15];${query}(around:${r},${lat},${lng});out body ${limit};`;
+      const res = await fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: overpassQuery,
+        headers: { "Content-Type": "text/plain" },
+        signal: AbortSignal.timeout(12000),
+      });
+      const data = await res.json();
+      const results = (data.elements || [])
+        .filter((el) => el.tags?.name)
+        .map((el) => ({
+          name: el.tags.name,
+          lat: el.lat,
+          lng: el.lon,
+          type: el.tags?.amenity || el.tags?.tourism || "",
+          phone: el.tags?.phone || "",
+        }));
+      if (results.length > 0) return results;
+    } catch {}
+  }
+  return [];
 }
 
 const NEARBY_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
@@ -349,28 +360,27 @@ export default function DashboardPage() {
     }
 
     setNearbyLoading(true);
-    Promise.allSettled(
-      NEARBY_CATEGORIES.map((cat) =>
-        fetchNearby(loc.lat, loc.lng, cat.query).then((results) => ({
-          key: cat.key,
-          results,
-        })),
-      ),
-    ).then((outcomes) => {
+
+    // Fetch sequentially with 500ms delay to avoid Overpass rate limiting
+    const fetchSequentially = async () => {
       const result = {};
-      outcomes.forEach((o) => {
-        if (o.status === "fulfilled") {
-          result[o.value.key] = o.value.results;
-        } else {
-          // find the key from the index
-          const idx = outcomes.indexOf(o);
-          result[NEARBY_CATEGORIES[idx].key] = [];
+      for (const cat of NEARBY_CATEGORIES) {
+        try {
+          const results = await fetchNearby(loc.lat, loc.lng, cat.query);
+          result[cat.key] = results;
+          setNearby((prev) => ({ ...prev, [cat.key]: results }));
+        } catch {
+          result[cat.key] = [];
         }
-      });
+        // Small delay between requests to avoid rate limiting
+        await new Promise((r) => setTimeout(r, 500));
+      }
       setNearby(result);
       setNearbyCache(cacheKey, result);
       setNearbyLoading(false);
-    });
+    };
+
+    fetchSequentially();
   }, [loc.lat, loc.lng]);
 
   // Auth check + trips fetch
