@@ -61,6 +61,19 @@ const QUESTION_PATTERNS = [
             /\btravel with\b/i,
         ],
     },
+    {
+        type: 'generate',
+        patterns: [
+            /\bready to plan\b/i,
+            /\bgenerate\b/i,
+            /\bcreate itinerary\b/i,
+            /\blet me plan\b/i,
+            /\bhere'?s what I suggest\b/i,
+            /\bbased on your preferences\b/i,
+            /\bshall I create\b/i,
+            /\bwould you like me to plan\b/i,
+        ],
+    },
 ];
 
 /**

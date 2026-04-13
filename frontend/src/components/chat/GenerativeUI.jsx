@@ -18,6 +18,7 @@ import DurationSelector from "@/components/chat/inputs/DurationSelector";
 import InputBudgetSelector from "@/components/chat/inputs/BudgetSelector";
 import PreferenceChips from "@/components/chat/inputs/PreferenceChips";
 import CompanionSelector from "@/components/chat/inputs/CompanionSelector";
+import GenerateItinerary from "@/components/chat/inputs/GenerateItinerary";
 
 // ─── PARSER ───
 export function parseAIMessage(rawText) {
@@ -57,6 +58,7 @@ const QUESTION_COMPONENT_MAP = {
   budget: InputBudgetSelector,
   preferences: PreferenceChips,
   companions: CompanionSelector,
+  generate: GenerateItinerary,
 };
 
 // ─── RENDERER ───
