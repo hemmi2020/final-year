@@ -268,16 +268,10 @@ export default function Navigation() {
                   }}
                 >
                   {feelsLike !== null && (
-                    <span>
-                      🌡️ Feels like {Math.round(feelsLike)}°{tempUnit}
-                    </span>
+                    <span>🌡️ Feels like {Math.round(feelsLike)}°C</span>
                   )}
                   {humidity !== null && <span>💧 Humidity {humidity}%</span>}
-                  {windSpeed !== null && (
-                    <span>
-                      🌬️ Wind {windSpeed} {tempUnit === "F" ? "mph" : "m/s"}
-                    </span>
-                  )}
+                  {windSpeed !== null && <span>🌬️ Wind {windSpeed} m/s</span>}
                   {condition && <span>☁️ {condition}</span>}
                   {weatherCity && <span>📍 {weatherCity}</span>}
                 </div>
