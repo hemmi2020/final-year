@@ -18,8 +18,6 @@ import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
 import { useLocation, getCurrencySymbol } from "@/hooks/useLocation";
 import { useWeather } from "@/hooks/useWeather";
-import { useCurrency } from "@/hooks/useCurrency";
-import { useDestinationStore } from "@/store/destinationStore";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -38,17 +36,10 @@ export default function Navigation() {
   const [userDropdown, setUserDropdown] = useState(false);
   const [flagTooltip, setFlagTooltip] = useState(false);
   const [tempPopover, setTempPopover] = useState(false);
-  const { tempUnit, setTempUnit } =
-    require("@/store/preferenceStore").usePreferenceStore();
-  const {
-    city: destCity,
-    country: destCountry,
-    currency: destCurrency,
-  } = useDestinationStore();
   const { user, isAuthenticated, logout, updateUser } = useAuthStore();
   const dropRef = useRef(null);
 
-  // Live data hooks — all auto-detected
+  // Live data hooks — ALWAYS user's home location from IP, never destination
   const {
     lat,
     lng,
@@ -60,13 +51,7 @@ export default function Navigation() {
     loading: locLoading,
   } = useLocation();
 
-  // Temperature: changes based on destination CITY (even within same country)
-  // Use city name when available (more reliable than lat/lng for weather)
-  const weatherQuery = destCity
-    ? { city: destCity, unit: "C" }
-    : city
-      ? { city: city, unit: "C" }
-      : { lat, lng, unit: "C" };
+  // Temperature: ALWAYS user's home city weather
   const {
     temp,
     feelsLike,
@@ -76,17 +61,9 @@ export default function Navigation() {
     city: weatherCity,
     icon: weatherIcon,
     loading: weatherLoading,
-  } = useWeather(weatherQuery);
+  } = useWeather(city ? { city, unit: "C" } : { lat, lng, unit: "C" });
 
-  // Currency: only changes when destination is a DIFFERENT COUNTRY
-  const effectiveCurrency =
-    destCurrency && destCurrency !== homeCurrency ? destCurrency : null;
-  const { rate, loading: rateLoading } = useCurrency(
-    homeCurrency,
-    effectiveCurrency || "USD",
-  );
-  const showConversion =
-    effectiveCurrency && effectiveCurrency !== homeCurrency;
+  // Currency: just show home currency symbol, no conversion in navbar
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -172,7 +149,7 @@ export default function Navigation() {
             className="hidden md:flex"
             style={{ alignItems: "center", gap: 6 }}
           >
-            {/* Currency — auto-detected, shows symbol */}
+            {/* Currency — user's home currency */}
             <span
               style={{
                 padding: "6px 14px",
@@ -185,11 +162,7 @@ export default function Navigation() {
                 whiteSpace: "nowrap",
               }}
             >
-              {locLoading
-                ? "..."
-                : showConversion && rate !== null
-                  ? `${getCurrencySymbol(homeCurrency)} → ${getCurrencySymbol(effectiveCurrency)}`
-                  : getCurrencySymbol(homeCurrency || "USD")}
+              {locLoading ? "..." : getCurrencySymbol(homeCurrency || "USD")}
             </span>
 
             {/* Country flag — hover shows city/country */}
