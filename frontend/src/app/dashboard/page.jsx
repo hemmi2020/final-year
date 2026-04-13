@@ -1,25 +1,301 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import {
   MapPin,
   Calendar,
-  Heart,
   TrendingUp,
   MessageSquare,
   Settings,
   Plus,
-  Clock,
   Globe,
 } from "lucide-react";
-import Container from "@/components/layout/Container";
-import Button from "@/components/ui/Button";
-import Card, { CardBody } from "@/components/ui/Card";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
 import { tripsAPI } from "@/lib/api";
+import { useLocation, getCurrencySymbol } from "@/hooks/useLocation";
+import { useWeather } from "@/hooks/useWeather";
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  const m = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
+}
+
+async function fetchNearby(lat, lng, query, radius = 3000, limit = 5) {
+  const overpassQuery = `[out:json][timeout:10];${query}(around:${radius},${lat},${lng});out body ${limit};`;
+  const res = await fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: overpassQuery,
+    headers: { "Content-Type": "text/plain" },
+  });
+  const data = await res.json();
+  return (data.elements || []).map((el) => ({
+    name: el.tags?.name || "Unknown",
+    lat: el.lat,
+    lng: el.lon,
+    type: el.tags?.amenity || el.tags?.tourism || "",
+    phone: el.tags?.phone || "",
+  }));
+}
+
+const NEARBY_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+function getNearbyCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    return Date.now() - ts < NEARBY_CACHE_TTL ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+function setNearbyCache(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
+}
+
+// ── Nearby categories ────────────────────────────────────────────────────────
+
+const NEARBY_CATEGORIES = [
+  {
+    key: "mosques",
+    emoji: "🕌",
+    title: "Nearby Mosques",
+    query: 'node["amenity"="place_of_worship"]["religion"="muslim"]',
+  },
+  {
+    key: "hospitals",
+    emoji: "🏥",
+    title: "Hospitals",
+    query: 'node["amenity"~"hospital|clinic"]',
+  },
+  {
+    key: "police",
+    emoji: "👮",
+    title: "Police Stations",
+    query: 'node["amenity"="police"]',
+  },
+  {
+    key: "halal",
+    emoji: "🍽️",
+    title: "Halal Restaurants",
+    query:
+      'node["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian"]',
+  },
+  {
+    key: "atms",
+    emoji: "🏧",
+    title: "ATMs & Banks",
+    query: 'node["amenity"~"atm|bank"]',
+  },
+  {
+    key: "fuel",
+    emoji: "⛽",
+    title: "Petrol Stations",
+    query: 'node["amenity"="fuel"]',
+  },
+];
+
+// ── Styles ───────────────────────────────────────────────────────────────────
+
+const cardShadow = "0 2px 12px rgba(0,0,0,0.06)";
+
+const styles = {
+  container: {
+    width: "100%",
+    maxWidth: 1280,
+    margin: "0 auto",
+    padding: "32px 16px",
+  },
+  headerRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 32,
+    gap: 16,
+  },
+  h1: { fontSize: 28, fontWeight: 700, color: "#0A0A0A", margin: 0 },
+  subtitle: { color: "#6B7280", margin: "4px 0 0" },
+  btnGroup: { display: "flex", gap: 10 },
+  btnOutline: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 16px",
+    border: "1px solid #E5E7EB",
+    borderRadius: 8,
+    background: "#fff",
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 500,
+    color: "#374151",
+  },
+  btnPrimary: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 16px",
+    border: "none",
+    borderRadius: 8,
+    background: "#FF4500",
+    color: "#fff",
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 500,
+  },
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 20,
+    marginBottom: 32,
+  },
+  statCard: {
+    background: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    boxShadow: cardShadow,
+  },
+  statEmoji: { fontSize: 28, marginBottom: 8 },
+  statValue: { fontSize: 22, fontWeight: 700, color: "#0A0A0A", margin: 0 },
+  statSub: { fontSize: 13, color: "#6B7280", margin: "4px 0 0" },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 700,
+    color: "#0A0A0A",
+    margin: "0 0 20px",
+  },
+  nearbyGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+    gap: 20,
+    marginBottom: 40,
+  },
+  nearbyCard: {
+    background: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    boxShadow: cardShadow,
+  },
+  nearbyHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 14,
+  },
+  nearbyEmoji: { fontSize: 24 },
+  nearbyTitle: { fontSize: 16, fontWeight: 600, color: "#0A0A0A", margin: 0 },
+  nearbyItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "8px 0",
+    borderBottom: "1px solid #F3F4F6",
+  },
+  nearbyName: { fontSize: 14, color: "#374151", fontWeight: 500 },
+  nearbyDist: { fontSize: 12, color: "#9CA3AF" },
+  mapLink: {
+    fontSize: 12,
+    color: "#FF4500",
+    textDecoration: "none",
+    marginLeft: 8,
+    whiteSpace: "nowrap",
+  },
+  skeleton: {
+    height: 14,
+    borderRadius: 6,
+    background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)",
+    backgroundSize: "200% 100%",
+    animation: "shimmer 1.5s infinite",
+    marginBottom: 10,
+  },
+  mainGrid: {
+    display: "grid",
+    gridTemplateColumns: "2fr 1fr",
+    gap: 32,
+  },
+  tripCard: {
+    background: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    boxShadow: cardShadow,
+    marginBottom: 12,
+  },
+  tripTitle: {
+    fontSize: 18,
+    fontWeight: 600,
+    color: "#0A0A0A",
+    margin: "0 0 4px",
+  },
+  tripDest: {
+    fontSize: 14,
+    color: "#6B7280",
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 8,
+  },
+  badge: (bg, color) => ({
+    display: "inline-block",
+    padding: "2px 10px",
+    fontSize: 12,
+    fontWeight: 500,
+    borderRadius: 999,
+    background: bg,
+    color,
+    marginRight: 6,
+  }),
+  quickAction: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    width: "100%",
+    padding: 14,
+    background: "#fff",
+    border: "1px solid #E5E7EB",
+    borderRadius: 12,
+    cursor: "pointer",
+    marginBottom: 10,
+    textAlign: "left",
+    transition: "border-color 0.15s",
+  },
+  qaIcon: (bg) => ({
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: bg,
+    flexShrink: 0,
+  }),
+  qaTitle: { fontSize: 14, fontWeight: 600, color: "#0A0A0A", margin: 0 },
+  qaSub: { fontSize: 13, color: "#6B7280", margin: 0 },
+  emptyTrips: {
+    textAlign: "center",
+    padding: "40px 20px",
+    background: "#fff",
+    borderRadius: 12,
+    boxShadow: cardShadow,
+  },
+};
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -29,18 +305,88 @@ export default function DashboardPage() {
   const [trips, setTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Live data hooks
+  const loc = useLocation();
+  const weather = useWeather({ lat: loc.lat, lng: loc.lng, city: loc.city });
+
+  // Live clock
+  const [currentTime, setCurrentTime] = useState("");
+  const [timeZone, setTimeZone] = useState("");
+
+  useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    setTimeZone(tz);
+    const tick = () => {
+      const now = new Date();
+      setCurrentTime(
+        now.toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+      );
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Nearby places
+  const [nearby, setNearby] = useState({});
+  const [nearbyLoading, setNearbyLoading] = useState(true);
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    if (!loc.lat || !loc.lng || fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    const cacheKey = `nearby_${loc.lat.toFixed(2)}_${loc.lng.toFixed(2)}`;
+    const cached = getNearbyCache(cacheKey);
+    if (cached) {
+      setNearby(cached);
+      setNearbyLoading(false);
+      return;
+    }
+
+    setNearbyLoading(true);
+    Promise.allSettled(
+      NEARBY_CATEGORIES.map((cat) =>
+        fetchNearby(loc.lat, loc.lng, cat.query).then((results) => ({
+          key: cat.key,
+          results,
+        })),
+      ),
+    ).then((outcomes) => {
+      const result = {};
+      outcomes.forEach((o) => {
+        if (o.status === "fulfilled") {
+          result[o.value.key] = o.value.results;
+        } else {
+          // find the key from the index
+          const idx = outcomes.indexOf(o);
+          result[NEARBY_CATEGORIES[idx].key] = [];
+        }
+      });
+      setNearby(result);
+      setNearbyCache(cacheKey, result);
+      setNearbyLoading(false);
+    });
+  }, [loc.lat, loc.lng]);
+
+  // Auth check + trips fetch
   useEffect(() => {
     if (!isAuthenticated) {
       setIsLoginModalOpen(true);
       return;
     }
-    // Fetch real trips from API
     tripsAPI
       .getAll()
       .then(({ data }) => setTrips(data.data || []))
       .catch(() => setTrips([]))
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
+
+  // ── Auth wall ──────────────────────────────────────────────────────────────
 
   if (!isAuthenticated) {
     return (
@@ -65,240 +411,366 @@ export default function DashboardPage() {
     );
   }
 
-  const stats = [
-    {
-      label: "Trips Planned",
-      value: String(trips.length),
-      icon: MapPin,
-      color: "primary",
-    },
-    {
-      label: "Completed",
-      value: String(trips.filter((t) => t.status === "completed").length),
-      icon: Globe,
-      color: "secondary",
-    },
-    {
-      label: "AI Generated",
-      value: String(trips.filter((t) => t.aiGenerated).length),
-      icon: Heart,
-      color: "accent",
-    },
-    {
-      label: "Active",
-      value: String(trips.filter((t) => t.status === "active").length),
-      icon: TrendingUp,
-      color: "success",
-    },
-  ];
-
   const recentTrips = trips.slice(0, 3);
+  const currSymbol = getCurrencySymbol(loc.currency);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <Container className="py-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+    <div style={styles.container}>
+      {/* Shimmer keyframes */}
+      <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div style={styles.headerRow}>
         <div>
-          <h1 className="text-3xl font-bold text-[#0A0A0A] mb-2">
-            Welcome back, {user?.name}! 👋
-          </h1>
-          <p className="text-[#6B7280]">
-            Here's what's happening with your travels
+          <h1 style={styles.h1}>Welcome back, {user?.name}! 👋</h1>
+          <p style={styles.subtitle}>
+            Here&apos;s what&apos;s happening with your travels
           </p>
         </div>
-        <div className="mt-4 md:mt-0 flex space-x-3">
-          <Button variant="outline" onClick={() => router.push("/settings")}>
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
-          <Button variant="primary" onClick={() => router.push("/chat")}>
-            <Plus className="w-4 h-4 mr-2" />
-            Plan New Trip
-          </Button>
+        <div style={styles.btnGroup}>
+          <button
+            style={styles.btnOutline}
+            onClick={() => router.push("/settings")}
+          >
+            <Settings size={16} /> Settings
+          </button>
+          <button
+            style={styles.btnPrimary}
+            onClick={() => router.push("/chat")}
+          >
+            <Plus size={16} /> Plan New Trip
+          </button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <Card key={stat.label} variant="elevated" padding="lg">
-            <CardBody className="p-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-[#6B7280] mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold text-[#0A0A0A]">
-                    {stat.value}
-                  </p>
-                </div>
-                <div
-                  className={`w-12 h-12 bg-${stat.color}-100 rounded-lg flex items-center justify-center`}
-                >
-                  <stat.icon className={`w-6 h-6 text-${stat.color}-600`} />
-                </div>
-              </div>
-            </CardBody>
-          </Card>
-        ))}
+      {/* ── Live Stats ──────────────────────────────────────────────────── */}
+      <div style={styles.statsGrid}>
+        {/* Location */}
+        <div style={styles.statCard}>
+          <div style={styles.statEmoji}>📍</div>
+          <p style={styles.statValue}>
+            {loc.loading ? "Detecting…" : `${loc.city}, ${loc.country}`}
+          </p>
+          <p style={styles.statSub}>
+            {loc.lat && loc.lng
+              ? `${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)}`
+              : "Locating…"}
+          </p>
+        </div>
+
+        {/* Time */}
+        <div style={styles.statCard}>
+          <div style={styles.statEmoji}>🕐</div>
+          <p style={styles.statValue}>{currentTime || "--:--:--"}</p>
+          <p style={styles.statSub}>{timeZone}</p>
+        </div>
+
+        {/* Weather */}
+        <div style={styles.statCard}>
+          <div style={styles.statEmoji}>{weather.icon || "🌡️"}</div>
+          <p style={styles.statValue}>
+            {weather.loading
+              ? "Loading…"
+              : weather.temp !== null
+                ? `${weather.temp}°C — ${weather.condition}`
+                : "Unavailable"}
+          </p>
+          <p style={styles.statSub}>
+            {weather.feelsLike !== null
+              ? `Feels like ${weather.feelsLike}°C`
+              : ""}
+          </p>
+        </div>
+
+        {/* Currency */}
+        <div style={styles.statCard}>
+          <div style={styles.statEmoji}>💱</div>
+          <p style={styles.statValue}>
+            {loc.loading ? "Detecting…" : `${currSymbol} ${loc.currency}`}
+          </p>
+          <p style={styles.statSub}>Auto-detected from IP</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* ── Near You Right Now ──────────────────────────────────────────── */}
+      <h2 style={styles.sectionTitle}>📍 Near You Right Now</h2>
+      <div style={styles.nearbyGrid}>
+        {NEARBY_CATEGORIES.map((cat) => {
+          const items = nearby[cat.key];
+          const isLoading = nearbyLoading || !items;
+
+          return (
+            <div key={cat.key} style={styles.nearbyCard}>
+              <div style={styles.nearbyHeader}>
+                <span style={styles.nearbyEmoji}>{cat.emoji}</span>
+                <h3 style={styles.nearbyTitle}>{cat.title}</h3>
+              </div>
+
+              {isLoading ? (
+                <>
+                  <div style={{ ...styles.skeleton, width: "80%" }} />
+                  <div style={{ ...styles.skeleton, width: "60%" }} />
+                  <div style={{ ...styles.skeleton, width: "70%" }} />
+                </>
+              ) : items.length === 0 ? (
+                <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+                  None found nearby
+                </p>
+              ) : (
+                items.map((place, i) => (
+                  <div key={i} style={styles.nearbyItem}>
+                    <div>
+                      <span style={styles.nearbyName}>{place.name}</span>
+                      <span style={styles.nearbyDist}>
+                        {" "}
+                        ·{" "}
+                        {loc.lat && place.lat
+                          ? getDistance(loc.lat, loc.lng, place.lat, place.lng)
+                          : ""}
+                      </span>
+                    </div>
+                    <a
+                      href={`https://www.google.com/maps/search/${encodeURIComponent(place.name)}+${place.lat},${place.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={styles.mapLink}
+                    >
+                      View on Map ↗
+                    </a>
+                  </div>
+                ))
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Main content: Recent Trips + Quick Actions ──────────────────── */}
+      <div style={styles.mainGrid} data-dashboard-main="">
         {/* Recent Trips */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[#0A0A0A]">
-              Recent Trips
-            </h2>
-            <Button variant="ghost" onClick={() => router.push("/trips")}>
+        <div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <h2 style={{ ...styles.sectionTitle, margin: 0 }}>Recent Trips</h2>
+            <button
+              style={{
+                ...styles.btnOutline,
+                border: "none",
+                color: "#FF4500",
+                background: "transparent",
+              }}
+              onClick={() => router.push("/trips")}
+            >
               View All
-            </Button>
+            </button>
           </div>
 
-          <div className="space-y-4">
-            {loading ? (
-              <p className="text-[#9CA3AF] text-center py-8">
-                Loading trips...
+          {loading ? (
+            <p style={{ color: "#9CA3AF", textAlign: "center", padding: 32 }}>
+              Loading trips…
+            </p>
+          ) : recentTrips.length === 0 ? (
+            <div style={styles.emptyTrips}>
+              <MapPin
+                size={48}
+                color="#D1D5DB"
+                style={{ margin: "0 auto 12px" }}
+              />
+              <p style={{ color: "#6B7280", marginBottom: 16 }}>
+                No trips yet. Start planning your first adventure!
               </p>
-            ) : recentTrips.length === 0 ? (
-              <Card padding="lg">
-                <CardBody className="text-center py-8">
-                  <MapPin className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
-                  <p className="text-[#6B7280] mb-4">
-                    No trips yet. Start planning your first adventure!
-                  </p>
-                  <Button
-                    variant="primary"
-                    onClick={() => router.push("/chat")}
-                  >
-                    <Plus className="w-4 h-4 mr-2" /> Plan a Trip with AI
-                  </Button>
-                </CardBody>
-              </Card>
-            ) : (
-              recentTrips.map((trip) => (
-                <Card
-                  key={trip._id}
-                  hoverable
-                  padding="none"
-                  className="overflow-hidden"
+              <button
+                style={styles.btnPrimary}
+                onClick={() => router.push("/chat")}
+              >
+                <Plus size={16} /> Plan a Trip with AI
+              </button>
+            </div>
+          ) : (
+            recentTrips.map((trip) => (
+              <div key={trip._id} style={styles.tripCard}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
                 >
-                  <CardBody>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-[#0A0A0A] mb-1">
-                          {trip.title}
-                        </h3>
-                        <div className="flex items-center text-sm text-[#6B7280] mb-2">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {trip.destination}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                              trip.status === "active"
-                                ? "bg-[#E8F5E9] text-[#22C55E]"
-                                : trip.status === "planned"
-                                  ? "bg-[#FFF5F0] text-[#FF4500]"
-                                  : "bg-[#F5F5F5] text-[#374151]"
-                            }`}
-                          >
-                            {trip.status}
-                          </span>
-                          {trip.aiGenerated && (
-                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-[#FFF3E0] text-[#F59E0B]">
-                              AI Generated
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/trips/${trip._id}`)}
-                      >
-                        View Details
-                      </Button>
+                  <div>
+                    <h3 style={styles.tripTitle}>{trip.title}</h3>
+                    <div style={styles.tripDest}>
+                      <MapPin size={14} /> {trip.destination}
                     </div>
-                  </CardBody>
-                </Card>
-              ))
-            )}
-          </div>
+                    <div>
+                      <span
+                        style={styles.badge(
+                          trip.status === "active"
+                            ? "#E8F5E9"
+                            : trip.status === "planned"
+                              ? "#FFF5F0"
+                              : "#F5F5F5",
+                          trip.status === "active"
+                            ? "#22C55E"
+                            : trip.status === "planned"
+                              ? "#FF4500"
+                              : "#374151",
+                        )}
+                      >
+                        {trip.status}
+                      </span>
+                      {trip.aiGenerated && (
+                        <span style={styles.badge("#FFF3E0", "#F59E0B")}>
+                          AI Generated
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    style={styles.btnOutline}
+                    onClick={() => router.push(`/trips/${trip._id}`)}
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Quick Actions */}
         <div>
-          <h2 className="text-2xl font-bold text-[#0A0A0A] mb-6">
+          <h2 style={{ ...styles.sectionTitle, marginBottom: 16 }}>
             Quick Actions
           </h2>
-          <div className="space-y-3">
-            <button
-              onClick={() => router.push("/chat")}
-              className="w-full flex items-center space-x-3 p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#FF4500] hover:bg-[#FFF5F0] transition-colors"
-            >
-              <div className="w-10 h-10 bg-[#FFF5F0] rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-[#FF4500]" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-[#0A0A0A]">Start AI Chat</p>
-                <p className="text-sm text-[#6B7280]">
-                  Plan your next adventure
-                </p>
-              </div>
-            </button>
 
-            <button
-              onClick={() => router.push("/destinations")}
-              className="w-full flex items-center space-x-3 p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#0284C7] hover:bg-[#E0F2FE] transition-colors"
-            >
-              <div className="w-10 h-10 bg-[#E0F2FE] rounded-lg flex items-center justify-center">
-                <Globe className="w-5 h-5 text-[#0284C7]" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-[#0A0A0A]">
-                  Explore Destinations
-                </p>
-                <p className="text-sm text-[#6B7280]">Discover new places</p>
-              </div>
-            </button>
+          <button
+            style={styles.quickAction}
+            onClick={() => router.push("/chat")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.borderColor = "#FF4500")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.borderColor = "#E5E7EB")
+            }
+          >
+            <div style={styles.qaIcon("#FFF5F0")}>
+              <MessageSquare size={20} color="#FF4500" />
+            </div>
+            <div>
+              <p style={styles.qaTitle}>Start AI Chat</p>
+              <p style={styles.qaSub}>Plan your next adventure</p>
+            </div>
+          </button>
 
-            <button
-              onClick={() => router.push("/trips")}
-              className="w-full flex items-center space-x-3 p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#F59E0B] hover:bg-[#FFF3E0] transition-colors"
-            >
-              <div className="w-10 h-10 bg-[#FFF3E0] rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-[#F59E0B]" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-[#0A0A0A]">My Trips</p>
-                <p className="text-sm text-[#6B7280]">View all itineraries</p>
-              </div>
-            </button>
+          <button
+            style={styles.quickAction}
+            onClick={() => router.push("/destinations")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.borderColor = "#0284C7")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.borderColor = "#E5E7EB")
+            }
+          >
+            <div style={styles.qaIcon("#E0F2FE")}>
+              <Globe size={20} color="#0284C7" />
+            </div>
+            <div>
+              <p style={styles.qaTitle}>Explore Destinations</p>
+              <p style={styles.qaSub}>Discover new places</p>
+            </div>
+          </button>
 
-            <button
-              onClick={() => router.push("/settings")}
-              className="w-full flex items-center space-x-3 p-4 bg-white border border-[#E5E7EB] rounded-lg hover:border-[#D1D5DB] hover:bg-[#FAF9F7] transition-colors"
-            >
-              <div className="w-10 h-10 bg-[#F5F5F5] rounded-lg flex items-center justify-center">
-                <Settings className="w-5 h-5 text-[#6B7280]" />
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-[#0A0A0A]">Settings</p>
-                <p className="text-sm text-[#6B7280]">Manage your account</p>
-              </div>
-            </button>
-          </div>
+          <button
+            style={styles.quickAction}
+            onClick={() => router.push("/trips")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.borderColor = "#F59E0B")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.borderColor = "#E5E7EB")
+            }
+          >
+            <div style={styles.qaIcon("#FFF3E0")}>
+              <Calendar size={20} color="#F59E0B" />
+            </div>
+            <div>
+              <p style={styles.qaTitle}>My Trips</p>
+              <p style={styles.qaSub}>View all itineraries</p>
+            </div>
+          </button>
 
-          {/* Travel Tips */}
-          <div className="mt-8 p-6 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl border border-primary-100">
-            <div className="flex items-start space-x-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="w-5 h-5 text-[#FF4500]" />
+          <button
+            style={styles.quickAction}
+            onClick={() => router.push("/settings")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.borderColor = "#D1D5DB")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.borderColor = "#E5E7EB")
+            }
+          >
+            <div style={styles.qaIcon("#F5F5F5")}>
+              <Settings size={20} color="#6B7280" />
+            </div>
+            <div>
+              <p style={styles.qaTitle}>Settings</p>
+              <p style={styles.qaSub}>Manage your account</p>
+            </div>
+          </button>
+
+          {/* Travel Tip */}
+          <div
+            style={{
+              marginTop: 28,
+              padding: 20,
+              background: "linear-gradient(135deg, #FFF5F0, #FFF9F5)",
+              borderRadius: 16,
+              border: "1px solid #FFE0CC",
+            }}
+          >
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 8,
+                  background: "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <TrendingUp size={20} color="#FF4500" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#0A0A0A] mb-2">
+                <h3
+                  style={{
+                    fontWeight: 600,
+                    color: "#0A0A0A",
+                    margin: "0 0 6px",
+                    fontSize: 15,
+                  }}
+                >
                   Travel Tip
                 </h3>
-                <p className="text-sm text-[#374151]">
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "#374151",
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
                   Book flights 6-8 weeks in advance for the best deals! Our AI
                   can help you find the perfect timing.
                 </p>
@@ -307,6 +779,18 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </Container>
+
+      {/* Responsive overrides */}
+      <style>{`
+        @media (max-width: 900px) {
+          /* stack main grid on tablet/mobile */
+        }
+        @media (max-width: 768px) {
+          [data-dashboard-main] {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
+    </div>
   );
 }
