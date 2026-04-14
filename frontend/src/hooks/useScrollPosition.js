@@ -17,7 +17,7 @@ export function useScrollPosition() {
         const handleScroll = () => {
             if (timeoutId) {
                 clearTimeout(timeoutId);
-            }
+            } 
 
             timeoutId = setTimeout(() => {
                 setScrollPosition(window.scrollY);

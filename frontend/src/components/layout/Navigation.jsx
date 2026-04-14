@@ -414,7 +414,7 @@ export default function Navigation() {
                       </button>
                       <button
                         onClick={() => {
-                          router.push("/settings");
+                          router.push("/profile");
                           setUserDropdown(false);
                         }}
                         style={{
