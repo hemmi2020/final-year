@@ -53,6 +53,7 @@ export default function Navigation() {
   } = useLocation();
 
   // Temperature: ALWAYS user's home city weather
+  // Use lat/lng as primary (more reliable), city name as fallback
   const {
     temp,
     feelsLike,
@@ -62,7 +63,13 @@ export default function Navigation() {
     city: weatherCity,
     icon: weatherIcon,
     loading: weatherLoading,
-  } = useWeather(city ? { city, unit: "C" } : { lat, lng, unit: "C" });
+  } = useWeather(
+    lat && lng
+      ? { lat, lng, city: city || undefined, unit: "C" }
+      : city
+        ? { city, unit: "C" }
+        : {},
+  );
 
   // Currency: just show home currency symbol, no conversion in navbar
 

@@ -41,30 +41,36 @@ function setCache(key, data) {
 }
 
 // Fallback: wttr.in (free, no API key needed, works on HTTPS)
-async function fetchFromWttr(cityName) {
-    try {
-        const res = await fetch(
-            `https://wttr.in/${encodeURIComponent(cityName)}?format=j1`,
-            { signal: AbortSignal.timeout(5000) }
-        );
-        const data = await res.json();
-        const current = data.current_condition?.[0];
-        if (!current) return null;
-        const code = current.weatherCode;
-        return {
-            temp: parseInt(current.temp_C),
-            feelsLike: parseInt(current.FeelsLikeC),
-            humidity: parseInt(current.humidity),
-            windSpeed: parseFloat(current.windspeedKmph),
-            condition: current.weatherDesc?.[0]?.value || "Unknown",
-            city: cityName,
-            description: current.weatherDesc?.[0]?.value || "Unknown",
-            icon: WTTR_ICONS[code] || "🌡️",
-        };
-    } catch (e) {
-        console.log("[useWeather] wttr.in failed:", e.message);
-        return null;
+async function fetchFromWttr(cityName, lat, lng) {
+    // Try city name first, then lat/lng
+    const queries = [];
+    if (cityName) queries.push(cityName);
+    if (lat && lng) queries.push(`${lat},${lng}`);
+    if (queries.length === 0) return null;
+
+    for (const q of queries) {
+        try {
+            const res = await fetch(
+                `https://wttr.in/${encodeURIComponent(q)}?format=j1`,
+                { signal: AbortSignal.timeout(5000) }
+            );
+            const data = await res.json();
+            const current = data.current_condition?.[0];
+            if (!current) continue;
+            const code = current.weatherCode;
+            return {
+                temp: parseInt(current.temp_C),
+                feelsLike: parseInt(current.FeelsLikeC),
+                humidity: parseInt(current.humidity),
+                windSpeed: parseFloat(current.windspeedKmph),
+                condition: current.weatherDesc?.[0]?.value || "Unknown",
+                city: cityName || `${lat},${lng}`,
+                description: current.weatherDesc?.[0]?.value || "Unknown",
+                icon: WTTR_ICONS[code] || "🌡️",
+            };
+        } catch { }
     }
+    return null;
 }
 
 export function useWeather({ lat, lng, city, unit = "C" } = {}) {
@@ -124,9 +130,9 @@ export function useWeather({ lat, lng, city, unit = "C" } = {}) {
             }
 
             // Fallback: wttr.in (free, no key needed)
-            const cityName = city || "Karachi";
-            console.log("[useWeather] Trying wttr.in for:", cityName);
-            const wttrData = await fetchFromWttr(cityName);
+            const cityName = city || null;
+            console.log("[useWeather] Trying wttr.in for:", cityName || `${lat},${lng}`);
+            const wttrData = await fetchFromWttr(cityName, lat, lng);
             if (wttrData) {
                 console.log("[useWeather] wttr.in success:", wttrData.city, wttrData.temp + "°C");
                 setCache(cacheKey, wttrData);
