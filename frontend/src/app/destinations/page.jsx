@@ -187,7 +187,7 @@ export default function DestinationsPage() {
     if (cachedAttractions) setAttractions(cachedAttractions);
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       const geo = await externalAPI.geocode(name, {
         signal: controller.signal,
@@ -204,20 +204,13 @@ export default function DestinationsPage() {
         country: loc.country || null,
         currency: loc.currency || null,
       });
+      // Fetch weather, restaurants, attractions in parallel (separate from abort controller)
       const [wx, rest, attr] = await Promise.allSettled([
+        fetchWithRetry(() => externalAPI.weather(loc.lat, loc.lng)),
         fetchWithRetry(() =>
-          externalAPI.weather(loc.lat, loc.lng, { signal: controller.signal }),
+          externalAPI.places(name, loc.lat, loc.lng, "restaurant"),
         ),
-        fetchWithRetry(() =>
-          externalAPI.places(name, loc.lat, loc.lng, "restaurant", {
-            signal: controller.signal,
-          }),
-        ),
-        fetchWithRetry(() =>
-          externalAPI.attractions(loc.lat, loc.lng, {
-            signal: controller.signal,
-          }),
-        ),
+        fetchWithRetry(() => externalAPI.attractions(loc.lat, loc.lng)),
       ]);
       if (wx.status === "fulfilled") {
         const weatherData = wx.value.data.data;
