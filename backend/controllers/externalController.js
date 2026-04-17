@@ -106,3 +106,57 @@ exports.reverseGeocode = async (req, res, next) => {
         next(error);
     }
 };
+
+// ─── RapidAPI: Flights + Hotels ─────────────────────────────────────────────
+
+const { searchFlights } = require('../services/external/flightService');
+const { searchHotels, searchAttractions: searchBookingAttractions } = require('../services/external/hotelService');
+
+// GET /api/external/flights?from=Karachi&to=Istanbul&date=2026-05-15&adults=1&currency=USD
+exports.flights = async (req, res, next) => {
+    try {
+        const { from, to, date, adults, cabinClass, currency } = req.query;
+        if (!from || !to) return res.status(400).json({ success: false, error: 'from and to cities required' });
+
+        const departDate = date || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+        const data = await searchFlights(from, to, departDate, {
+            adults: parseInt(adults) || 1,
+            cabinClass: cabinClass || 'economy',
+            currency: currency || req.user?.preferences?.preferredCurrency || 'USD',
+        });
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// GET /api/external/hotels?city=Istanbul&checkin=2026-05-15&checkout=2026-05-20&adults=2&currency=USD
+exports.hotels = async (req, res, next) => {
+    try {
+        const { city, checkin, checkout, adults, rooms, currency } = req.query;
+        if (!city) return res.status(400).json({ success: false, error: 'city required' });
+
+        const checkinDate = checkin || new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+        const checkoutDate = checkout || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+        const data = await searchHotels(city, checkinDate, checkoutDate, {
+            adults: parseInt(adults) || 2,
+            rooms: parseInt(rooms) || 1,
+            currency: currency || req.user?.preferences?.preferredCurrency || 'USD',
+        });
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// GET /api/external/booking-attractions?city=Istanbul
+exports.bookingAttractions = async (req, res, next) => {
+    try {
+        const { city } = req.query;
+        if (!city) return res.status(400).json({ success: false, error: 'city required' });
+        const data = await searchBookingAttractions(city);
+        res.json({ success: true, data });
+    } catch (error) {
+        next(error);
+    }
+};

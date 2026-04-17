@@ -75,6 +75,9 @@ export const externalAPI = {
     places: (query, lat, lng, type, config) => api.get('/api/external/places', { params: { query, lat, lng, type }, ...config }),
     attractions: (lat, lng, config) => api.get('/api/external/attractions', { params: { lat, lng }, ...config }),
     currency: (from, to, amount) => api.get('/api/external/currency', { params: { from, to, amount } }),
+    flights: (from, to, date, options) => api.get('/api/external/flights', { params: { from, to, date, ...options } }),
+    hotels: (city, checkin, checkout, options) => api.get('/api/external/hotels', { params: { city, checkin, checkout, ...options } }),
+    bookingAttractions: (city) => api.get('/api/external/booking-attractions', { params: { city } }),
 };
 
 // ─── Groups ───
