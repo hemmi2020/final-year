@@ -160,3 +160,67 @@ exports.bookingAttractions = async (req, res, next) => {
         next(error);
     }
 };
+
+// GET /api/external/detect-location — detect user's location from their IP (no CORS issues)
+exports.detectLocation = async (req, res, next) => {
+    try {
+        const axios = require('axios');
+        // Get client IP from request
+        const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || '';
+
+        // Try freeipapi.com first (works server-side, no CORS)
+        try {
+            const url = clientIp && clientIp !== '::1' && clientIp !== '127.0.0.1'
+                ? `https://freeipapi.com/api/json/${clientIp}`
+                : 'https://freeipapi.com/api/json';
+            const { data } = await axios.get(url, { timeout: 5000 });
+            if (data.countryCode) {
+                return res.json({
+                    success: true,
+                    data: {
+                        lat: data.latitude,
+                        lng: data.longitude,
+                        city: data.cityName,
+                        country: data.countryName,
+                        countryCode: data.countryCode,
+                        currency: data.currencies?.[0] || null,
+                        timezone: data.timeZones?.[0] || null,
+                    },
+                });
+            }
+        } catch { }
+
+        // Fallback: ip-api.com (works server-side)
+        try {
+            const url = clientIp && clientIp !== '::1' && clientIp !== '127.0.0.1'
+                ? `http://ip-api.com/json/${clientIp}?fields=lat,lon,city,country,countryCode,currency,timezone`
+                : 'http://ip-api.com/json/?fields=lat,lon,city,country,countryCode,currency,timezone';
+            const { data } = await axios.get(url, { timeout: 5000 });
+            if (data.countryCode) {
+                return res.json({
+                    success: true,
+                    data: {
+                        lat: data.lat,
+                        lng: data.lon,
+                        city: data.city,
+                        country: data.country,
+                        countryCode: data.countryCode,
+                        currency: data.currency,
+                        timezone: data.timezone,
+                    },
+                });
+            }
+        } catch { }
+
+        // Hard fallback
+        res.json({
+            success: true,
+            data: {
+                lat: 24.8607, lng: 67.0011, city: 'Karachi', country: 'Pakistan',
+                countryCode: 'PK', currency: 'PKR', timezone: 'Asia/Karachi',
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};

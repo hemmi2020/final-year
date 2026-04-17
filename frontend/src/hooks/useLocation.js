@@ -30,19 +30,31 @@ export function getCurrencySymbol(code) {
     return CURRENCY_SYMBOLS[code] || code || "$";
 }
 
-// Module-level deduplication — resets on full page reload
-// Also clears when tab becomes visible again (VPN change detection)
+// Module-level deduplication — clears on tab visibility change (VPN detection)
 let locationPromise = null;
 let cachedData = null;
 
 if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            // Clear cache when user returns to tab — picks up VPN changes
             locationPromise = null;
             cachedData = null;
         }
     });
+}
+
+function buildResult(data) {
+    const cc = data.countryCode;
+    const curr = data.currency || COUNTRY_CURRENCY[cc] || "USD";
+    return {
+        lat: data.lat ?? data.latitude ?? null,
+        lng: data.lng ?? data.longitude ?? null,
+        city: data.city ?? data.cityName ?? null,
+        country: data.country ?? data.countryName ?? null,
+        countryCode: cc,
+        currency: curr,
+        flag: countryCodeToFlag(cc),
+    };
 }
 
 async function detectLocation() {
@@ -50,66 +62,46 @@ async function detectLocation() {
     if (locationPromise) return locationPromise;
 
     locationPromise = (async () => {
-        // API 1: freeipapi.com (HTTPS, CORS-friendly, no key)
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+        // PRIMARY: Use own backend (no CORS, detects real client IP including VPN)
+        try {
+            const res = await fetch(`${API_URL}/api/external/detect-location`, {
+                signal: AbortSignal.timeout(8000),
+            });
+            const json = await res.json();
+            if (json.success && json.data?.countryCode) {
+                console.log("[useLocation] Backend detect-location success:", json.data.city, json.data.country);
+                cachedData = buildResult(json.data);
+                return cachedData;
+            }
+        } catch (e) { console.log("[useLocation] Backend detect-location failed:", e.message); }
+
+        // FALLBACK 1: freeipapi.com (direct, may have CORS issues)
         try {
             const res = await fetch("https://freeipapi.com/api/json", { signal: AbortSignal.timeout(5000) });
             const data = await res.json();
             if (data.countryCode) {
-                const cc = data.countryCode;
-                const curr = (data.currencies && data.currencies[0]) || COUNTRY_CURRENCY[cc] || "USD";
-                console.log("[useLocation] freeipapi.com success:", data.cityName, data.countryName, curr);
-                cachedData = {
-                    lat: data.latitude ?? null, lng: data.longitude ?? null,
-                    city: data.cityName ?? null, country: data.countryName ?? null,
-                    countryCode: cc, currency: curr,
-                    flag: countryCodeToFlag(cc),
-                };
+                console.log("[useLocation] freeipapi.com success:", data.cityName, data.countryName);
+                cachedData = buildResult({ ...data, city: data.cityName, country: data.countryName, lat: data.latitude, lng: data.longitude, currency: data.currencies?.[0] });
                 return cachedData;
             }
         } catch (e) { console.log("[useLocation] freeipapi.com failed:", e.message); }
 
-        // API 2: ipwhois.app (HTTPS, CORS-friendly, no key)
+        // FALLBACK 2: ipwhois.app
         try {
             const res = await fetch("https://ipwhois.app/json/", { signal: AbortSignal.timeout(5000) });
             const data = await res.json();
             if (data.success !== false && data.country_code) {
-                const cc = data.country_code;
-                const curr = data.currency_code || COUNTRY_CURRENCY[cc] || "USD";
-                console.log("[useLocation] ipwhois.app success:", data.city, data.country, curr);
-                cachedData = {
-                    lat: data.latitude ?? null, lng: data.longitude ?? null,
-                    city: data.city ?? null, country: data.country ?? null,
-                    countryCode: cc, currency: curr,
-                    flag: countryCodeToFlag(cc),
-                };
+                console.log("[useLocation] ipwhois.app success:", data.city, data.country);
+                cachedData = buildResult({ countryCode: data.country_code, city: data.city, country: data.country, lat: data.latitude, lng: data.longitude, currency: data.currency_code });
                 return cachedData;
             }
         } catch (e) { console.log("[useLocation] ipwhois.app failed:", e.message); }
 
-        // API 3: ipwho.is (HTTPS, no key)
-        try {
-            const res = await fetch("https://ipwho.is/", { signal: AbortSignal.timeout(5000) });
-            const data = await res.json();
-            if (data.success !== false && data.country_code) {
-                const cc = data.country_code;
-                const curr = data.currency?.code || COUNTRY_CURRENCY[cc] || "USD";
-                console.log("[useLocation] ipwho.is success:", data.city, data.country, curr);
-                cachedData = {
-                    lat: data.latitude ?? null, lng: data.longitude ?? null,
-                    city: data.city ?? null, country: data.country ?? null,
-                    countryCode: cc, currency: curr,
-                    flag: countryCodeToFlag(cc),
-                };
-                return cachedData;
-            }
-        } catch (e) { console.log("[useLocation] ipwho.is failed:", e.message); }
-
         // Hard fallback
         console.log("[useLocation] All APIs failed, using hard fallback: PK/Karachi/PKR");
-        cachedData = {
-            lat: 24.8607, lng: 67.0011, city: "Karachi", country: "Pakistan",
-            countryCode: "PK", currency: "PKR", flag: countryCodeToFlag("PK"),
-        };
+        cachedData = buildResult({ countryCode: "PK", city: "Karachi", country: "Pakistan", lat: 24.8607, lng: 67.0011, currency: "PKR" });
         return cachedData;
     })();
 
