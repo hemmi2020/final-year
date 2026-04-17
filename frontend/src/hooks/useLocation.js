@@ -30,9 +30,20 @@ export function getCurrencySymbol(code) {
     return CURRENCY_SYMBOLS[code] || code || "$";
 }
 
-// Module-level deduplication
+// Module-level deduplication — resets on full page reload
+// Also clears when tab becomes visible again (VPN change detection)
 let locationPromise = null;
 let cachedData = null;
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            // Clear cache when user returns to tab — picks up VPN changes
+            locationPromise = null;
+            cachedData = null;
+        }
+    });
+}
 
 async function detectLocation() {
     if (cachedData) return cachedData;
