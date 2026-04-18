@@ -239,8 +239,16 @@ function ChatContent() {
       ? { lat: location.lat, lng: location.lng }
       : null;
   const messagesEnd = useRef(null);
+  const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
   const generatingTimerRef = useRef(null);
+
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -254,7 +262,7 @@ function ChatContent() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(scrollToBottom, 100);
   }, [messages, typing]);
 
   // Cleanup generating timer on unmount
@@ -271,6 +279,7 @@ function ChatContent() {
     const userMsg = { id: Date.now(), role: "user", content: trimmed };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
+    setTimeout(scrollToBottom, 50);
 
     // Stage transitions
     const lowerText = trimmed.toLowerCase();
@@ -410,7 +419,15 @@ function ChatContent() {
         </div>
 
         {/* Chat area */}
-        <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
+        <div
+          ref={chatContainerRef}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: 20,
+            scrollBehavior: "smooth",
+          }}
+        >
           {showInitial ? (
             /* Initial state — quick actions */
             <div
