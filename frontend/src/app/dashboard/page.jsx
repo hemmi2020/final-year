@@ -20,7 +20,7 @@ import { useWeather } from "@/hooks/useWeather";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 async function fetchNearbyFromBackend(lat, lng, category, radius = 10000) {
   // Try with initial radius, then expand if empty
@@ -28,7 +28,7 @@ async function fetchNearbyFromBackend(lat, lng, category, radius = 10000) {
     try {
       const res = await fetch(
         `${API_URL}/api/external/nearby?lat=${lat}&lng=${lng}&category=${category}&radius=${r}`,
-        { signal: AbortSignal.timeout(20000) }
+        { signal: AbortSignal.timeout(20000) },
       );
       const json = await res.json();
       if (json.success && json.data?.length > 0) {
@@ -47,11 +47,15 @@ function getNearbyCache(key) {
     if (!raw) return null;
     const { data, ts } = JSON.parse(raw);
     return Date.now() - ts < NEARBY_CACHE_TTL ? data : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function setNearbyCache(key, data) {
-  try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch {}
+  try {
+    localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch {}
 }
 
 // ── Nearby categories ────────────────────────────────────────────────────────
@@ -63,9 +67,6 @@ const NEARBY_CATEGORIES = [
   { key: "halal", emoji: "🍽️", title: "Halal Restaurants" },
   { key: "atms", emoji: "🏧", title: "ATMs & Banks" },
   { key: "fuel", emoji: "⛽", title: "Petrol Stations" },
-];
-    query: 'node["amenity"="fuel"]',
-  },
 ];
 
 // ── Styles ───────────────────────────────────────────────────────────────────
