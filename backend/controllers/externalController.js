@@ -262,8 +262,15 @@ exports.nearby = async (req, res, next) => {
         const userLng = parseFloat(lng);
 
         const results = (data.elements || [])
-            .filter(el => el.tags?.name)
+            .filter(el => {
+                const name = el.tags?.['name:en'] || el.tags?.['int_name'] || el.tags?.name;
+                if (!name) return false;
+                // Check if mostly Latin characters
+                const latinChars = name.match(/[a-zA-Z\s\-\(\)\.,'0-9&]/g)?.length || 0;
+                return latinChars / name.length > 0.5;
+            })
             .map(el => {
+                const name = el.tags['name:en'] || el.tags['int_name'] || el.tags.name;
                 // Haversine distance
                 const R = 6371000;
                 const dLat = (el.lat - userLat) * Math.PI / 180;
