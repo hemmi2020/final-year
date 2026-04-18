@@ -38,6 +38,7 @@ export default function Navigation() {
   const [flagTooltip, setFlagTooltip] = useState(false);
   const [tempPopover, setTempPopover] = useState(false);
   const { user, isAuthenticated, logout, updateUser } = useAuthStore();
+  const { tempUnit } = require("@/store/preferenceStore").usePreferenceStore();
   const dropRef = useRef(null);
 
   // Live data hooks — ALWAYS user's home location from IP, never destination
@@ -52,7 +53,7 @@ export default function Navigation() {
     loading: locLoading,
   } = useLocation();
 
-  // Temperature: ALWAYS user's home city weather
+  // Temperature: ALWAYS user's home city weather, unit from profile preferences
   // Use lat/lng as primary (more reliable), city name as fallback
   const {
     temp,
@@ -65,9 +66,9 @@ export default function Navigation() {
     loading: weatherLoading,
   } = useWeather(
     lat && lng
-      ? { lat, lng, city: city || undefined, unit: "C" }
+      ? { lat, lng, city: city || undefined, unit: tempUnit || "C" }
       : city
-        ? { city, unit: "C" }
+        ? { city, unit: tempUnit || "C" }
         : {},
   );
 
@@ -251,8 +252,8 @@ export default function Navigation() {
                 {weatherLoading
                   ? "..."
                   : temp !== null
-                    ? `${weatherIcon || ""} ${temp}°C`
-                    : "--°C"}
+                    ? `${weatherIcon || ""} ${temp}°${tempUnit || "C"}`
+                    : `--°${tempUnit || "C"}`}
               </button>
               {tempPopover && !weatherLoading && temp !== null && (
                 <div
@@ -276,10 +277,16 @@ export default function Navigation() {
                   }}
                 >
                   {feelsLike !== null && (
-                    <span>🌡️ Feels like {Math.round(feelsLike)}°C</span>
+                    <span>
+                      🌡️ Feels like {Math.round(feelsLike)}°{tempUnit || "C"}
+                    </span>
                   )}
                   {humidity !== null && <span>💧 Humidity {humidity}%</span>}
-                  {windSpeed !== null && <span>🌬️ Wind {windSpeed} m/s</span>}
+                  {windSpeed !== null && (
+                    <span>
+                      🌬️ Wind {windSpeed} {tempUnit === "F" ? "mph" : "m/s"}
+                    </span>
+                  )}
                   {condition && <span>☁️ {condition}</span>}
                   {weatherCity && <span>📍 {weatherCity}</span>}
                 </div>
