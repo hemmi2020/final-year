@@ -4,12 +4,21 @@ import { useState, useRef, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { chatAPI } from "@/lib/api";
-import { Send, Globe, Sparkles, Save, Download } from "lucide-react";
+import {
+  Send,
+  Globe,
+  Sparkles,
+  Save,
+  Download,
+  Users,
+  Pencil,
+} from "lucide-react";
 import { MessageRenderer } from "@/components/chat/GenerativeUI";
 import GlobeMap from "@/components/map/GlobeMap";
 import { extractDestinationFromText } from "@/lib/extractDestination";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
+import ShareTripModal from "@/components/chat/ShareTripModal";
 import { useLocation } from "@/hooks/useLocation";
 
 /* ── Animated typing dots component ── */
@@ -231,8 +240,10 @@ function ChatContent() {
   const [currentDestination, setCurrentDestination] = useState(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [chatStage, setChatStage] = useState("initial");
   const [generatingDest, setGeneratingDest] = useState("");
+  const [tripId, setTripId] = useState(null);
   const location = useLocation();
   const userLocation =
     location.lat && location.lng
@@ -350,6 +361,8 @@ function ChatContent() {
     setChatStage("initial");
     setCurrentDestination(null);
     setGeneratingDest("");
+    setTripId(null);
+    setShareModalOpen(false);
     if (generatingTimerRef.current) clearTimeout(generatingTimerRef.current);
   };
 
@@ -550,6 +563,100 @@ function ChatContent() {
           )}
         </div>
 
+        {/* ── Floating Action Bar — visible when itinerary is ready ── */}
+        {chatStage === "ready" && (
+          <div
+            style={{
+              padding: "10px 16px",
+              borderTop: "1px solid var(--border-light)",
+              background: "#FFFBF7",
+              display: "flex",
+              gap: 8,
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <button
+              onClick={() => sendMessage("Save this trip")}
+              disabled={typing}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 16px",
+                borderRadius: 10,
+                border: "1.5px solid #E5E7EB",
+                background: "#FFF",
+                color: "#374151",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: typing ? "not-allowed" : "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--orange)";
+                e.currentTarget.style.color = "var(--orange)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#E5E7EB";
+                e.currentTarget.style.color = "#374151";
+              }}
+            >
+              💾 Save Trip
+            </button>
+            <button
+              onClick={() => setShareModalOpen(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 16px",
+                borderRadius: 10,
+                border: "none",
+                background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                color: "#FFF",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.2s",
+              }}
+            >
+              👥 Share with Group
+            </button>
+            <button
+              onClick={() => sendMessage("Modify this itinerary")}
+              disabled={typing}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 16px",
+                borderRadius: 10,
+                border: "1.5px solid #E5E7EB",
+                background: "#FFF",
+                color: "#374151",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: typing ? "not-allowed" : "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--orange)";
+                e.currentTarget.style.color = "var(--orange)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "#E5E7EB";
+                e.currentTarget.style.color = "#374151";
+              }}
+            >
+              ✏️ Modify
+            </button>
+          </div>
+        )}
+
         {/* Input area */}
         <div
           style={{
@@ -662,6 +769,12 @@ function ChatContent() {
           setRegisterOpen(false);
           setLoginOpen(true);
         }}
+      />
+      <ShareTripModal
+        isOpen={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        tripTitle={generatingDest ? `${generatingDest} Trip` : "My Trip"}
+        tripId={tripId}
       />
     </div>
   );
