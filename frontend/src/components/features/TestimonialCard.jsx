@@ -15,13 +15,16 @@ export default function TestimonialCard({ text, author, avatar, role }) {
     <Card padding="lg">
       <CardBody className="p-0">
         <div className="flex items-center mb-4">
-          <div className="relative w-12 h-12 rounded-full overflow-hidden">
+          <div
+            className="relative overflow-hidden shrink-0"
+            style={{ width: 56, height: 56, borderRadius: "50%" }}
+          >
             <Image
               src={avatar}
               alt={author}
               fill
-              className="object-cover"
-              sizes="48px"
+              className="object-cover object-center"
+              sizes="56px"
             />
           </div>
           <div className="ml-3">

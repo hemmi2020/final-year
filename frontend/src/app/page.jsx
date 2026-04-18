@@ -715,13 +715,24 @@ export default function Home() {
                   "{t.text}"
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <Image
-                    src={t.avatar}
-                    alt={t.name}
-                    width={48}
-                    height={48}
-                    style={{ borderRadius: "50%", objectFit: "cover" }}
-                  />
+                  <div
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: "50%",
+                      overflow: "hidden",
+                      flexShrink: 0,
+                      position: "relative",
+                    }}
+                  >
+                    <Image
+                      src={t.avatar}
+                      alt={t.name}
+                      fill
+                      style={{ objectFit: "cover", objectPosition: "center" }}
+                      sizes="56px"
+                    />
+                  </div>
                   <div>
                     <p style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>
                       {t.name}
