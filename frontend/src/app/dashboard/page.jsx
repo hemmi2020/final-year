@@ -53,7 +53,6 @@ function getNearbyCache(key) {
 function setNearbyCache(key, data) {
   try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch {}
 }
-}
 
 // ── Nearby categories ────────────────────────────────────────────────────────
 
