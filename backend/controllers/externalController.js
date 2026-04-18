@@ -253,10 +253,10 @@ exports.nearby = async (req, res, next) => {
 
         const overpassQuery = `[out:json][timeout:25];${query}out body 15;`;
 
-        const { data } = await axios.post(OVERPASS_API, overpassQuery, {
-            headers: { 'Content-Type': 'text/plain' },
-            timeout: 20000,
-        });
+        const { data } = await axios.post(OVERPASS_API,
+            `data=${encodeURIComponent(overpassQuery)}`,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 20000 }
+        );
 
         const userLat = parseFloat(lat);
         const userLng = parseFloat(lng);
