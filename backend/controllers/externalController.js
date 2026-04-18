@@ -224,3 +224,70 @@ exports.detectLocation = async (req, res, next) => {
         next(error);
     }
 };
+
+// GET /api/external/nearby?lat=24.86&lng=67.00&category=mosques&radius=10000
+exports.nearby = async (req, res, next) => {
+    try {
+        const axios = require('axios');
+        const { lat, lng, category, radius: radiusParam } = req.query;
+        if (!lat || !lng || !category) {
+            return res.status(400).json({ success: false, error: 'lat, lng, and category required' });
+        }
+
+        const r = parseInt(radiusParam) || 10000;
+        const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+
+        const QUERIES = {
+            mosques: `node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});`,
+            hospitals: `node["amenity"~"hospital|clinic|doctors"](around:${r},${lat},${lng});`,
+            police: `node["amenity"="police"](around:${r},${lat},${lng});`,
+            halal: `(node["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim"](around:${r},${lat},${lng});node["amenity"="restaurant"]["diet:halal"="yes"](around:${r},${lat},${lng}););`,
+            atms: `node["amenity"~"atm|bank"](around:${r},${lat},${lng});`,
+            fuel: `node["amenity"="fuel"](around:${r},${lat},${lng});`,
+        };
+
+        const query = QUERIES[category];
+        if (!query) {
+            return res.status(400).json({ success: false, error: 'Invalid category. Use: mosques, hospitals, police, halal, atms, fuel' });
+        }
+
+        const overpassQuery = `[out:json][timeout:25];${query}out body 15;`;
+
+        const { data } = await axios.post(OVERPASS_API, overpassQuery, {
+            headers: { 'Content-Type': 'text/plain' },
+            timeout: 20000,
+        });
+
+        const userLat = parseFloat(lat);
+        const userLng = parseFloat(lng);
+
+        const results = (data.elements || [])
+            .filter(el => el.tags?.name)
+            .map(el => {
+                // Haversine distance
+                const R = 6371000;
+                const dLat = (el.lat - userLat) * Math.PI / 180;
+                const dLng = (el.lon - userLng) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(el.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+                const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+
+                return {
+                    name: el.tags.name,
+                    lat: el.lat,
+                    lng: el.lon,
+                    type: el.tags.amenity || el.tags.tourism || category,
+                    phone: el.tags.phone || '',
+                    cuisine: el.tags.cuisine || '',
+                    distance: dist,
+                    distanceText: dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`,
+                };
+            })
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 10);
+
+        res.json({ success: true, data: results, count: results.length, radius: r });
+    } catch (error) {
+        console.log('[nearby] Overpass error:', error.message);
+        res.json({ success: true, data: [], count: 0, radius: parseInt(req.query.radius) || 10000 });
+    }
+};

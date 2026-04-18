@@ -20,48 +20,26 @@ import { useWeather } from "@/hooks/useWeather";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function getDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  const m = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-  return m < 1000 ? `${m}m` : `${(m / 1000).toFixed(1)}km`;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-async function fetchNearby(lat, lng, query, radius = 5000, limit = 8) {
-  // Try up to 2 times with increasing radius
-  for (let attempt = 0; attempt < 2; attempt++) {
+async function fetchNearbyFromBackend(lat, lng, category, radius = 10000) {
+  // Try with initial radius, then expand if empty
+  for (const r of [radius, 15000, 20000]) {
     try {
-      const r = radius + attempt * 3000; // expand radius on retry
-      const overpassQuery = `[out:json][timeout:15];${query}(around:${r},${lat},${lng});out body ${limit};`;
-      const res = await fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: overpassQuery,
-        headers: { "Content-Type": "text/plain" },
-        signal: AbortSignal.timeout(12000),
-      });
-      const data = await res.json();
-      const results = (data.elements || [])
-        .filter((el) => el.tags?.name)
-        .map((el) => ({
-          name: el.tags.name,
-          lat: el.lat,
-          lng: el.lon,
-          type: el.tags?.amenity || el.tags?.tourism || "",
-          phone: el.tags?.phone || "",
-        }));
-      if (results.length > 0) return results;
+      const res = await fetch(
+        `${API_URL}/api/external/nearby?lat=${lat}&lng=${lng}&category=${category}&radius=${r}`,
+        { signal: AbortSignal.timeout(20000) }
+      );
+      const json = await res.json();
+      if (json.success && json.data?.length > 0) {
+        return json.data;
+      }
     } catch {}
   }
   return [];
 }
 
-const NEARBY_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const NEARBY_CACHE_TTL = 15 * 60 * 1000;
 
 function getNearbyCache(key) {
   try {
@@ -69,55 +47,24 @@ function getNearbyCache(key) {
     if (!raw) return null;
     const { data, ts } = JSON.parse(raw);
     return Date.now() - ts < NEARBY_CACHE_TTL ? data : null;
-  } catch {
-    return null;
-  }
+  } catch { return null; }
 }
 
 function setNearbyCache(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
-  } catch {}
+  try { localStorage.setItem(key, JSON.stringify({ data, ts: Date.now() })); } catch {}
+}
 }
 
 // ── Nearby categories ────────────────────────────────────────────────────────
 
 const NEARBY_CATEGORIES = [
-  {
-    key: "mosques",
-    emoji: "🕌",
-    title: "Nearby Mosques",
-    query: 'node["amenity"="place_of_worship"]["religion"="muslim"]',
-  },
-  {
-    key: "hospitals",
-    emoji: "🏥",
-    title: "Hospitals",
-    query: 'node["amenity"~"hospital|clinic"]',
-  },
-  {
-    key: "police",
-    emoji: "👮",
-    title: "Police Stations",
-    query: 'node["amenity"="police"]',
-  },
-  {
-    key: "halal",
-    emoji: "🍽️",
-    title: "Halal Restaurants",
-    query:
-      'node["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian"]',
-  },
-  {
-    key: "atms",
-    emoji: "🏧",
-    title: "ATMs & Banks",
-    query: 'node["amenity"~"atm|bank"]',
-  },
-  {
-    key: "fuel",
-    emoji: "⛽",
-    title: "Petrol Stations",
+  { key: "mosques", emoji: "🕌", title: "Nearby Mosques" },
+  { key: "hospitals", emoji: "🏥", title: "Hospitals & Clinics" },
+  { key: "police", emoji: "👮", title: "Police Stations" },
+  { key: "halal", emoji: "🍽️", title: "Halal Restaurants" },
+  { key: "atms", emoji: "🏧", title: "ATMs & Banks" },
+  { key: "fuel", emoji: "⛽", title: "Petrol Stations" },
+];
     query: 'node["amenity"="fuel"]',
   },
 ];
@@ -361,26 +308,25 @@ export default function DashboardPage() {
 
     setNearbyLoading(true);
 
-    // Fetch sequentially with 500ms delay to avoid Overpass rate limiting
-    const fetchSequentially = async () => {
+    // Fetch each category via backend API (no CORS, server-side Overpass)
+    const fetchAll = async () => {
       const result = {};
       for (const cat of NEARBY_CATEGORIES) {
         try {
-          const results = await fetchNearby(loc.lat, loc.lng, cat.query);
-          result[cat.key] = results;
-          setNearby((prev) => ({ ...prev, [cat.key]: results }));
+          const data = await fetchNearbyFromBackend(loc.lat, loc.lng, cat.key);
+          result[cat.key] = data;
+          // Update UI progressively as each category loads
+          setNearby((prev) => ({ ...prev, [cat.key]: data }));
         } catch {
           result[cat.key] = [];
         }
-        // Small delay between requests to avoid rate limiting
-        await new Promise((r) => setTimeout(r, 500));
       }
       setNearby(result);
       setNearbyCache(cacheKey, result);
       setNearbyLoading(false);
     };
 
-    fetchSequentially();
+    fetchAll();
   }, [loc.lat, loc.lng]);
 
   // Auth check + trips fetch
@@ -534,11 +480,8 @@ export default function DashboardPage() {
                     <div>
                       <span style={styles.nearbyName}>{place.name}</span>
                       <span style={styles.nearbyDist}>
-                        {" "}
-                        ·{" "}
-                        {loc.lat && place.lat
-                          ? getDistance(loc.lat, loc.lng, place.lat, place.lng)
-                          : ""}
+                        {" · "}
+                        {place.distanceText || ""}
                       </span>
                     </div>
                     <a

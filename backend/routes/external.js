@@ -1,10 +1,11 @@
 const router = require('express').Router();
-const { weather, forecast, places, currency, geocodePlace, attractions, reverseGeocode, flights, hotels, bookingAttractions, detectLocation } = require('../controllers/externalController');
+const { weather, forecast, places, currency, geocodePlace, attractions, reverseGeocode, flights, hotels, bookingAttractions, detectLocation, nearby } = require('../controllers/externalController');
 const { optionalAuth } = require('../middleware/auth');
 
 router.use(optionalAuth);
 
 router.get('/detect-location', detectLocation);
+router.get('/nearby', nearby);
 router.get('/weather', weather);
 router.get('/forecast', forecast);
 router.get('/places', places);
