@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { chatAPI } from "@/lib/api";
+import { chatAPI, tripsAPI } from "@/lib/api";
 import {
   Send,
   Globe,
@@ -577,8 +577,31 @@ function ChatContent() {
             }}
           >
             <button
-              onClick={() => sendMessage("Save this trip")}
-              disabled={typing}
+              onClick={async () => {
+                if (tripId) {
+                  alert("Trip already saved!");
+                  return;
+                }
+                try {
+                  const dest = generatingDest || "My Destination";
+                  const { data } = await tripsAPI.generate({
+                    destination: dest,
+                    days: 7,
+                    budget: "moderate",
+                    interests: [],
+                    dietary: [],
+                  });
+                  if (data.data?.trip?._id) {
+                    setTripId(data.data.trip._id);
+                    sendMessage(
+                      `Trip saved! ID: ${data.data.trip._id}. You can now share it.`,
+                    );
+                  }
+                } catch {
+                  sendMessage("Save this trip");
+                }
+              }}
+              disabled={typing || !!tripId}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -603,7 +626,7 @@ function ChatContent() {
                 e.currentTarget.style.color = "#374151";
               }}
             >
-              💾 Save Trip
+              {tripId ? "✅ Saved" : "💾 Save Trip"}
             </button>
             <button
               onClick={() => setShareModalOpen(true)}
