@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import FlatMap from "@/components/map/FlatMap";
 import TripTrail from "@/components/map/TripTrail";
-import { exportTripPDF } from "@/lib/exportPDF";
 import { exportItineraryPdf } from "@/lib/exportPdf";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import LoginModal from "@/components/auth/LoginModal";
@@ -143,7 +142,7 @@ export default function TripDetailPage() {
               📥 Download PDF
             </button>
             <button
-              onClick={() => trip && exportTripPDF(trip)}
+              onClick={() => trip && exportItineraryPdf(trip)}
               style={{
                 width: 36,
                 height: 36,
