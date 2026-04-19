@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { communityAPI } from "@/lib/api";
+import { communityAPI, groupsAPI } from "@/lib/api";
 import {
   MapPin,
   Heart,
@@ -78,6 +78,19 @@ export default function CommunityPage() {
       const { data } = await communityAPI.clone(tripId);
       router.push(`/trips/${data.data._id}`);
     } catch {}
+  };
+
+  const handleJoin = async (trip) => {
+    if (!isAuthenticated) {
+      setLoginOpen(true);
+      return;
+    }
+    try {
+      await groupsAPI.create({ name: trip.title, tripId: trip._id });
+      alert("Joined! Check My Groups");
+    } catch {
+      alert("Could not join trip. Try again.");
+    }
   };
 
   const getLikeCount = (trip) =>
@@ -458,6 +471,36 @@ export default function CommunityPage() {
                     }}
                   >
                     <Copy size={15} /> Clone
+                  </button>
+                  <button
+                    onClick={() => handleJoin(trip)}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "8px 0",
+                      borderRadius: 50,
+                      border: "1.5px solid var(--orange)",
+                      background: "var(--orange-bg)",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--orange)",
+                      fontFamily: "inherit",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--orange)";
+                      e.currentTarget.style.color = "#FFF";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "var(--orange-bg)";
+                      e.currentTarget.style.color = "var(--orange)";
+                    }}
+                  >
+                    ✈️ Join Trip
                   </button>
                   <button
                     onClick={() => router.push(`/community/${trip._id}`)}

@@ -21,6 +21,7 @@ import {
 import FlatMap from "@/components/map/FlatMap";
 import TripTrail from "@/components/map/TripTrail";
 import { exportTripPDF } from "@/lib/exportPDF";
+import { exportItineraryPdf } from "@/lib/exportPdf";
 import { usePreferenceStore } from "@/store/preferenceStore";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
@@ -122,6 +123,25 @@ export default function TripDetailPage() {
             <ArrowLeft size={16} /> Back
           </button>
           <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => trip && exportItineraryPdf(trip)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "6px 14px",
+                borderRadius: 10,
+                border: "1.5px solid var(--orange)",
+                background: "var(--orange-bg)",
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--orange)",
+                fontFamily: "inherit",
+              }}
+            >
+              📥 Download PDF
+            </button>
             <button
               onClick={() => trip && exportTripPDF(trip)}
               style={{

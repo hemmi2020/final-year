@@ -72,6 +72,27 @@ exports.generateItinerary = async (user, params) => {
         currencyRate = await getExchangeRate('USD', preferences.preferredCurrency);
     }
 
+    // Step 5b: Get real flight and hotel data from RapidAPI
+    const { searchFlights } = require('../external/flightService');
+    const { searchHotels } = require('../external/hotelService');
+
+    let flightData = [];
+    let hotelData = [];
+    try {
+        // Get user's home city from preferences or default
+        const userCity = user?.preferences?.homeCity || 'Karachi';
+        const departDate = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+        const returnDate = new Date(Date.now() + (7 + days) * 86400000).toISOString().split('T')[0];
+
+        [flightData, hotelData] = await Promise.allSettled([
+            searchFlights(userCity, destination, departDate, { currency: preferences.preferredCurrency }),
+            searchHotels(destination, departDate, returnDate, { currency: preferences.preferredCurrency }),
+        ]).then(results => [
+            results[0].status === 'fulfilled' ? results[0].value : [],
+            results[1].status === 'fulfilled' ? results[1].value : [],
+        ]);
+    } catch (e) { console.log('Flight/hotel fetch failed:', e.message); }
+
     // Step 6: Get conversation history (if user is authenticated)
     let conversationHistory = [];
     if (user) {
@@ -82,6 +103,7 @@ exports.generateItinerary = async (user, params) => {
     const prompt = itineraryPrompt({
         destination, days, preferences,
         graphResults, weather, currencyRate, vectorResults, conversationHistory,
+        flightData, hotelData,
     });
 
     const response = await client.chat.completions.create({

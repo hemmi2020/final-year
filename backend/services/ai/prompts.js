@@ -3,7 +3,7 @@
  */
 
 exports.itineraryPrompt = (context) => {
-    const { destination, days, preferences, graphResults, weather, currencyRate, vectorResults, conversationHistory } = context;
+    const { destination, days, preferences, graphResults, weather, currencyRate, vectorResults, conversationHistory, flightData, hotelData } = context;
 
     let prompt = `You are an expert travel planner. Generate a detailed ${days}-day travel itinerary for ${destination}.
 
@@ -33,6 +33,20 @@ USER PREFERENCES:
         prompt += `\nCURRENCY: 1 ${currencyRate.from} = ${currencyRate.rate} ${currencyRate.to}. Show all costs in ${preferences.preferredCurrency}.`;
     }
 
+    if (context.flightData?.length > 0) {
+        prompt += `\n\nREAL FLIGHT DATA (use these actual flights in the itinerary):`;
+        context.flightData.slice(0, 3).forEach(f => {
+            prompt += `\n- ${f.airline}: ${f.originCode}→${f.destinationCode}, ${f.departure}, ${f.duration}, ${f.stops} stops, ${f.price}`;
+        });
+    }
+
+    if (context.hotelData?.length > 0) {
+        prompt += `\n\nREAL HOTEL DATA (use these actual hotels in the itinerary):`;
+        context.hotelData.slice(0, 3).forEach(h => {
+            prompt += `\n- ${h.name}: ${h.stars}★, rating ${h.rating}, ${h.price}, ${h.distance}`;
+        });
+    }
+
     if (vectorResults?.length > 0) {
         prompt += `\n\nRELATED RECOMMENDATIONS: ${vectorResults.map(v => v.text || v.name).join('; ')}`;
     }
@@ -47,6 +61,8 @@ RESPOND IN JSON FORMAT:
 {
   "title": "Trip title",
   "destination": "${destination}",
+  "flight": { "airline": "string", "from": "string", "to": "string", "price": "string", "duration": "string" },
+  "hotel": { "name": "string", "stars": number, "rating": number, "pricePerNight": "string", "address": "string" },
   "days": [
     {
       "day": 1,
