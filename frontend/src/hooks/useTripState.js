@@ -161,6 +161,15 @@ export function extractFields(text) {
         return {};
     }
 
+    // Skip extraction for quick action button texts — these are not trip info
+    const SKIP_PHRASES = [
+        "create new trip", "inspire me where to go", "discover hidden gems",
+        "adventure destination", "inspire me", "hidden gems", "new trip",
+    ];
+    if (SKIP_PHRASES.some(p => text.toLowerCase().trim() === p || text.toLowerCase().trim().includes(p))) {
+        return {};
+    }
+
     const result = {};
 
     // ── Destination detection ────────────────────────────────────────────────
@@ -188,7 +197,13 @@ export function extractFields(text) {
             "Solo", "Family", "Couple", "Budget", "Luxury", "History", "Food",
             "Shopping", "Adventure", "Nature", "Nightlife", "Culture", "Relaxation",
             "Mid", "Cheap", "Expensive", "Days", "Weeks", "Week", "Day", "Custom",
-            "Alone", "Friends",
+            "Alone", "Friends", "Create", "New", "Trip", "Inspire", "Discover",
+            "Hidden", "Gems", "Destination", "Plan", "Start", "Help", "Find",
+            "Search", "Explore", "Show", "Tell", "Give", "Make", "Build",
+            "Generate", "Itinerary", "Please", "Thanks", "Yes", "No", "Okay",
+            "Sure", "Great", "Amazing", "Perfect", "Good", "Nice", "Cool",
+            "Let", "Just", "Really", "Very", "More", "Most", "Best", "Top",
+            "Go", "Going", "Travel", "Traveling", "Visit", "Visiting",
         ]);
         const placeMatch = text.match(
             /\b([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*)\b/g
