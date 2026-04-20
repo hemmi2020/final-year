@@ -323,9 +323,8 @@ exports.nearbyAll = async (req, res, next) => {
 
         const delay = () => new Promise(resolve => setTimeout(resolve, 1200));
 
-        // BATCH 1: Mosques + Hospitals + ATMs + Fuel + Restaurants (all in one)
-        const rFood = Math.round(r * 1.5); // Wider radius for restaurants (7.5km vs 5km)
-        const b1 = await runQuery('batch1', `[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng});node["amenity"="restaurant"](around:${rFood},${lat},${lng});node["amenity"="fast_food"](around:${rFood},${lat},${lng}););out body;`);
+        // BATCH 1: Mosques + Hospitals + ATMs + Fuel + Restaurants (all in one, limited)
+        const b1 = await runQuery('batch1', `[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng});node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
         for (const el of b1) {
             const a = el.tags?.amenity;
             if (a === 'place_of_worship' && el.tags?.religion === 'muslim') categorized.mosques.push(el);
@@ -356,11 +355,11 @@ exports.nearbyAll = async (req, res, next) => {
         // Muslim-majority countries → ALL restaurants are halal by default
         // Other countries → only halal-tagged, fallback to general with "verify" flag
         if (isMuslimCountry) {
-            // In Muslim countries, all restaurants are halal — show all of them
-            categorized.halal = allRestaurants;
+            // In Muslim countries, all restaurants are halal
+            categorized.halal = allRestaurants.slice(0, 15);
         } else if (categorized.halal.length === 0 && allRestaurants.length > 0) {
             // Non-Muslim country, no halal-tagged found → show general restaurants as fallback
-            categorized.halal = allRestaurants;
+            categorized.halal = allRestaurants.slice(0, 15);
         }
 
         // Parse each category (sorts by distance, slices to top 10)
