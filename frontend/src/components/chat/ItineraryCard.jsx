@@ -70,6 +70,15 @@ export default function ItineraryCard({
     }
   };
 
+  // Build booking URLs
+  const flightFrom = itinerary?.flight?.from || origin || "";
+  const flightTo = itinerary?.flight?.to || destination || "";
+  const googleFlightsUrl = `https://www.google.com/travel/flights?q=flights+from+${encodeURIComponent(flightFrom)}+to+${encodeURIComponent(flightTo)}`;
+  const skyscannerUrl = `https://www.skyscanner.com/transport/flights/${encodeURIComponent(flightFrom)}/${encodeURIComponent(flightTo)}/`;
+  const bookingHotelUrl = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destination || "")}`;
+  const googleMapsUrl = (placeName) =>
+    `https://www.google.com/maps/search/${encodeURIComponent(placeName)}`;
+
   const statItems = [
     { emoji: "📅", label: "Days", value: totalDays },
     { emoji: "🏙️", label: "Cities", value: cities },
@@ -389,7 +398,32 @@ export default function ItineraryCard({
                 {itinerary.flight.price || "—"}
               </span>
               <div style={{ display: "flex", gap: 8 }}>
-                <button
+                <a
+                  href={googleFlightsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                    color: "#FFFFFF",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  Book on Google ↗
+                </a>
+                <a
+                  href={skyscannerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     padding: "6px 14px",
                     borderRadius: 10,
@@ -400,25 +434,14 @@ export default function ItineraryCard({
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: "inherit",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
                   }}
                 >
-                  Change ↻
-                </button>
-                <button
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: 10,
-                    border: "1.5px solid #E5E7EB",
-                    background: "#FFFFFF",
-                    color: "#374151",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  Lock 🔒
-                </button>
+                  Skyscanner ↗
+                </a>
               </div>
             </div>
           </div>
@@ -529,21 +552,28 @@ export default function ItineraryCard({
                 >
                   {itinerary.hotel.name || "Hotel"}
                 </span>
-                <button
+                <a
+                  href={bookingHotelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     padding: "5px 12px",
                     borderRadius: 10,
-                    border: "1.5px solid #E5E7EB",
-                    background: "#FFFFFF",
-                    color: "#374151",
+                    border: "none",
+                    background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                    color: "#FFFFFF",
                     fontSize: 12,
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: "inherit",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
                   }}
                 >
-                  Change ↻
-                </button>
+                  Book on Booking.com ↗
+                </a>
               </div>
               <div
                 style={{
@@ -780,15 +810,27 @@ export default function ItineraryCard({
                                     flexWrap: "wrap",
                                   }}
                                 >
-                                  <span
+                                  <a
+                                    href={googleMapsUrl(
+                                      activity.name + " " + (destination || ""),
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     style={{
                                       fontSize: 13,
                                       fontWeight: 600,
                                       color: "#1F2937",
+                                      textDecoration: "none",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.color = "#FF4500";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.color = "#1F2937";
                                     }}
                                   >
-                                    {activity.name}
-                                  </span>
+                                    {activity.name} 📍
+                                  </a>
                                   {activity.tags &&
                                     activity.tags.includes("halal") && (
                                       <span
@@ -930,7 +972,32 @@ export default function ItineraryCard({
                 {itinerary.returnFlight.price || "—"}
               </span>
               <div style={{ display: "flex", gap: 8 }}>
-                <button
+                <a
+                  href={googleFlightsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                    color: "#FFFFFF",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  Book on Google ↗
+                </a>
+                <a
+                  href={skyscannerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     padding: "6px 14px",
                     borderRadius: 10,
@@ -941,25 +1008,14 @@ export default function ItineraryCard({
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: "inherit",
+                    textDecoration: "none",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
                   }}
                 >
-                  Change ↻
-                </button>
-                <button
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: 10,
-                    border: "1.5px solid #E5E7EB",
-                    background: "#FFFFFF",
-                    color: "#374151",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
-                >
-                  Lock 🔒
-                </button>
+                  Skyscanner ↗
+                </a>
               </div>
             </div>
           </div>
