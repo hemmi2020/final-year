@@ -298,15 +298,24 @@ exports.nearbyAll = async (req, res, next) => {
         const categorized = { mosques: [], hospitals: [], pharmacy: [], police: [], halal: [], atms: [], fuel: [] };
         const allRestaurants = [];
 
-        const runQuery = async (label, query) => {
-            try {
-                const { data } = await axios.post(OVERPASS_API, `data=${encodeURIComponent(query)}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 12000 });
-                console.log(`[nearby] ${label}: ${(data.elements || []).length} results`);
-                return data.elements || [];
-            } catch (e) { console.log(`[nearby] ${label} FAILED:`, e.message); return []; }
+        const runQuery = async (label, query, retries = 1) => {
+            for (let attempt = 0; attempt <= retries; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        console.log(`[nearby] ${label} retry #${attempt}...`);
+                        await new Promise(r => setTimeout(r, 2500));
+                    }
+                    const { data } = await axios.post(OVERPASS_API, `data=${encodeURIComponent(query)}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 15000 });
+                    console.log(`[nearby] ${label}: ${(data.elements || []).length} results`);
+                    return data.elements || [];
+                } catch (e) {
+                    console.log(`[nearby] ${label} attempt ${attempt} FAILED:`, e.message);
+                }
+            }
+            return [];
         };
 
-        const wait = () => new Promise(r => setTimeout(r, 1200));
+        const wait = () => new Promise(r => setTimeout(r, 1500));
 
         // BATCH 1: Mosques + Hospitals only (2 types — very light)
         const b1 = await runQuery('B1', `[out:json][timeout:10];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng}););out body;`);
