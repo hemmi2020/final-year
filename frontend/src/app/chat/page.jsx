@@ -260,6 +260,12 @@ function ChatContent() {
   const inputRef = useRef(null);
   const hasInitialized = useRef(false);
   const generationTriggered = useRef(false);
+  const tripStateRef = useRef(tripState);
+
+  // Keep ref in sync with latest tripState
+  useEffect(() => {
+    tripStateRef.current = tripState;
+  }, [tripState]);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -322,8 +328,11 @@ function ChatContent() {
   }, [isComplete, chatStage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerGeneration = async () => {
+    // Read latest tripState from ref (avoids stale closure)
+    const ts = tripStateRef.current;
+
     // Guard: don't call API without destination
-    if (!tripState.destination) {
+    if (!ts.destination) {
       console.log("[triggerGeneration] No destination in tripState, aborting");
       return;
     }
@@ -340,14 +349,14 @@ function ChatContent() {
 
     try {
       const { data } = await tripsAPI.generate({
-        destination: tripState.destination,
-        origin: tripState.origin,
-        duration: tripState.duration,
-        travelCompanion: tripState.travelCompanion,
-        vibe: tripState.vibe,
-        budget: tripState.budget,
-        dates: tripState.dates,
-        interests: Array.isArray(tripState.vibe) ? tripState.vibe : [],
+        destination: ts.destination,
+        origin: ts.origin,
+        duration: ts.duration,
+        travelCompanion: ts.travelCompanion,
+        vibe: ts.vibe,
+        budget: ts.budget,
+        dates: ts.dates,
+        interests: Array.isArray(ts.vibe) ? ts.vibe : [],
         dietary: ["halal"],
       });
 
@@ -367,7 +376,7 @@ function ChatContent() {
       const readyMsg = {
         id: Date.now() + 1,
         role: "assistant",
-        content: `Your ${tripState.destination} itinerary is ready! 🎉 Check out the full plan on the right panel. You can save it, share it with the community, or ask me to modify anything.`,
+        content: `Your ${ts.destination} itinerary is ready! 🎉 Check out the full plan on the right panel. You can save it, share it with the community, or ask me to modify anything.`,
       };
       setMessages((prev) => [...prev, readyMsg]);
     } catch (err) {
