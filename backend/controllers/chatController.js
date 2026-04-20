@@ -1,6 +1,9 @@
 const { chat, generateItinerary: generateAI } = require('../services/ai/agent');
 const Trip = require('../models/Trip');
 
+// Simple per-user rate limiter for generate endpoint (max 1 request per 10 seconds)
+const generateRateLimit = new Map();
+
 // POST /api/chat
 exports.sendMessage = async (req, res, next) => {
     try {
@@ -22,6 +25,14 @@ exports.generateItinerary = async (req, res, next) => {
         if (!destination) {
             return res.status(400).json({ success: false, error: 'destination is required' });
         }
+
+        // Rate limit: 1 generate request per 10 seconds per user
+        const userId = req.user?._id?.toString() || req.ip;
+        const lastCall = generateRateLimit.get(userId);
+        if (lastCall && Date.now() - lastCall < 10000) {
+            return res.status(429).json({ success: false, error: 'Please wait before generating another trip' });
+        }
+        generateRateLimit.set(userId, Date.now());
 
         // Resolve numeric days from the duration string if days not provided
         let numDays = days;
