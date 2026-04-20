@@ -313,13 +313,13 @@ exports.nearbyAll = async (req, res, next) => {
             }
         };
 
-        // BATCH 1: Common categories (mosques, hospitals, ATMs, fuel) — lightweight
+        // BATCH 1: Common categories (mosques, hospitals, ATMs, fuel)
         const q1 = `[out:json][timeout:20];(
 node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});
 node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});
 node["amenity"~"atm|bank"](around:${r},${lat},${lng});
 node["amenity"="fuel"](around:${r},${lat},${lng});
-);out body 12;`;
+);out body;`;
 
         const batch1 = await runQuery(q1);
         for (const el of batch1) {
@@ -334,13 +334,13 @@ node["amenity"="fuel"](around:${r},${lat},${lng});
         // 1.5s delay between queries
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // BATCH 2: Rare + restaurants (police, pharmacy, restaurants) — separate query
+        // BATCH 2: Rare + restaurants (police, pharmacy, restaurants)
         const q2 = `[out:json][timeout:20];(
 node["amenity"="police"](around:${r},${lat},${lng});
 node["amenity"="pharmacy"](around:${r},${lat},${lng});
 node["amenity"="restaurant"](around:${r},${lat},${lng});
 node["amenity"="fast_food"](around:${r},${lat},${lng});
-);out body 15;`;
+);out body;`;
 
         const batch2 = await runQuery(q2);
         for (const el of batch2) {
