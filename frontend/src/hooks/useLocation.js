@@ -54,6 +54,7 @@ function buildResult(data) {
         countryCode: cc,
         currency: curr,
         flag: countryCodeToFlag(cc),
+        timezone: data.timezone ?? null,
     };
 }
 
@@ -83,7 +84,7 @@ async function detectLocation() {
             const data = await res.json();
             if (data.countryCode) {
                 console.log("[useLocation] freeipapi.com success:", data.cityName, data.countryName);
-                cachedData = buildResult({ ...data, city: data.cityName, country: data.countryName, lat: data.latitude, lng: data.longitude, currency: data.currencies?.[0] });
+                cachedData = buildResult({ ...data, city: data.cityName, country: data.countryName, lat: data.latitude, lng: data.longitude, currency: data.currencies?.[0], timezone: data.timeZones?.[0] });
                 return cachedData;
             }
         } catch (e) { console.log("[useLocation] freeipapi.com failed:", e.message); }
@@ -101,7 +102,7 @@ async function detectLocation() {
 
         // Hard fallback
         console.log("[useLocation] All APIs failed, using hard fallback: PK/Karachi/PKR");
-        cachedData = buildResult({ countryCode: "PK", city: "Karachi", country: "Pakistan", lat: 24.8607, lng: 67.0011, currency: "PKR" });
+        cachedData = buildResult({ countryCode: "PK", city: "Karachi", country: "Pakistan", lat: 24.8607, lng: 67.0011, currency: "PKR", timezone: "Asia/Karachi" });
         return cachedData;
     })();
 
@@ -111,7 +112,7 @@ async function detectLocation() {
 export function useLocation() {
     const [state, setState] = useState({
         lat: null, lng: null, city: null, country: null,
-        countryCode: null, currency: null, flag: "🌐", loading: true, error: null,
+        countryCode: null, currency: null, flag: "🌐", timezone: null, loading: true, error: null,
     });
 
     useEffect(() => {

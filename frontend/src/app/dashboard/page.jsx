@@ -544,12 +544,14 @@ export default function DashboardPage() {
   const loc = useLocation();
   const weather = useWeather({ lat: loc.lat, lng: loc.lng, city: loc.city });
 
-  // Live clock
+  // Live clock — aligned with IP-detected timezone
   const [currentTime, setCurrentTime] = useState("");
   const [timeZone, setTimeZone] = useState("");
 
   useEffect(() => {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    // Use IP-detected timezone, fallback to browser timezone
+    const tz =
+      loc.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     setTimeZone(tz);
     const tick = () => {
       const now = new Date();
@@ -558,13 +560,14 @@ export default function DashboardPage() {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
+          timeZone: tz,
         }),
       );
     };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [loc.timezone]);
 
   // Nearby places
   const [nearby, setNearby] = useState({});
