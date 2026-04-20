@@ -546,17 +546,10 @@ function ChatContent() {
       };
       setMessages((prev) => [...prev, aiMsg]);
 
-      // Try to extract fields from AI response too
-      const aiExtracted = extractFields(cleanContent);
-      const aiFilledFields = Object.entries(aiExtracted).filter(
-        ([, v]) => v != null,
-      );
-      aiFilledFields.forEach(([field, value]) => {
-        updateField(field, value);
-        updatedState[field] = value;
-      });
+      // Do NOT extract fields from AI responses — only from user messages
+      // AI responses contain city names as suggestions, not user selections
 
-      // Detect destination for map
+      // Detect destination for map (visual only, doesn't set tripState)
       extractDestinationFromText(cleanContent + " " + trimmed).then((dest) => {
         if (dest) setCurrentDestination(dest);
       });
