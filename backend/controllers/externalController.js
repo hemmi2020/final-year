@@ -309,6 +309,7 @@ nwr["amenity"="restaurant"]["halal"="yes"](around:${rWide},${lat},${lng});
 nwr["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern"](around:${rWide},${lat},${lng});
 nwr["amenity"="fast_food"]["diet:halal"="yes"](around:${rWide},${lat},${lng});
 nwr["amenity"="fast_food"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim|kebab"](around:${rWide},${lat},${lng});
+nwr["amenity"="restaurant"](around:${rClose},${lat},${lng});
 nwr["amenity"~"atm|bank"](around:${rClose},${lat},${lng});
 nwr["amenity"="fuel"](around:${rClose},${lat},${lng});
 );out center 80;`;
@@ -324,6 +325,7 @@ nwr["amenity"="fuel"](around:${rClose},${lat},${lng});
             mosques: [], hospitals: [], pharmacy: [], police: [],
             halal: [], atms: [], fuel: [],
         };
+        const allRestaurants = []; // Fallback pool for halal
 
         for (const el of allElements) {
             const amenity = el.tags?.amenity;
@@ -338,12 +340,18 @@ nwr["amenity"="fuel"](around:${rClose},${lat},${lng});
             else if (amenity === 'pharmacy') categorized.pharmacy.push(el);
             else if (amenity === 'police' || (office === 'government' && government === 'police')) categorized.police.push(el);
             else if (amenity === 'restaurant' || amenity === 'fast_food') {
+                allRestaurants.push(el);
                 if (dietHalal === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
                     categorized.halal.push(el);
                 }
             }
             else if (/^(atm|bank)$/.test(amenity)) categorized.atms.push(el);
             else if (amenity === 'fuel') categorized.fuel.push(el);
+        }
+
+        // If no halal-tagged restaurants found, show general nearby restaurants as fallback
+        if (categorized.halal.length === 0 && allRestaurants.length > 0) {
+            categorized.halal = allRestaurants.slice(0, 15);
         }
 
         // Parse each category

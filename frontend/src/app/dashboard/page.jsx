@@ -753,25 +753,48 @@ export default function DashboardPage() {
                   None found nearby
                 </p>
               ) : (
-                items.map((place, i) => (
-                  <div key={i} style={styles.nearbyItem}>
-                    <div>
-                      <span style={styles.nearbyName}>{place.name}</span>
-                      <span style={styles.nearbyDist}>
-                        {" · "}
-                        {place.distanceText || ""}
-                      </span>
+                <>
+                  {cat.key === "halal" &&
+                    items.length > 0 &&
+                    !items.some(
+                      (p) =>
+                        p.cuisine &&
+                        /halal|pakistani|arabic|turkish|indian|muslim/i.test(
+                          p.cuisine,
+                        ),
+                    ) && (
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: "#F59E0B",
+                          margin: "0 0 8px",
+                          fontWeight: 500,
+                        }}
+                      >
+                        ⚠️ No verified halal restaurants found — showing nearby
+                        restaurants. Verify halal status locally.
+                      </p>
+                    )}
+                  {items.map((place, i) => (
+                    <div key={i} style={styles.nearbyItem}>
+                      <div>
+                        <span style={styles.nearbyName}>{place.name}</span>
+                        <span style={styles.nearbyDist}>
+                          {" · "}
+                          {place.distanceText || ""}
+                        </span>
+                      </div>
+                      <a
+                        href={`https://www.google.com/maps/search/${encodeURIComponent(place.name)}+${place.lat},${place.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={styles.mapLink}
+                      >
+                        View on Map ↗
+                      </a>
                     </div>
-                    <a
-                      href={`https://www.google.com/maps/search/${encodeURIComponent(place.name)}+${place.lat},${place.lng}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.mapLink}
-                    >
-                      View on Map ↗
-                    </a>
-                  </div>
-                ))
+                  ))}
+                </>
               )}
             </div>
           );
