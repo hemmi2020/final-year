@@ -22,6 +22,8 @@ exports.generateItinerary = async (req, res, next) => {
     try {
         const { destination, days, budget, interests, dietary, origin, travelCompanion, vibe, dates, duration } = req.body;
 
+        console.log('[generate] Request body:', JSON.stringify({ destination, origin, duration, travelCompanion, vibe, budget }));
+
         if (!destination) {
             return res.status(400).json({ success: false, error: 'destination is required' });
         }
