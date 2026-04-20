@@ -322,6 +322,12 @@ function ChatContent() {
   }, [isComplete, chatStage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerGeneration = async () => {
+    // Guard: don't call API without destination
+    if (!tripState.destination) {
+      console.log("[triggerGeneration] No destination in tripState, aborting");
+      return;
+    }
+
     setChatStage("generating");
 
     const genMsg = {
@@ -365,13 +371,13 @@ function ChatContent() {
       };
       setMessages((prev) => [...prev, readyMsg]);
     } catch (err) {
+      // DON'T reset generationTriggered — prevents infinite retry loop
       setChatStage("greeting");
-      generationTriggered.current = false;
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",
         content:
-          "Sorry, I couldn't generate your itinerary right now. Please try again.",
+          "Sorry, I couldn't generate your itinerary right now. Please try again by clicking + New Trip.",
       };
       setMessages((prev) => [...prev, errorMsg]);
     }
