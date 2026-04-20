@@ -3,6 +3,19 @@ const axios = require('axios');
 const NOMINATIM_API = 'https://nominatim.openstreetmap.org';
 const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
 
+// Server-side cache for Overpass results (10 min TTL)
+const overpassCache = new Map();
+const CACHE_TTL = 10 * 60 * 1000;
+
+function getCached(key) {
+    const entry = overpassCache.get(key);
+    if (entry && Date.now() - entry.ts < CACHE_TTL) return entry.data;
+    return null;
+}
+function setCached(key, data) {
+    overpassCache.set(key, { data, ts: Date.now() });
+}
+
 const FALLBACK_RESTAURANTS = {
     tokyo: [
         { name: 'Sukiyabashi Jiro', cuisine: 'Sushi', address: 'Ginza, Chuo City, Tokyo', dietary: {}, isFallback: true },
@@ -225,63 +238,70 @@ exports.searchPlaces = async (query, lat, lng, options = {}) => {
     try {
         const { type = 'restaurant', dietary = [], radius = 10000 } = options;
 
-        // Try with initial radius, then expand if empty
-        for (const r of [radius, 20000]) {
-            let overpassQuery;
-            if (type === 'restaurant') {
-                // NO cuisine filter — get ALL food places, label halal on frontend
-                overpassQuery = `[out:json][timeout:30];(node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng});node["amenity"="food_court"](around:${r},${lat},${lng});node["amenity"="cafe"](around:${Math.min(r, 8000)},${lat},${lng}););out body 20;`;
-            } else {
-                const osmTags = {
-                    cafe: 'amenity=cafe', hotel: 'tourism=hotel', museum: 'tourism=museum',
-                    attraction: 'tourism=attraction', park: 'leisure=park',
-                    mosque: 'amenity=place_of_worship"]["religion"="muslim',
-                };
-                const tag = osmTags[type] || `amenity=${type}`;
-                overpassQuery = `[out:json][timeout:30];node[${tag}](around:${r},${lat},${lng});out body 20;`;
+        // Check cache first
+        const cacheKey = `places_${lat.toFixed(3)}_${lng.toFixed(3)}_${type}_${radius}`;
+        const cached = getCached(cacheKey);
+        if (cached) return cached;
+
+        // Single request — no retry to avoid 429
+        let overpassQuery;
+        if (type === 'restaurant') {
+            overpassQuery = `[out:json][timeout:30];(nwr["amenity"="restaurant"](around:${radius},${lat},${lng});nwr["amenity"="fast_food"](around:${radius},${lat},${lng});nwr["amenity"="food_court"](around:${radius},${lat},${lng});nwr["amenity"="cafe"](around:${Math.min(radius, 8000)},${lat},${lng}););out center 20;`;
+        } else {
+            const osmTags = {
+                cafe: 'amenity=cafe', hotel: 'tourism=hotel', museum: 'tourism=museum',
+                attraction: 'tourism=attraction', park: 'leisure=park',
+                mosque: 'amenity=place_of_worship"]["religion"="muslim',
+            };
+            const tag = osmTags[type] || `amenity=${type}`;
+            overpassQuery = `[out:json][timeout:30];nwr[${tag}](around:${radius},${lat},${lng});out center 20;`;
+        }
+
+        try {
+            const { data } = await axios.post(OVERPASS_API,
+                `data=${encodeURIComponent(overpassQuery)}`,
+                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 25000 }
+            );
+
+            let results = (data.elements || [])
+                .map((el) => {
+                    const name = getEnglishName(el.tags);
+                    if (!name) return null;
+                    const elLat = el.lat || el.center?.lat;
+                    const elLng = el.lon || el.center?.lon;
+                    if (!elLat || !elLng) return null;
+                    const cuisine = el.tags?.cuisine || '';
+                    const halalKeywords = /halal|pakistani|arabic|turkish|indian|muslim|kebab/i;
+                    const isHalal = el.tags?.['diet:halal'] === 'yes' || el.tags?.halal === 'yes' || halalKeywords.test(cuisine);
+                    return {
+                        name, lat: elLat, lng: elLng,
+                        type: el.tags?.amenity || type,
+                        cuisine,
+                        dietary: { halal: !!isHalal, vegan: el.tags?.['diet:vegan'] === 'yes', vegetarian: el.tags?.['diet:vegetarian'] === 'yes' },
+                        halalStatus: isHalal ? '🟢 Halal' : halalKeywords.test(cuisine) ? '🟡 Likely Halal' : '',
+                        rating: el.tags?.stars ? parseFloat(el.tags.stars) : null,
+                        address: el.tags?.['addr:street'] ? `${el.tags['addr:street']} ${el.tags['addr:housenumber'] || ''}, ${el.tags['addr:city'] || ''}` : '',
+                        website: el.tags?.website || '', phone: el.tags?.phone || '',
+                    };
+                })
+                .filter(Boolean);
+
+            if (dietary.length > 0) {
+                const filtered = results.filter((p) => dietary.some((d) => {
+                    if (d === 'halal') return p.dietary.halal;
+                    if (d === 'vegan') return p.dietary.vegan;
+                    if (d === 'vegetarian') return p.dietary.vegetarian;
+                    return p.cuisine.toLowerCase().includes(d.toLowerCase());
+                }));
+                if (filtered.length > 0) results = filtered;
             }
 
-            try {
-                const { data } = await axios.post(OVERPASS_API,
-                    `data=${encodeURIComponent(overpassQuery)}`,
-                    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 25000 }
-                );
-
-                let results = (data.elements || [])
-                    .map((el) => {
-                        const name = getEnglishName(el.tags);
-                        if (!name) return null;
-                        const cuisine = el.tags?.cuisine || '';
-                        const halalKeywords = /halal|pakistani|arabic|turkish|indian|muslim|kebab/i;
-                        const isHalal = el.tags?.['diet:halal'] === 'yes' || el.tags?.halal === 'yes' || halalKeywords.test(cuisine);
-                        return {
-                            name, lat: el.lat, lng: el.lon,
-                            type: el.tags?.amenity || type,
-                            cuisine,
-                            dietary: { halal: !!isHalal, vegan: el.tags?.['diet:vegan'] === 'yes', vegetarian: el.tags?.['diet:vegetarian'] === 'yes' },
-                            halalStatus: isHalal ? '🟢 Halal' : halalKeywords.test(cuisine) ? '🟡 Likely Halal' : '',
-                            rating: el.tags?.stars ? parseFloat(el.tags.stars) : null,
-                            address: el.tags?.['addr:street'] ? `${el.tags['addr:street']} ${el.tags['addr:housenumber'] || ''}, ${el.tags['addr:city'] || ''}` : '',
-                            website: el.tags?.website || '', phone: el.tags?.phone || '',
-                        };
-                    })
-                    .filter(Boolean);
-
-                // Only apply dietary filter if it returns results
-                if (dietary.length > 0) {
-                    const filtered = results.filter((p) => dietary.some((d) => {
-                        if (d === 'halal') return p.dietary.halal;
-                        if (d === 'vegan') return p.dietary.vegan;
-                        if (d === 'vegetarian') return p.dietary.vegetarian;
-                        return p.cuisine.toLowerCase().includes(d.toLowerCase());
-                    }));
-                    if (filtered.length > 0) results = filtered;
-                }
-
-                if (results.length > 0) return results;
-            } catch (e) {
-                console.log(`[searchPlaces] Overpass failed at radius ${r}:`, e.message);
+            if (results.length > 0) {
+                setCached(cacheKey, results);
+                return results;
             }
+        } catch (e) {
+            console.log(`[searchPlaces] Overpass failed:`, e.message);
         }
 
         // Fallback for known cities
@@ -314,33 +334,38 @@ exports.findHalalRestaurants = async (lat, lng, radius = 5000) => {
  */
 exports.findAttractions = async (lat, lng, radius = 10000) => {
     try {
-        for (const r of [radius, 20000]) {
-            const overpassQuery = `[out:json][timeout:30];(node["tourism"~"attraction|museum|viewpoint|artwork"]["name"](around:${r},${lat},${lng});node["historic"~"monument|castle|ruins|memorial"]["name"](around:${r},${lat},${lng}););out body 20;`;
+        // Check cache first
+        const cacheKey = `attr_${lat.toFixed(3)}_${lng.toFixed(3)}_${radius}`;
+        const cached = getCached(cacheKey);
+        if (cached) return cached;
 
-            try {
-                const { data } = await axios.post(OVERPASS_API,
-                    `data=${encodeURIComponent(overpassQuery)}`,
-                    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 25000 }
-                );
+        // Single request — no retry to avoid 429
+        const overpassQuery = `[out:json][timeout:30];(nwr["tourism"~"attraction|museum|viewpoint|artwork"]["name"](around:${radius},${lat},${lng});nwr["historic"~"monument|castle|ruins|memorial"]["name"](around:${radius},${lat},${lng}););out center 20;`;
 
-                const results = (data.elements || [])
-                    .map((el) => {
-                        const name = getEnglishName(el.tags);
-                        if (!name) return null;
-                        return {
-                            name, lat: el.lat, lng: el.lon,
-                            type: el.tags?.tourism || el.tags?.historic || 'attraction',
-                            description: el.tags?.description || el.tags?.['description:en'] || '',
-                            wikipedia: el.tags?.wikipedia || '',
-                            website: el.tags?.website || '',
-                        };
-                    })
-                    .filter(Boolean);
+        const { data } = await axios.post(OVERPASS_API,
+            `data=${encodeURIComponent(overpassQuery)}`,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 25000 }
+        );
 
-                if (results.length > 0) return results;
-            } catch { }
-        }
-        return [];
+        const results = (data.elements || [])
+            .map((el) => {
+                const name = getEnglishName(el.tags);
+                if (!name) return null;
+                const elLat = el.lat || el.center?.lat;
+                const elLng = el.lon || el.center?.lon;
+                if (!elLat || !elLng) return null;
+                return {
+                    name, lat: elLat, lng: elLng,
+                    type: el.tags?.tourism || el.tags?.historic || 'attraction',
+                    description: el.tags?.description || el.tags?.['description:en'] || '',
+                    wikipedia: el.tags?.wikipedia || '',
+                    website: el.tags?.website || '',
+                };
+            })
+            .filter(Boolean);
+
+        if (results.length > 0) setCached(cacheKey, results);
+        return results;
     } catch (error) {
         console.warn('Attractions search error:', error.message);
         return [];

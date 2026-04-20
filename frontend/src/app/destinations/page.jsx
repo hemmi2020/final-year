@@ -209,31 +209,40 @@ export default function DestinationsPage() {
         country: loc.country || null,
         currency: loc.currency || null,
       });
-      // Fetch weather, restaurants, attractions in parallel (separate from abort controller)
-      const [wx, rest, attr] = await Promise.allSettled([
-        fetchWithRetry(() => externalAPI.weather(loc.lat, loc.lng)),
-        fetchWithRetry(() =>
-          externalAPI.places(name, loc.lat, loc.lng, "restaurant"),
-        ),
-        fetchWithRetry(() => externalAPI.attractions(loc.lat, loc.lng)),
-      ]);
-      if (wx.status === "fulfilled") {
-        const weatherData = wx.value.data.data;
-        setWeather(weatherData);
-        setCache(`dest_weather_${cityKey}`, weatherData);
-      }
-      if (rest.status === "fulfilled") {
-        const restaurantData = rest.value.data.data?.slice(0, 8) || [];
-        setRestaurants(restaurantData);
-        setCache(`dest_restaurants_${cityKey}`, restaurantData);
-      }
-      if (attr.status === "fulfilled") {
-        const attractionData = attr.value.data.data?.slice(0, 8) || [];
+      // Fetch weather first (uses OpenWeather, not Overpass), then Overpass calls sequentially
+      try {
+        const wx = await externalAPI.weather(loc.lat, loc.lng);
+        if (wx.data.data) {
+          setWeather(wx.data.data);
+          setCache(`dest_weather_${cityKey}`, wx.data.data);
+        }
+      } catch {}
+
+      // Attractions (Overpass call 1)
+      try {
+        const attr = await externalAPI.attractions(loc.lat, loc.lng);
+        const attractionData = attr.data.data?.slice(0, 8) || [];
         setAttractions(attractionData);
         setCache(`dest_attractions_${cityKey}`, attractionData);
-      }
+      } catch {}
+
+      // Small delay to avoid Overpass 429
+      await new Promise((r) => setTimeout(r, 1500));
+
+      // Restaurants (Overpass call 2)
+      try {
+        const rest = await externalAPI.places(
+          name,
+          loc.lat,
+          loc.lng,
+          "restaurant",
+        );
+        const restaurantData = rest.data.data?.slice(0, 8) || [];
+        setRestaurants(restaurantData);
+        setCache(`dest_restaurants_${cityKey}`, restaurantData);
+      } catch {}
     } catch {
-      // Abort/timeout or network error — leave result as null so fallback DESTINATIONS grid renders
+      // Abort/timeout or network error
     } finally {
       clearTimeout(timeout);
     }
