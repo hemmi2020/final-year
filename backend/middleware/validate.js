@@ -6,6 +6,7 @@ const { body, validationResult } = require('express-validator');
 const handleValidation = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log('[validation] Failed:', req.path, JSON.stringify(req.body), errors.array().map(e => e.msg));
         return res.status(400).json({ success: false, errors: errors.array().map(e => e.msg) });
     }
     next();
@@ -29,7 +30,7 @@ const tripRules = [
 
 const generateRules = [
     body('destination').trim().notEmpty().withMessage('Destination is required'),
-    body('days').isInt({ min: 1, max: 30 }).withMessage('Days must be between 1 and 30'),
+    body('days').optional().isInt({ min: 1, max: 30 }).withMessage('Days must be between 1 and 30'),
 ];
 
 const preferencesRules = [
