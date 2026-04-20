@@ -580,16 +580,20 @@ export default function DashboardPage() {
 
     const cacheKey = `nearby_${loc.lat.toFixed(2)}_${loc.lng.toFixed(2)}`;
     const cached = getNearbyCache(cacheKey);
-    // Only use cache if it has actual data (not all empty)
+    // Only use cache if at least 3 categories have data (not a partial/failed result)
     if (cached) {
-      const hasData = Object.values(cached).some(
+      const filledCount = Object.values(cached).filter(
         (arr) => Array.isArray(arr) && arr.length > 0,
-      );
-      if (hasData) {
+      ).length;
+      if (filledCount >= 3) {
         setNearby(cached);
         setNearbyLoading(false);
         return;
       }
+      // Partial cache — clear it and refetch
+      try {
+        localStorage.removeItem(cacheKey);
+      } catch {}
     }
 
     setNearbyLoading(true);
@@ -597,12 +601,12 @@ export default function DashboardPage() {
     const fetchAll = async () => {
       const data = await fetchAllNearbyFromBackend(loc.lat, loc.lng);
       if (data) {
-        // Only cache if at least one category has results
-        const hasData = Object.values(data).some(
+        // Only cache if at least 3 categories have results
+        const filledCount = Object.values(data).filter(
           (arr) => Array.isArray(arr) && arr.length > 0,
-        );
+        ).length;
         setNearby(data);
-        if (hasData) setNearbyCache(cacheKey, data);
+        if (filledCount >= 3) setNearbyCache(cacheKey, data);
       } else {
         const empty = {};
         NEARBY_CATEGORIES.forEach((cat) => {
