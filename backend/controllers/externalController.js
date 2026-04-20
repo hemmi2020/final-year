@@ -315,19 +315,27 @@ exports.nearbyAll = async (req, res, next) => {
 
         const delay = () => new Promise(resolve => setTimeout(resolve, 1200));
 
-        // BATCH 1: Mosques + Hospitals + ATMs + Fuel
-        const b1 = await runQuery('batch1', `[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng}););out body;`);
+        // BATCH 1: Mosques + Hospitals + ATMs + Fuel + Restaurants (all in one, limited)
+        const b1 = await runQuery('batch1', `[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng});node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
         for (const el of b1) {
             const a = el.tags?.amenity;
             if (a === 'place_of_worship' && el.tags?.religion === 'muslim') categorized.mosques.push(el);
             else if (/^(hospital|clinic)$/.test(a)) categorized.hospitals.push(el);
             else if (/^(atm|bank)$/.test(a)) categorized.atms.push(el);
             else if (a === 'fuel') categorized.fuel.push(el);
+            else if (a === 'restaurant' || a === 'fast_food') {
+                allRestaurants.push(el);
+                const cuisine = el.tags?.cuisine || '';
+                const dietHalal = el.tags?.['diet:halal'];
+                if (dietHalal === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
+                    categorized.halal.push(el);
+                }
+            }
         }
 
         await delay();
 
-        // BATCH 2: Police + Pharmacy (separate — these are rare, need their own query)
+        // BATCH 2: Police + Pharmacy (separate — these are rare)
         const b2 = await runQuery('batch2', `[out:json][timeout:15];(node["amenity"="police"](around:${r},${lat},${lng});node["amenity"="pharmacy"](around:${r},${lat},${lng}););out body;`);
         for (const el of b2) {
             const a = el.tags?.amenity;
@@ -335,26 +343,15 @@ exports.nearbyAll = async (req, res, next) => {
             else if (a === 'pharmacy') categorized.pharmacy.push(el);
         }
 
-        await delay();
-
-        // BATCH 3: Restaurants + Fast food (separate — these return many results)
-        const b3 = await runQuery('batch3', `[out:json][timeout:15];(node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
-        for (const el of b3) {
-            const a = el.tags?.amenity;
-            const cuisine = el.tags?.cuisine || '';
-            const dietHalal = el.tags?.['diet:halal'];
-            if (a === 'restaurant' || a === 'fast_food') {
-                allRestaurants.push(el);
-                if (dietHalal === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
-                    categorized.halal.push(el);
-                }
-            }
-        }
-
-        // Halal fallback: if no halal-tagged, use general restaurants
-        if (categorized.halal.length === 0 && allRestaurants.length > 0) {
+        // Halal: always show restaurants — in Muslim countries all are halal by default
+        // If specific halal-tagged ones found, use those. Otherwise use all restaurants.
+        if (categorized.halal.length === 0) {
             categorized.halal = allRestaurants.slice(0, 15);
         }
+
+        // If restaurants batch failed entirely (429/timeout), halal is still empty
+        // In that case, use restaurants from Batch 1 area (some may be near mosques/hospitals)
+        // Or just accept empty — the frontend shows "None found nearby" which is honest
 
         // Parse each category (sorts by distance, slices to top 10)
         const result = {};
