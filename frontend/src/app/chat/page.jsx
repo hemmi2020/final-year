@@ -4,15 +4,7 @@ import { useState, useRef, useEffect, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { chatAPI, tripsAPI } from "@/lib/api";
-import {
-  Send,
-  Globe,
-  Sparkles,
-  Save,
-  Download,
-  Users,
-  Pencil,
-} from "lucide-react";
+import { Send } from "lucide-react";
 import { MessageRenderer } from "@/components/chat/GenerativeUI";
 import GlobeMap from "@/components/map/GlobeMap";
 import { extractDestinationFromText } from "@/lib/extractDestination";
@@ -20,6 +12,9 @@ import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
 import ShareTripModal from "@/components/chat/ShareTripModal";
 import { useLocation } from "@/hooks/useLocation";
+import { useTripState, extractFields } from "@/hooks/useTripState";
+import QuickReplyChips from "@/components/chat/QuickReplyChips";
+import ItineraryCard from "@/components/chat/ItineraryCard";
 
 /* ── Animated typing dots component ── */
 function TypingIndicator() {
@@ -62,7 +57,7 @@ function TypingIndicator() {
 }
 
 /* ── Generating progress panel ── */
-function GeneratingPanel({ destination }) {
+function GeneratingPanel({ origin, destination }) {
   const [progress, setProgress] = useState(0);
   const [checklist, setChecklist] = useState([
     { label: "Optimizing your route", done: false },
@@ -78,14 +73,13 @@ function GeneratingPanel({ destination }) {
           clearInterval(interval);
           return 100;
         }
-        return prev + 1.25; // 0→100 in 8 seconds (100/1.25 = 80 ticks * 100ms)
+        return prev + 1.25;
       });
     }, 100);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    // Animate checklist items at 25%, 50%, 75%, 100%
     const thresholds = [25, 50, 75, 100];
     setChecklist((prev) =>
       prev.map((item, idx) => ({
@@ -95,7 +89,8 @@ function GeneratingPanel({ destination }) {
     );
   }, [progress]);
 
-  const displayName = destination || "Your";
+  const displayOrigin = origin || "Your City";
+  const displayDestination = destination || "Destination";
 
   return (
     <div
@@ -124,7 +119,7 @@ function GeneratingPanel({ destination }) {
             margin: "0 0 8px",
           }}
         >
-          {displayName} Trip
+          {displayOrigin} to {displayDestination} Trip
         </h2>
         <p
           style={{
@@ -236,23 +231,35 @@ function ChatContent() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [showInitial, setShowInitial] = useState(true);
   const [currentDestination, setCurrentDestination] = useState(null);
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [chatStage, setChatStage] = useState("initial");
-  const [generatingDest, setGeneratingDest] = useState("");
   const [tripId, setTripId] = useState(null);
+  const [itineraryData, setItineraryData] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
+
   const location = useLocation();
   const userLocation =
     location.lat && location.lng
-      ? { lat: location.lat, lng: location.lng }
+      ? { lat: location.lat, lng: location.lng, city: location.city }
       : null;
+
+  const {
+    tripState,
+    updateField,
+    getNextQuestion,
+    isComplete,
+    reset,
+    chatStage,
+    setChatStage,
+  } = useTripState(location);
+
   const messagesEnd = useRef(null);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
-  const generatingTimerRef = useRef(null);
+  const hasInitialized = useRef(false);
+  const generationTriggered = useRef(false);
 
   const scrollToBottom = () => {
     if (chatContainerRef.current) {
@@ -261,69 +268,161 @@ function ChatContent() {
     }
   };
 
+  // Initialize greeting + first question on mount
   useEffect(() => {
     if (!isAuthenticated) {
       setLoginOpen(true);
       return;
     }
-    const q = searchParams.get("q");
-    if (q) {
-      sendMessage(q);
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    const greeting = {
+      id: Date.now(),
+      role: "assistant",
+      content:
+        "Hey Hamza! 👋 I'm your AI travel planner. Let's create an amazing trip together! I'll ask you a few quick questions to build your perfect itinerary.",
+    };
+
+    const nextQ = getNextQuestion();
+    if (nextQ) {
+      const questionMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: nextQ.prompt,
+        chipType: nextQ.chipType,
+        multiSelect: nextQ.multiSelect,
+      };
+      setMessages([greeting, questionMsg]);
+    } else {
+      setMessages([greeting]);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle query param
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const q = searchParams.get("q");
+    if (q && hasInitialized.current && messages.length > 0) {
+      handleUserMessage(q);
+    }
+  }, [isAuthenticated, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setTimeout(scrollToBottom, 100);
   }, [messages, typing]);
 
-  // Cleanup generating timer on unmount
+  // Auto-trigger generation when isComplete becomes true
   useEffect(() => {
-    return () => {
-      if (generatingTimerRef.current) clearTimeout(generatingTimerRef.current);
-    };
-  }, []);
+    if (
+      isComplete &&
+      !generationTriggered.current &&
+      chatStage !== "generating" &&
+      chatStage !== "ready"
+    ) {
+      generationTriggered.current = true;
+      triggerGeneration();
+    }
+  }, [isComplete, chatStage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const sendMessage = async (text) => {
+  const triggerGeneration = async () => {
+    setChatStage("generating");
+
+    const genMsg = {
+      id: Date.now(),
+      role: "assistant",
+      content:
+        "Perfect! I have everything I need. Let me craft your dream itinerary... ✨",
+    };
+    setMessages((prev) => [...prev, genMsg]);
+
+    try {
+      const { data } = await tripsAPI.generate({
+        destination: tripState.destination,
+        origin: tripState.origin,
+        duration: tripState.duration,
+        travelCompanion: tripState.travelCompanion,
+        vibe: tripState.vibe,
+        budget: tripState.budget,
+        dates: tripState.dates,
+        interests: Array.isArray(tripState.vibe) ? tripState.vibe : [],
+        dietary: ["halal"],
+      });
+
+      const trip = data.data?.trip;
+      const itinerary = data.data?.itinerary;
+
+      if (trip?._id) {
+        setTripId(trip._id);
+        setIsSaved(true);
+      }
+      if (itinerary) {
+        setItineraryData(itinerary);
+      }
+
+      setChatStage("ready");
+
+      const readyMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: `Your ${tripState.destination} itinerary is ready! 🎉 Check out the full plan on the right panel. You can save it, share it with the community, or ask me to modify anything.`,
+      };
+      setMessages((prev) => [...prev, readyMsg]);
+    } catch (err) {
+      setChatStage("greeting");
+      generationTriggered.current = false;
+      const errorMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content:
+          "Sorry, I couldn't generate your itinerary right now. Please try again.",
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    }
+  };
+
+  const handleUserMessage = async (text) => {
     if (!text.trim()) return;
-    setShowInitial(false);
     const trimmed = text.trim();
     const userMsg = { id: Date.now(), role: "user", content: trimmed };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTimeout(scrollToBottom, 50);
 
-    // Stage transitions
-    const lowerText = trimmed.toLowerCase();
-    const isGenerateRequest =
-      lowerText.includes("generate") || lowerText.includes("itinerary");
+    // Extract fields from user text
+    const extracted = extractFields(trimmed);
+    Object.entries(extracted).forEach(([field, value]) => {
+      if (value != null) {
+        updateField(field, value);
+      }
+    });
 
-    if (isGenerateRequest) {
-      // Extract destination name from recent messages for the generating panel
-      const destName = extractDestNameFromMessages([...messages, userMsg]);
-      setGeneratingDest(destName);
-      setChatStage("generating");
-      // Auto-transition to "ready" after 8 seconds
-      generatingTimerRef.current = setTimeout(() => {
-        setChatStage("ready");
-      }, 8000);
-    } else if (chatStage === "initial") {
-      setChatStage("understanding");
-    }
-
+    // Send to backend with tripState context
     setTyping(true);
-
     try {
-      const { data } = await chatAPI.send(trimmed);
-      setMessages((prev) => [
-        ...prev,
-        { id: Date.now() + 1, role: "assistant", content: data.data.message },
-      ]);
-      // Detect destination via Mapbox geocoding
-      extractDestinationFromText(data.data.message + " " + trimmed).then(
-        (dest) => {
-          if (dest) setCurrentDestination(dest);
-        },
-      );
+      const { data } = await chatAPI.send(trimmed, tripState);
+      const aiContent =
+        data.data?.message ||
+        data.data?.response ||
+        "I understand! Let me help you plan your trip.";
+
+      const aiMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: aiContent,
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+
+      // Detect destination for map
+      extractDestinationFromText(aiContent + " " + trimmed).then((dest) => {
+        if (dest) setCurrentDestination(dest);
+      });
+
+      // After AI response, check if there's a next question to ask
+      // We need to check the updated state (after extracted fields are applied)
+      setTimeout(() => {
+        appendNextQuestionIfNeeded(extracted);
+      }, 300);
     } catch (err) {
       setMessages((prev) => [
         ...prev,
@@ -338,33 +437,224 @@ function ChatContent() {
     }
   };
 
-  // Simple helper to extract a destination name from message history
-  const extractDestNameFromMessages = (msgs) => {
-    // Look through messages for common destination patterns
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      const content = msgs[i].content;
-      // Try to find destination-like words (capitalized place names)
-      const match = content.match(
-        /(?:to|visit|trip to|going to|travel to|explore)\s+([A-Z][a-zA-Z\s]{2,20})/,
-      );
-      if (match) return match[1].trim();
+  const appendNextQuestionIfNeeded = (justExtracted) => {
+    // Build a temporary state to check what's next
+    // The actual tripState may not have updated yet due to React batching
+    const tempState = { ...tripState };
+    if (justExtracted) {
+      Object.entries(justExtracted).forEach(([field, value]) => {
+        if (value != null) tempState[field] = value;
+      });
     }
-    return "Your";
+
+    // Check if all required fields are filled
+    const requiredFields = [
+      "destination",
+      "duration",
+      "travelCompanion",
+      "vibe",
+      "budget",
+    ];
+    const allFilled = requiredFields.every((f) => tempState[f] != null);
+
+    if (allFilled) {
+      // isComplete will trigger generation via useEffect
+      return;
+    }
+
+    // Find next unfilled field
+    const questionSequence = [
+      {
+        field: "destination",
+        prompt: "Where would you like to go? Tell me your dream destination!",
+        chipType: "destination",
+        multiSelect: false,
+      },
+      {
+        field: "duration",
+        prompt: "How long would you like your trip to be?",
+        chipType: "duration",
+        multiSelect: false,
+      },
+      {
+        field: "travelCompanion",
+        prompt: "Who are you traveling with?",
+        chipType: "travelCompanion",
+        multiSelect: false,
+      },
+      {
+        field: "vibe",
+        prompt:
+          "What kind of vibe are you looking for? Pick as many as you like!",
+        chipType: "vibe",
+        multiSelect: true,
+      },
+      {
+        field: "budget",
+        prompt: "What's your budget range for this trip?",
+        chipType: "budget",
+        multiSelect: false,
+      },
+    ];
+
+    let nextQ = null;
+    for (const q of questionSequence) {
+      if (tempState[q.field] == null) {
+        nextQ = q;
+        break;
+      }
+    }
+
+    if (nextQ) {
+      const questionMsg = {
+        id: Date.now() + 2,
+        role: "assistant",
+        content: nextQ.prompt,
+        chipType: nextQ.chipType,
+        multiSelect: nextQ.multiSelect,
+      };
+      setMessages((prev) => [...prev, questionMsg]);
+    }
   };
 
-  const handleQuickAction = (text) => sendMessage(text);
+  const handleChipSelect = (value) => {
+    // Determine which question the chips are for (last message with chipType)
+    const lastChipMsg = [...messages].reverse().find((m) => m.chipType);
+    if (!lastChipMsg) return;
+
+    const chipType = lastChipMsg.chipType;
+    const displayValue = Array.isArray(value) ? value.join(", ") : value;
+
+    // Add user message
+    const userMsg = { id: Date.now(), role: "user", content: displayValue };
+    setMessages((prev) => [...prev, userMsg]);
+
+    // Update the field
+    updateField(chipType, value);
+
+    // Send to backend for contextual response
+    setTyping(true);
+    chatAPI
+      .send(displayValue, { ...tripState, [chipType]: value })
+      .then(({ data }) => {
+        const aiContent =
+          data.data?.message || data.data?.response || "Great choice!";
+        const aiMsg = {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: aiContent,
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+
+        // Detect destination for map
+        if (chipType === "destination") {
+          extractDestinationFromText(displayValue).then((dest) => {
+            if (dest) setCurrentDestination(dest);
+          });
+        }
+
+        // Append next question
+        setTimeout(() => {
+          appendNextQuestionIfNeeded({ [chipType]: value });
+        }, 300);
+      })
+      .catch(() => {
+        // Even if backend fails, still append next question
+        const fallbackMsg = {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: "Got it! Let's continue.",
+        };
+        setMessages((prev) => [...prev, fallbackMsg]);
+        setTimeout(() => {
+          appendNextQuestionIfNeeded({ [chipType]: value });
+        }, 300);
+      })
+      .finally(() => {
+        setTyping(false);
+      });
+  };
 
   const handleNewTrip = () => {
+    reset();
     setMessages([]);
-    setShowInitial(true);
     setInput("");
-    setChatStage("initial");
     setCurrentDestination(null);
-    setGeneratingDest("");
     setTripId(null);
+    setItineraryData(null);
+    setIsSaved(false);
     setShareModalOpen(false);
-    if (generatingTimerRef.current) clearTimeout(generatingTimerRef.current);
+    generationTriggered.current = false;
+    hasInitialized.current = false;
+
+    // Re-initialize with greeting
+    setTimeout(() => {
+      hasInitialized.current = true;
+      const greeting = {
+        id: Date.now(),
+        role: "assistant",
+        content:
+          "Hey Hamza! 👋 Let's plan a new trip! Where would you like to go?",
+      };
+      const questionMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: "Where would you like to go? Tell me your dream destination!",
+        chipType: "destination",
+        multiSelect: false,
+      };
+      setMessages([greeting, questionMsg]);
+    }, 100);
   };
+
+  const handleSave = async () => {
+    if (isSaved || tripId) return;
+    try {
+      const { data } = await tripsAPI.generate({
+        destination: tripState.destination,
+        origin: tripState.origin,
+        duration: tripState.duration,
+        travelCompanion: tripState.travelCompanion,
+        vibe: tripState.vibe,
+        budget: tripState.budget,
+        dates: tripState.dates,
+        interests: Array.isArray(tripState.vibe) ? tripState.vibe : [],
+        dietary: ["halal"],
+      });
+      const trip = data.data?.trip;
+      if (trip?._id) {
+        setTripId(trip._id);
+        setIsSaved(true);
+      }
+    } catch {
+      // Error handled silently
+    }
+  };
+
+  const handleShare = () => {
+    setShareModalOpen(true);
+  };
+
+  const handleModify = () => {
+    setChatStage("greeting");
+    generationTriggered.current = false;
+    const modifyMsg = {
+      id: Date.now(),
+      role: "assistant",
+      content:
+        "Sure! What would you like to change about your trip? You can update the destination, duration, companions, vibe, or budget.",
+    };
+    setMessages((prev) => [...prev, modifyMsg]);
+  };
+
+  // Determine if we should show chips (last AI message has chipType and we're not generating/ready)
+  const lastMessage = messages[messages.length - 1];
+  const showChips =
+    lastMessage?.role === "assistant" &&
+    lastMessage?.chipType &&
+    chatStage !== "generating" &&
+    chatStage !== "ready" &&
+    !typing;
 
   return (
     <div
@@ -420,7 +710,7 @@ function ChatContent() {
               Discover personalized travel itineraries
             </p>
           </div>
-          {!showInitial && (
+          {messages.length > 0 && (
             <button
               onClick={handleNewTrip}
               className="btn-orange"
@@ -441,244 +731,87 @@ function ChatContent() {
             scrollBehavior: "smooth",
           }}
         >
-          {showInitial ? (
-            /* Initial state — quick actions */
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                marginTop: 20,
-              }}
-            >
-              {[
-                { icon: "🌐", label: "Create New Trip" },
-                { icon: "✈️", label: "Inspire me where to go" },
-                { icon: "🏛️", label: "Discover Hidden gems" },
-                { icon: "🌍", label: "Adventure Destination" },
-              ].map((a, idx) => (
-                <button
-                  key={a.label}
-                  onClick={() => handleQuickAction(a.label)}
-                  className={`stagger-${idx + 1}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: "16px 20px",
-                    background: "#FFF",
-                    border: "1.5px solid var(--border)",
-                    borderRadius: 12,
-                    cursor: "pointer",
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: "var(--text-primary)",
-                    textAlign: "left",
-                    fontFamily: "inherit",
-                    transition: "all 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--orange)";
-                    e.currentTarget.style.background = "var(--orange-bg)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.background = "#FFF";
-                  }}
-                >
-                  <span style={{ fontSize: 22 }}>{a.icon}</span>
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          ) : (
-            /* Active chat messages */
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  style={{
-                    display: "flex",
-                    justifyContent:
-                      msg.role === "user" ? "flex-end" : "flex-start",
-                    alignItems: "flex-start",
-                    gap: 8,
-                  }}
-                  className={msg.role === "user" ? "msg-user" : "msg-ai"}
-                >
-                  {/* AI Avatar */}
-                  {msg.role === "assistant" && (
-                    <div
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: "50%",
-                        background: "linear-gradient(135deg, #FF4500, #FF6B35)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        marginTop: 2,
-                      }}
-                    >
-                      <span
-                        style={{ color: "#FFF", fontSize: 10, fontWeight: 700 }}
-                      >
-                        AI
-                      </span>
-                    </div>
-                  )}
-                  {msg.role === "user" ? (
+          {/* Active chat messages */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                style={{
+                  display: "flex",
+                  justifyContent:
+                    msg.role === "user" ? "flex-end" : "flex-start",
+                  alignItems: "flex-start",
+                  gap: 8,
+                }}
+                className={msg.role === "user" ? "msg-user" : "msg-ai"}
+              >
+                {/* AI Avatar */}
+                {msg.role === "assistant" && (
+                  <div
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: "50%",
+                      background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      marginTop: 2,
+                    }}
+                  >
                     <span
-                      className="bubble-user"
-                      style={{
-                        padding: "8px 20px",
-                        fontSize: 15,
-                        fontWeight: 500,
-                      }}
+                      style={{ color: "#FFF", fontSize: 10, fontWeight: 700 }}
                     >
-                      {msg.content}
+                      AI
                     </span>
-                  ) : (
-                    <div
-                      className="bubble-ai"
-                      style={{
-                        padding: "14px 18px",
-                        maxWidth: "85%",
-                      }}
-                    >
-                      <MessageRenderer
-                        content={msg.content}
-                        onSendMessage={sendMessage}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                )}
+                {msg.role === "user" ? (
+                  <span
+                    className="bubble-user"
+                    style={{
+                      padding: "8px 20px",
+                      fontSize: 15,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {msg.content}
+                  </span>
+                ) : (
+                  <div
+                    className="bubble-ai"
+                    style={{
+                      padding: "14px 18px",
+                      maxWidth: "85%",
+                    }}
+                  >
+                    <MessageRenderer
+                      content={msg.content}
+                      onSendMessage={handleUserMessage}
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
 
-              {/* Typing indicator */}
-              {typing && <TypingIndicator />}
-              <div ref={messagesEnd} />
-            </div>
-          )}
-        </div>
+            {/* Typing indicator */}
+            {typing && <TypingIndicator />}
 
-        {/* ── Floating Action Bar — visible when itinerary is ready ── */}
-        {chatStage === "ready" && (
-          <div
-            style={{
-              padding: "10px 16px",
-              borderTop: "1px solid var(--border-light)",
-              background: "#FFFBF7",
-              display: "flex",
-              gap: 8,
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <button
-              onClick={async () => {
-                if (tripId) {
-                  alert("Trip already saved!");
-                  return;
-                }
-                try {
-                  const dest = generatingDest || "My Destination";
-                  const { data } = await tripsAPI.generate({
-                    destination: dest,
-                    days: 7,
-                    budget: "moderate",
-                    interests: [],
-                    dietary: [],
-                  });
-                  if (data.data?.trip?._id) {
-                    setTripId(data.data.trip._id);
-                    sendMessage(
-                      `Trip saved! ID: ${data.data.trip._id}. You can now share it.`,
-                    );
-                  }
-                } catch {
-                  sendMessage("Save this trip");
-                }
-              }}
-              disabled={typing || !!tripId}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "8px 16px",
-                borderRadius: 10,
-                border: "1.5px solid #E5E7EB",
-                background: "#FFF",
-                color: "#374151",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: typing ? "not-allowed" : "pointer",
-                fontFamily: "inherit",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--orange)";
-                e.currentTarget.style.color = "var(--orange)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#E5E7EB";
-                e.currentTarget.style.color = "#374151";
-              }}
-            >
-              {tripId ? "✅ Saved" : "💾 Save Trip"}
-            </button>
-            <button
-              onClick={() => setShareModalOpen(true)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "8px 16px",
-                borderRadius: 10,
-                border: "none",
-                background: "linear-gradient(135deg, #FF4500, #FF6B35)",
-                color: "#FFF",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                transition: "all 0.2s",
-              }}
-            >
-              👥 Share with Group
-            </button>
-            <button
-              onClick={() => sendMessage("Modify this itinerary")}
-              disabled={typing}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "8px 16px",
-                borderRadius: 10,
-                border: "1.5px solid #E5E7EB",
-                background: "#FFF",
-                color: "#374151",
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: typing ? "not-allowed" : "pointer",
-                fontFamily: "inherit",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--orange)";
-                e.currentTarget.style.color = "var(--orange)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#E5E7EB";
-                e.currentTarget.style.color = "#374151";
-              }}
-            >
-              ✏️ Modify
-            </button>
+            {/* Quick Reply Chips — shown below last AI message when it has chipType */}
+            {showChips && (
+              <div style={{ paddingLeft: 38 }}>
+                <QuickReplyChips
+                  questionType={lastMessage.chipType}
+                  onSelect={handleChipSelect}
+                  multiSelect={lastMessage.multiSelect || false}
+                />
+              </div>
+            )}
+
+            <div ref={messagesEnd} />
           </div>
-        )}
+        </div>
 
         {/* Input area */}
         <div
@@ -696,7 +829,7 @@ function ChatContent() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  sendMessage(input);
+                  handleUserMessage(input);
                 }
               }}
               placeholder="Start typing here..."
@@ -716,11 +849,11 @@ function ChatContent() {
               }}
               onFocus={(e) => (e.target.style.borderColor = "var(--orange)")}
               onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-              disabled={typing}
+              disabled={typing || chatStage === "generating"}
             />
             <button
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || typing}
+              onClick={() => handleUserMessage(input)}
+              disabled={!input.trim() || typing || chatStage === "generating"}
               style={{
                 position: "absolute",
                 bottom: 8,
@@ -756,24 +889,47 @@ function ChatContent() {
             left: 0,
             right: 0,
             bottom: 0,
-            visibility: chatStage === "generating" ? "hidden" : "visible",
+            visibility:
+              chatStage === "generating" || chatStage === "ready"
+                ? "hidden"
+                : "visible",
           }}
         >
           <GlobeMap
             destination={currentDestination}
-            userLocation={userLocation}
+            userLocation={
+              userLocation
+                ? { lat: userLocation.lat, lng: userLocation.lng }
+                : null
+            }
           />
         </div>
 
-        {/* Understanding overlay — shown when messages exist and stage is understanding */}
-        {(chatStage === "understanding" ||
-          (chatStage === "initial" && messages.length > 0)) && (
+        {/* Understanding overlay — shown when messages exist and stage is greeting */}
+        {chatStage === "greeting" && messages.length > 2 && (
           <UnderstandingOverlay />
         )}
 
         {/* Generating panel — animated progress */}
         {chatStage === "generating" && (
-          <GeneratingPanel destination={generatingDest} />
+          <GeneratingPanel
+            origin={tripState.origin || location.city}
+            destination={tripState.destination}
+          />
+        )}
+
+        {/* Itinerary Card — shown when ready */}
+        {chatStage === "ready" && itineraryData && (
+          <ItineraryCard
+            itinerary={itineraryData}
+            tripId={tripId}
+            origin={tripState.origin || location.city}
+            destination={tripState.destination}
+            onSave={handleSave}
+            onShare={handleShare}
+            onModify={handleModify}
+            isSaved={isSaved}
+          />
         )}
       </div>
 
@@ -796,7 +952,9 @@ function ChatContent() {
       <ShareTripModal
         isOpen={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
-        tripTitle={generatingDest ? `${generatingDest} Trip` : "My Trip"}
+        tripTitle={
+          tripState.destination ? `${tripState.destination} Trip` : "My Trip"
+        }
         tripId={tripId}
       />
     </div>

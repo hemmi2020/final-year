@@ -34,6 +34,82 @@ async function searchDestination(query) {
 }
 
 /**
+ * Returns realistic mock hotel data when RapidAPI is unavailable or returns empty results
+ * @param {string} city - Destination city name
+ * @returns {Array} Mock hotel results matching the searchHotels return format
+ */
+function getMockHotels(city) {
+    console.log('[hotelService] Using mock hotel data for:', city);
+
+    return [
+        {
+            id: `mock-hotel-1-${city.toLowerCase().replace(/\s+/g, '-')}`,
+            name: `Grand ${city} Hotel & Suites`,
+            stars: 5,
+            rating: 9.1,
+            ratingText: 'Wonderful',
+            reviewCount: 2340,
+            price: 'PKR 18,500',
+            priceRaw: 18500,
+            currency: 'PKR',
+            image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800',
+            address: `Central District, ${city}`,
+            city: city,
+            distance: '0.5 km from center',
+            url: '',
+        },
+        {
+            id: `mock-hotel-2-${city.toLowerCase().replace(/\s+/g, '-')}`,
+            name: `${city} Palace Resort`,
+            stars: 4,
+            rating: 8.5,
+            ratingText: 'Very Good',
+            reviewCount: 1856,
+            price: 'PKR 12,000',
+            priceRaw: 12000,
+            currency: 'PKR',
+            image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800',
+            address: `Old Town, ${city}`,
+            city: city,
+            distance: '1.2 km from center',
+            url: '',
+        },
+        {
+            id: `mock-hotel-3-${city.toLowerCase().replace(/\s+/g, '-')}`,
+            name: `Comfort Inn ${city}`,
+            stars: 3,
+            rating: 7.8,
+            ratingText: 'Good',
+            reviewCount: 945,
+            price: 'PKR 6,500',
+            priceRaw: 6500,
+            currency: 'PKR',
+            image: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800',
+            address: `Market Area, ${city}`,
+            city: city,
+            distance: '2.0 km from center',
+            url: '',
+        },
+        {
+            id: `mock-hotel-4-${city.toLowerCase().replace(/\s+/g, '-')}`,
+            name: `${city} Boutique Hotel`,
+            stars: 4,
+            rating: 8.8,
+            ratingText: 'Excellent',
+            reviewCount: 1120,
+            price: 'PKR 14,200',
+            priceRaw: 14200,
+            currency: 'PKR',
+            image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',
+            address: `Waterfront, ${city}`,
+            city: city,
+            distance: '0.8 km from center',
+            url: '',
+        },
+    ];
+}
+
+/**
  * Search hotels in a city
  * @param {string} city - City name (e.g., "Istanbul")
  * @param {string} checkin - Check-in date YYYY-MM-DD
@@ -42,8 +118,8 @@ async function searchDestination(query) {
  */
 exports.searchHotels = async (city, checkin, checkout, options = {}) => {
     if (!RAPIDAPI_KEY) {
-        console.log('[hotelService] No RAPIDAPI_KEY set');
-        return [];
+        console.log('[hotelService] No RAPIDAPI_KEY set — returning mock data');
+        return getMockHotels(city);
     }
 
     try {
@@ -51,7 +127,7 @@ exports.searchHotels = async (city, checkin, checkout, options = {}) => {
         const dest = await searchDestination(city);
         if (!dest) {
             console.log('[hotelService] Could not find destination:', city);
-            return [];
+            return getMockHotels(city);
         }
 
         // Step 2: Search hotels
@@ -76,7 +152,7 @@ exports.searchHotels = async (city, checkin, checkout, options = {}) => {
 
         const results = data?.result || [];
 
-        return results.slice(0, 5).map((hotel) => ({
+        const mapped = results.slice(0, 5).map((hotel) => ({
             id: hotel.hotel_id,
             name: hotel.hotel_name || 'Unknown Hotel',
             stars: hotel.class || 0,
@@ -92,11 +168,21 @@ exports.searchHotels = async (city, checkin, checkout, options = {}) => {
             distance: hotel.distance_to_cc ? `${hotel.distance_to_cc} km from center` : '',
             url: hotel.url || '',
         }));
+
+        // Fallback to mock data if RapidAPI returned empty results
+        if (mapped.length === 0) {
+            return getMockHotels(city);
+        }
+
+        return mapped;
     } catch (err) {
         console.log('[hotelService] Hotel search failed:', err.message);
-        return [];
+        return getMockHotels(city);
     }
 };
+
+// Expose for testing
+exports._getMockHotels = getMockHotels;
 
 /**
  * Search attractions in a city

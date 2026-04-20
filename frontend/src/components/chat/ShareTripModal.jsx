@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Modal from "@/components/ui/Modal";
 import { groupsAPI, communityAPI } from "@/lib/api";
-import { Copy, Mail, Globe, Check, Link, Users } from "lucide-react";
+import { Copy, Mail, Globe, Check, Link, Users, EyeOff } from "lucide-react";
 
 /**
  * ShareTripModal — share a generated trip via link, email, or community
@@ -22,6 +22,8 @@ export default function ShareTripModal({ isOpen, onClose, tripTitle, tripId }) {
   const [postPublic, setPostPublic] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
+  const [personalNote, setPersonalNote] = useState("");
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [toast, setToast] = useState(null);
 
   const shareLink = tripId
@@ -75,7 +77,11 @@ export default function ShareTripModal({ isOpen, onClose, tripTitle, tripId }) {
     }
     setPublishing(true);
     try {
-      await communityAPI.publish(tripId, { isPublic: postPublic });
+      await communityAPI.publish(tripId, {
+        isPublic: postPublic,
+        note: personalNote,
+        anonymous: isAnonymous,
+      });
       setPublished(true);
       showToast("Trip posted to community!", "success");
     } catch (err) {
@@ -92,6 +98,8 @@ export default function ShareTripModal({ isOpen, onClose, tripTitle, tripId }) {
     setLinkCopied(false);
     setPostPublic(false);
     setPublished(false);
+    setPersonalNote("");
+    setIsAnonymous(false);
     setToast(null);
     onClose();
   };
@@ -138,6 +146,62 @@ export default function ShareTripModal({ isOpen, onClose, tripTitle, tripId }) {
             </p>
           )}
         </div>
+
+        {/* Trip Preview Card */}
+        {tripTitle && (
+          <div
+            style={{
+              padding: "16px 18px",
+              borderRadius: 12,
+              background: "linear-gradient(135deg, #FFF7ED, #FEF3E2)",
+              border: "1.5px solid #FDBA74",
+              marginBottom: 20,
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}
+          >
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 10,
+                background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Globe size={20} color="#FFF" />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <p
+                style={{
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: "#1F2937",
+                  margin: 0,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {tripTitle}
+              </p>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "#6B7280",
+                  margin: "2px 0 0",
+                  fontWeight: 500,
+                }}
+              >
+                Trip Preview
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* No tripId warning */}
         {!tripId && (
@@ -362,6 +426,122 @@ export default function ShareTripModal({ isOpen, onClose, tripTitle, tripId }) {
                 position: "absolute",
                 top: 3,
                 left: postPublic ? 25 : 3,
+                transition: "left 0.2s",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }}
+            />
+          </button>
+        </div>
+
+        {/* ── Personal Note ── */}
+        <div style={{ marginBottom: 20 }}>
+          <label
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#374151",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 8,
+            }}
+          >
+            <Mail size={14} color="#FF4500" />
+            Personal Note
+            <span style={{ fontSize: 12, color: "#9CA3AF", fontWeight: 400 }}>
+              (optional)
+            </span>
+          </label>
+          <textarea
+            value={personalNote}
+            onChange={(e) => setPersonalNote(e.target.value)}
+            placeholder="Add a message for the community..."
+            maxLength={500}
+            style={{
+              width: "100%",
+              padding: "12px 14px",
+              borderRadius: 10,
+              border: "1.5px solid #E5E7EB",
+              fontSize: 13,
+              color: "#1F2937",
+              outline: "none",
+              fontFamily: "inherit",
+              resize: "vertical",
+              minHeight: 80,
+              maxHeight: 160,
+              transition: "border-color 0.2s",
+              boxSizing: "border-box",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#FF4500")}
+            onBlur={(e) => (e.target.style.borderColor = "#E5E7EB")}
+          />
+          <p
+            style={{
+              fontSize: 11,
+              color: "#9CA3AF",
+              margin: "4px 0 0",
+              textAlign: "right",
+            }}
+          >
+            {personalNote.length}/500
+          </p>
+        </div>
+
+        {/* ── Post Anonymously Toggle ── */}
+        <div
+          style={{
+            padding: "14px 18px",
+            borderRadius: 12,
+            border: "1.5px solid #E5E7EB",
+            marginBottom: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <EyeOff size={18} color="#FF4500" />
+            <div>
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#1F2937",
+                  margin: 0,
+                }}
+              >
+                Post Anonymously
+              </p>
+              <p style={{ fontSize: 12, color: "#6B7280", margin: 0 }}>
+                Hide your name from the post
+              </p>
+            </div>
+          </div>
+          {/* Toggle switch */}
+          <button
+            onClick={() => setIsAnonymous(!isAnonymous)}
+            aria-label="Toggle post anonymously"
+            style={{
+              width: 48,
+              height: 26,
+              borderRadius: 13,
+              border: "none",
+              background: isAnonymous ? "#FF4500" : "#D1D5DB",
+              cursor: "pointer",
+              position: "relative",
+              transition: "background 0.2s",
+              flexShrink: 0,
+            }}
+          >
+            <div
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                background: "#FFF",
+                position: "absolute",
+                top: 3,
+                left: isAnonymous ? 25 : 3,
                 transition: "left 0.2s",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
               }}

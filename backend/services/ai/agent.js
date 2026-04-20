@@ -22,7 +22,7 @@ const getOpenAI = () => {
  * Orchestrates: Preferences → Graph → Vector → Weather → Currency → LLM
  */
 exports.generateItinerary = async (user, params) => {
-    const { destination, days, budget, interests, dietary } = params;
+    const { destination, days, budget, interests, dietary, origin: paramOrigin, travelCompanion, vibe, dates } = params;
     const client = getOpenAI();
     if (!client) throw new Error('OpenAI API key not configured');
 
@@ -79,8 +79,8 @@ exports.generateItinerary = async (user, params) => {
     let flightData = [];
     let hotelData = [];
     try {
-        // Get user's home city from preferences or default
-        const userCity = user?.preferences?.homeCity || 'Karachi';
+        // Use origin from Trip_State params, falling back to user preferences or default
+        const userCity = paramOrigin || user?.preferences?.homeCity || 'Karachi';
         const departDate = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
         const returnDate = new Date(Date.now() + (7 + days) * 86400000).toISOString().split('T')[0];
 
@@ -100,10 +100,11 @@ exports.generateItinerary = async (user, params) => {
     }
 
     // Step 7: Build prompt with ALL context and call LLM
+    const origin = paramOrigin || user?.preferences?.homeCity || 'Karachi';
     const prompt = itineraryPrompt({
         destination, days, preferences,
         graphResults, weather, currencyRate, vectorResults, conversationHistory,
-        flightData, hotelData,
+        flightData, hotelData, origin, travelCompanion, vibe,
     });
 
     const response = await client.chat.completions.create({
@@ -118,9 +119,41 @@ exports.generateItinerary = async (user, params) => {
 
     const itinerary = JSON.parse(response.choices[0].message.content);
 
+    // Build flight and returnFlight from real flight data or AI-generated data
+    const firstFlight = flightData && flightData.length > 0 ? flightData[0] : null;
+    const flight = itinerary.flight || (firstFlight ? {
+        airline: firstFlight.airline,
+        from: firstFlight.originCode || origin,
+        to: firstFlight.destinationCode || destination,
+        departure: firstFlight.departure,
+        arrival: firstFlight.arrival,
+        price: firstFlight.price,
+        duration: firstFlight.duration,
+        stops: firstFlight.stops,
+        airlineLogo: firstFlight.airlineLogo || '',
+    } : null);
+
+    const returnFlight = itinerary.returnFlight || (firstFlight ? {
+        airline: firstFlight.airline,
+        from: firstFlight.destinationCode || destination,
+        to: firstFlight.originCode || origin,
+        departure: firstFlight.departure,
+        arrival: firstFlight.arrival,
+        price: firstFlight.price,
+        duration: firstFlight.duration,
+        stops: firstFlight.stops,
+        airlineLogo: firstFlight.airlineLogo || '',
+    } : null);
+
+    // Build heroImage from itinerary or generate Unsplash URL based on destination
+    const heroImage = itinerary.heroImage || `https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80&fit=crop`;
+
     // Cache the result for 24 hours
     await cacheAIResponse(cacheKey, {
         ...itinerary,
+        flight,
+        returnFlight,
+        heroImage,
         aiGenerated: true,
         metadata: {
             graphResultsUsed: graphResults.restaurants.length + graphResults.attractions.length,
@@ -142,6 +175,9 @@ exports.generateItinerary = async (user, params) => {
 
     return {
         ...itinerary,
+        flight,
+        returnFlight,
+        heroImage,
         aiGenerated: true,
         metadata: {
             graphResultsUsed: graphResults.restaurants.length + graphResults.attractions.length,
@@ -155,7 +191,7 @@ exports.generateItinerary = async (user, params) => {
 /**
  * AI Chat — conversational with memory + function calling for restaurant search
  */
-exports.chat = async (user, message) => {
+exports.chat = async (user, message, tripState) => {
     const client = getOpenAI();
     if (!client) throw new Error('OpenAI API key not configured');
 
@@ -188,7 +224,7 @@ exports.chat = async (user, message) => {
     }];
 
     let messages = [
-        { role: 'system', content: chatPrompt(message, contextParts.join('\n\n')) },
+        { role: 'system', content: chatPrompt(message, contextParts.join('\n\n'), tripState) },
         { role: 'user', content: message },
     ];
 

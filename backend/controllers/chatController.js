@@ -4,10 +4,10 @@ const Trip = require('../models/Trip');
 // POST /api/chat
 exports.sendMessage = async (req, res, next) => {
     try {
-        const { message } = req.body;
+        const { message, tripState } = req.body;
         if (!message) return res.status(400).json({ success: false, error: 'Message is required' });
 
-        const result = await chat(req.user || null, message);
+        const result = await chat(req.user || null, message, tripState);
         res.json({ success: true, data: result });
     } catch (error) {
         next(error);
@@ -17,14 +17,43 @@ exports.sendMessage = async (req, res, next) => {
 // POST /api/trips/generate
 exports.generateItinerary = async (req, res, next) => {
     try {
-        const { destination, days, budget, interests, dietary } = req.body;
+        const { destination, days, budget, interests, dietary, origin, travelCompanion, vibe, dates, duration } = req.body;
 
-        const itinerary = await generateAI(req.user, { destination, days, budget, interests, dietary });
+        if (!destination) {
+            return res.status(400).json({ success: false, error: 'destination is required' });
+        }
 
-        // Auto-save as draft trip with snapshots
+        // Resolve numeric days from the duration string if days not provided
+        let numDays = days;
+        if (!numDays && duration) {
+            const weekMatch = duration.match(/(\d+)\s*week/i);
+            const dayMatch = duration.match(/(\d+)\s*day/i);
+            if (weekMatch) {
+                numDays = parseInt(weekMatch[1], 10) * 7;
+            } else if (dayMatch) {
+                numDays = parseInt(dayMatch[1], 10);
+            } else if (/a\s+week/i.test(duration)) {
+                numDays = 7;
+            }
+        }
+        numDays = numDays || 7; // Default to 7 days if not resolved
+
+        const itinerary = await generateAI(req.user, {
+            destination,
+            days: numDays,
+            budget,
+            interests,
+            dietary,
+            origin,
+            travelCompanion,
+            vibe,
+            dates,
+        });
+
+        // Auto-save as draft trip with snapshots and extended fields
         const trip = await Trip.create({
             user: req.user._id,
-            title: itinerary.title || `${days}-day ${destination} trip`,
+            title: itinerary.title || `${numDays}-day ${destination} trip`,
             destination,
             itinerary: itinerary.days || [],
             budget: itinerary.totalBudget || { total: 0, currency: 'USD' },
@@ -33,6 +62,14 @@ exports.generateItinerary = async (req, res, next) => {
             preferences: { budget, dietary, interests },
             weatherSnapshot: itinerary.metadata?.weatherAvailable ? { checkedAt: new Date() } : undefined,
             currencySnapshot: itinerary.metadata?.currencyConverted ? { checkedAt: new Date() } : undefined,
+            // Extended Trip_State fields
+            origin: origin || itinerary.origin || null,
+            travelCompanion: travelCompanion || null,
+            vibe: vibe || [],
+            flightData: itinerary.flight || null,
+            returnFlightData: itinerary.returnFlight || null,
+            hotelData: itinerary.hotel || null,
+            heroImage: itinerary.heroImage || null,
         });
 
         res.json({ success: true, data: { trip, itinerary } });

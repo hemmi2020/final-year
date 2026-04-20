@@ -8,6 +8,7 @@ const activitySchema = new mongoose.Schema({
     type: String,
     cost: { amount: Number, currency: String },
     tags: [String],
+    period: { type: String, enum: ['morning', 'lunch', 'afternoon', 'dinner'] },
 }, { _id: false });
 
 const daySchema = new mongoose.Schema({
@@ -48,6 +49,43 @@ const tripSchema = new mongoose.Schema({
     tags: [String],
     notes: String,
     isPublic: { type: Boolean, default: false },
+    origin: { type: String, trim: true },
+    travelCompanion: { type: String, trim: true },
+    vibe: [String],
+    flightData: {
+        airline: String,
+        from: String,
+        to: String,
+        departure: String,
+        arrival: String,
+        price: String,
+        duration: String,
+        stops: Number,
+        airlineLogo: String,
+    },
+    returnFlightData: {
+        airline: String,
+        from: String,
+        to: String,
+        departure: String,
+        arrival: String,
+        price: String,
+        duration: String,
+        stops: Number,
+        airlineLogo: String,
+    },
+    hotelData: {
+        name: String,
+        stars: Number,
+        rating: Number,
+        pricePerNight: String,
+        image: String,
+        address: String,
+        distance: String,
+    },
+    heroImage: String,
+    communityNote: String,
+    isAnonymous: { type: Boolean, default: false },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Trip', tripSchema);

@@ -3,7 +3,7 @@
  */
 
 exports.itineraryPrompt = (context) => {
-    const { destination, days, preferences, graphResults, weather, currencyRate, vectorResults, conversationHistory, flightData, hotelData } = context;
+    const { destination, days, preferences, graphResults, weather, currencyRate, vectorResults, conversationHistory, flightData, hotelData, origin, travelCompanion, vibe } = context;
 
     let prompt = `You are an expert travel planner. Generate a detailed ${days}-day travel itinerary for ${destination}.
 
@@ -13,6 +13,9 @@ USER PREFERENCES:
 - Travel Style: ${preferences.travelStyle}
 - Interests: ${preferences.interests.length > 0 ? preferences.interests.join(', ') : 'General'}
 - Currency: ${preferences.preferredCurrency}
+- Origin: ${origin || 'Not specified'}
+- Travel Companion: ${travelCompanion || 'Not specified'}
+- Vibe: ${Array.isArray(vibe) && vibe.length > 0 ? vibe.join(', ') : 'General'}
 `;
 
     if (graphResults && (graphResults.restaurants?.length > 0 || graphResults.attractions?.length > 0)) {
@@ -57,12 +60,19 @@ USER PREFERENCES:
 
     prompt += `
 
+IMPORTANT: Group activities within each day by time-of-day period. Each activity MUST include a "period" field with one of: "morning", "lunch", "afternoon", "dinner". Order activities within each day by period: morning first, then lunch, then afternoon, then dinner.
+
 RESPOND IN JSON FORMAT:
 {
   "title": "Trip title",
   "destination": "${destination}",
-  "flight": { "airline": "string", "from": "string", "to": "string", "price": "string", "duration": "string" },
-  "hotel": { "name": "string", "stars": number, "rating": number, "pricePerNight": "string", "address": "string" },
+  "origin": "${origin || ''}",
+  "heroImage": "Suggest a relevant Unsplash image URL for ${destination} (e.g. https://images.unsplash.com/photo-...) or leave as empty string",
+  "summary": { "days": ${days}, "cities": number, "experiences": number, "hotels": number, "transport": "flight|train|bus" },
+  "route": { "origin": "${origin || ''}", "destination": "${destination}", "startDate": "ISO date string or empty", "endDate": "ISO date string or empty" },
+  "flight": { "airline": "string", "from": "string", "to": "string", "departure": "string", "arrival": "string", "price": "string", "duration": "string", "stops": number, "airlineLogo": "string" },
+  "returnFlight": { "airline": "string", "from": "string", "to": "string", "departure": "string", "arrival": "string", "price": "string", "duration": "string", "stops": number, "airlineLogo": "string" },
+  "hotel": { "name": "string", "stars": number, "rating": number, "pricePerNight": "string", "image": "string", "address": "string", "distance": "string" },
   "days": [
     {
       "day": 1,
@@ -71,6 +81,7 @@ RESPOND IN JSON FORMAT:
       "activities": [
         {
           "time": "09:00",
+          "period": "morning|lunch|afternoon|dinner",
           "name": "Activity name",
           "description": "Brief description",
           "type": "attraction|restaurant|transport|hotel",
@@ -87,10 +98,25 @@ RESPOND IN JSON FORMAT:
     return prompt;
 };
 
-exports.chatPrompt = (message, context) => {
+exports.chatPrompt = (message, context, tripState) => {
+    let tripStateContext = '';
+    if (tripState) {
+        const fields = [];
+        if (tripState.destination) fields.push(`Destination: ${tripState.destination}`);
+        if (tripState.origin) fields.push(`Origin: ${tripState.origin}`);
+        if (tripState.duration) fields.push(`Duration: ${tripState.duration}`);
+        if (tripState.travelCompanion) fields.push(`Travel Companion: ${tripState.travelCompanion}`);
+        if (tripState.vibe && tripState.vibe.length > 0) fields.push(`Vibe: ${Array.isArray(tripState.vibe) ? tripState.vibe.join(', ') : tripState.vibe}`);
+        if (tripState.budget) fields.push(`Budget: ${tripState.budget}`);
+        if (tripState.dates) fields.push(`Dates: ${tripState.dates.start || ''} to ${tripState.dates.end || ''}`);
+        if (fields.length > 0) {
+            tripStateContext = `\nTRIP PLANNING STATE (already collected from user — do NOT re-ask these):\n${fields.join('\n')}\n`;
+        }
+    }
+
     return `You are TravelAI, a friendly and knowledgeable travel assistant with the ability to render rich interactive UI components.
 
-${context ? `CONTEXT:\n${context}\n` : ''}
+${context ? `CONTEXT:\n${context}\n` : ''}${tripStateContext}
 
 GENERATIVE UI INSTRUCTIONS:
 When appropriate, output interactive UI components using these tags mixed with your text:
