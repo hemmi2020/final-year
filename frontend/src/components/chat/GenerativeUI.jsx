@@ -67,6 +67,8 @@ export function MessageRenderer({ content, onSendMessage }) {
   return (
     <div>
       {blocks.map((block, i) =>
+        // Only render text blocks — skip component blocks entirely
+        // State machine (useTripState + QuickReplyChips) handles all interactive inputs
         block.type === "text" ? (
           <div key={i} style={{ margin: "8px 0" }}>
             <ReactMarkdown
@@ -108,31 +110,8 @@ export function MessageRenderer({ content, onSendMessage }) {
             >
               {block.content.trim()}
             </ReactMarkdown>
-            {(() => {
-              const detected = detectQuestion(block.content);
-              if (!detected) return null;
-              const InputComponent = QUESTION_COMPONENT_MAP[detected.type];
-              if (!InputComponent) return null;
-              return (
-                <div style={{ marginTop: 8 }}>
-                  <InputComponent onSend={onSendMessage} />
-                </div>
-              );
-            })()}
           </div>
-        ) : (
-          <div
-            key={i}
-            className="animate-slide-up"
-            style={{ margin: "12px 0" }}
-          >
-            <ComponentRenderer
-              type={block.componentType}
-              data={block.data}
-              onSend={onSendMessage}
-            />
-          </div>
-        ),
+        ) : null,
       )}
     </div>
   );

@@ -536,8 +536,12 @@ function ChatContent() {
         data.data?.response ||
         "I understand! Let me help you plan your trip.";
 
-      // Strip any <component> tags from AI response to prevent duplicate UI inputs
-      const cleanContent = aiContent.replace(/<component[^>]*\/>/g, "").trim();
+      // Strip ALL <component> tags from AI response — state machine handles the flow
+      const cleanContent = aiContent
+        .replace(/<component[^>]*\/>/g, "")
+        .replace(/<component[^>]*>[^<]*<\/component>/g, "")
+        .replace(/<component[^>]*>/g, "")
+        .trim();
 
       const aiMsg = {
         id: Date.now() + 1,
@@ -555,10 +559,11 @@ function ChatContent() {
       });
 
       // Check if AI response already covers the next question topic
+      // If AI is suggesting destinations or asking about any trip field, don't add state machine question
       const nextField = advanceToNextQuestion(updatedState, true);
       const FIELD_KEYWORDS = {
         destination:
-          /(?:destination|where|which city|which country|interested in visiting|want to go|like to travel)/i,
+          /(?:destination|where|which city|which country|interested in visiting|want to go|like to travel|these destinations|catches your eye|start planning)/i,
         duration: /(?:how long|how many days|duration|length of|stay for)/i,
         travelCompanion:
           /(?:who.*travel|solo|friends|family|couple|companion|traveling with)/i,
@@ -569,7 +574,11 @@ function ChatContent() {
       const aiAlreadyCoversNext =
         fieldPattern && fieldPattern.test(cleanContent);
 
-      if (!aiAlreadyCoversNext) {
+      // Also skip if AI response is long (>200 chars) and asks a question — it's conversational
+      const aiAsksQuestion =
+        cleanContent.includes("?") && cleanContent.length > 200;
+
+      if (!aiAlreadyCoversNext && !aiAsksQuestion) {
         setTimeout(() => advanceToNextQuestion(updatedState), 300);
       }
     } catch (err) {

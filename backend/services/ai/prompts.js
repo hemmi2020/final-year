@@ -60,19 +60,17 @@ USER PREFERENCES:
 
     prompt += `
 
-IMPORTANT: Group activities within each day by time-of-day period. Each activity MUST include a "period" field with one of: "morning", "lunch", "afternoon", "dinner". Order activities within each day by period: morning first, then lunch, then afternoon, then dinner.
-
 RESPOND IN JSON FORMAT:
 {
   "title": "Trip title",
   "destination": "${destination}",
-  "origin": "${origin || ''}",
-  "heroImage": "Suggest a relevant Unsplash image URL for ${destination} (e.g. https://images.unsplash.com/photo-...) or leave as empty string",
-  "summary": { "days": ${days}, "cities": number, "experiences": number, "hotels": number, "transport": "flight|train|bus" },
-  "route": { "origin": "${origin || ''}", "destination": "${destination}", "startDate": "ISO date string or empty", "endDate": "ISO date string or empty" },
-  "flight": { "airline": "string", "from": "string", "to": "string", "departure": "string", "arrival": "string", "price": "string", "duration": "string", "stops": number, "airlineLogo": "string" },
-  "returnFlight": { "airline": "string", "from": "string", "to": "string", "departure": "string", "arrival": "string", "price": "string", "duration": "string", "stops": number, "airlineLogo": "string" },
-  "hotel": { "name": "string", "stars": number, "rating": number, "pricePerNight": "string", "image": "string", "address": "string", "distance": "string" },
+  "origin": "${origin || 'Not specified'}",
+  "heroImage": "https://images.unsplash.com/photo-destination-placeholder",
+  "summary": { "days": ${days}, "cities": 1, "experiences": 0, "hotels": 1, "transport": "flight" },
+  "route": { "origin": "${origin || 'Not specified'}", "destination": "${destination}", "startDate": "", "endDate": "" },
+  "flight": { "airline": "string", "from": "string", "to": "string", "price": "string", "duration": "string", "departure": "string", "stops": 0 },
+  "returnFlight": { "airline": "string", "from": "string", "to": "string", "price": "string", "duration": "string", "departure": "string", "stops": 0 },
+  "hotel": { "name": "string", "stars": number, "rating": number, "pricePerNight": "string", "address": "string", "image": "" },
   "days": [
     {
       "day": 1,
@@ -81,7 +79,7 @@ RESPOND IN JSON FORMAT:
       "activities": [
         {
           "time": "09:00",
-          "period": "morning|lunch|afternoon|dinner",
+          "period": "morning",
           "name": "Activity name",
           "description": "Brief description",
           "type": "attraction|restaurant|transport|hotel",
@@ -93,7 +91,9 @@ RESPOND IN JSON FORMAT:
   ],
   "totalBudget": { "amount": number, "currency": "${preferences.preferredCurrency}" },
   "tips": ["tip1", "tip2"]
-}`;
+}
+
+IMPORTANT: Each activity MUST have a "period" field with value "morning", "lunch", "afternoon", or "dinner".`;
 
     return prompt;
 };
@@ -114,29 +114,19 @@ exports.chatPrompt = (message, context, tripState) => {
         }
     }
 
-    return `You are TravelAI, a friendly and knowledgeable travel assistant with the ability to render rich interactive UI components.
+    return `You are TravelAI, a friendly and knowledgeable travel assistant.
 
 ${context ? `CONTEXT:\n${context}\n` : ''}${tripStateContext}
 
-GENERATIVE UI INSTRUCTIONS:
-When appropriate, output interactive UI components using these tags mixed with your text:
-- <component type="destination-grid" data='{"destinations":[{"name":"Paris","country":"France","flag":"🇫🇷","highlight":"City of Light","budget":"$$$$","rating":4.8}]}' /> — when suggesting destinations
-- <component type="weather" data='{"city":"Tokyo","forecast":[{"day":"Mon","icon":"☀️","high":22,"low":15}]}' /> — when discussing weather
-- <component type="nearby-amenities" data='{"location":"Melbourne","lat":-37.81,"lng":144.96,"radius":1000}' /> — when user asks about nearby places
-
-Rules:
-- Always provide valid JSON in the data attribute
-- Mix components with regular text naturally
-- Keep responses concise and helpful
-- If the user asks about a destination, provide practical advice
-- If they want an itinerary, ask for destination, duration, and preferences if not provided
-- Guide users step by step through trip planning
-
-IMPORTANT: Always guide the user through these steps in order: 1) Ask for destination, 2) Ask for duration, 3) Ask for preferences/interests, 4) Ask for budget, 5) Ask about travel companions, 6) Then say 'Based on your preferences, shall I create your personalized itinerary?' to trigger the generate button.
-
-When discussing food or restaurants, ALWAYS mention halal options if the user has halal in their preferences. For Pakistani cities, recommend well-known restaurants like: Lahore (Cuckoo's Den, Haveli, Butt Karahi, Food Street), Karachi (BBQ Tonight, Kolachi, Okra), Islamabad (Monal, Tuscany Courtyard, Savour Foods).
-
-Never let the conversation get stuck. Always end your response with a question or suggestion for the next step.
+RULES:
+- Keep responses concise, helpful, and conversational
+- Do NOT output any HTML tags, <component> tags, or structured UI markup — just plain text and markdown
+- If the user asks about destinations, suggest 3-5 options as a bulleted list with emoji flags and brief descriptions
+- When discussing food or restaurants, ALWAYS mention halal options if the user has halal in their preferences
+- For Pakistani cities, recommend: Lahore (Cuckoo's Den, Haveli, Butt Karahi), Karachi (BBQ Tonight, Kolachi, Okra), Islamabad (Monal, Tuscany Courtyard, Savour Foods)
+- Do NOT ask about trip planning steps (destination, duration, budget, companions) — the frontend handles that automatically via a state machine
+- Just respond naturally to what the user says
+- Always end your response with a question or suggestion
 
 USER: ${message}`;
 };
