@@ -238,20 +238,21 @@ exports.nearby = async (req, res, next) => {
         const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
 
         const QUERIES = {
-            mosques: `node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});`,
-            hospitals: `node["amenity"~"hospital|clinic|doctors"](around:${r},${lat},${lng});`,
-            police: `node["amenity"="police"](around:${r},${lat},${lng});`,
-            halal: `(node["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim"](around:${r},${lat},${lng});node["amenity"="restaurant"]["diet:halal"="yes"](around:${r},${lat},${lng}););`,
-            atms: `node["amenity"~"atm|bank"](around:${r},${lat},${lng});`,
-            fuel: `node["amenity"="fuel"](around:${r},${lat},${lng});`,
+            mosques: `nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});`,
+            hospitals: `nwr["amenity"~"hospital|clinic|doctors"](around:${r},${lat},${lng});`,
+            police: `nwr["amenity"="police"](around:${r},${lat},${lng});`,
+            halal: `(nwr["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim"](around:${r},${lat},${lng});nwr["amenity"="restaurant"]["diet:halal"="yes"](around:${r},${lat},${lng}););`,
+            atms: `nwr["amenity"~"atm|bank"](around:${r},${lat},${lng});`,
+            fuel: `nwr["amenity"="fuel"](around:${r},${lat},${lng});`,
+            pharmacy: `nwr["amenity"="pharmacy"](around:${r},${lat},${lng});`,
         };
 
         const query = QUERIES[category];
         if (!query) {
-            return res.status(400).json({ success: false, error: 'Invalid category. Use: mosques, hospitals, police, halal, atms, fuel' });
+            return res.status(400).json({ success: false, error: 'Invalid category. Use: mosques, hospitals, police, halal, atms, fuel, pharmacy' });
         }
 
-        const overpassQuery = `[out:json][timeout:25];${query}out body 15;`;
+        const overpassQuery = `[out:json][timeout:25];${query}out center 15;`;
 
         const { data } = await axios.post(OVERPASS_API,
             `data=${encodeURIComponent(overpassQuery)}`,
@@ -264,24 +265,24 @@ exports.nearby = async (req, res, next) => {
         const results = (data.elements || [])
             .filter(el => {
                 const name = el.tags?.['name:en'] || el.tags?.['int_name'] || el.tags?.name;
-                if (!name) return false;
-                // Check if mostly Latin characters
-                const latinChars = name.match(/[a-zA-Z\s\-\(\)\.,'0-9&]/g)?.length || 0;
-                return latinChars / name.length > 0.5;
+                return !!name; // Just require a name exists, don't filter by language
             })
             .map(el => {
                 const name = el.tags['name:en'] || el.tags['int_name'] || el.tags.name;
+                const elLat = el.lat || el.center?.lat;
+                const elLng = el.lon || el.center?.lon;
+                if (!elLat || !elLng) return null;
                 // Haversine distance
                 const R = 6371000;
-                const dLat = (el.lat - userLat) * Math.PI / 180;
-                const dLng = (el.lon - userLng) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(el.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+                const dLat = (elLat - userLat) * Math.PI / 180;
+                const dLng2 = (elLng - userLng) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(elLat * Math.PI / 180) * Math.sin(dLng2 / 2) ** 2;
                 const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 
                 return {
                     name: el.tags.name,
-                    lat: el.lat,
-                    lng: el.lon,
+                    lat: elLat,
+                    lng: elLng,
                     type: el.tags.amenity || el.tags.tourism || category,
                     phone: el.tags.phone || '',
                     cuisine: el.tags.cuisine || '',
@@ -289,6 +290,7 @@ exports.nearby = async (req, res, next) => {
                     distanceText: dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`,
                 };
             })
+            .filter(Boolean)
             .sort((a, b) => a.distance - b.distance)
             .slice(0, 10);
 
