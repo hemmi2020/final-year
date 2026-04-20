@@ -226,10 +226,129 @@ exports.detectLocation = async (req, res, next) => {
 };
 
 // GET /api/external/nearby?lat=24.86&lng=67.00&category=mosques&radius=10000
-// In-memory cache for nearby results (5 min TTL)
+// In-memory cache for nearby results (10 min TTL)
 const nearbyCache = new Map();
-const NEARBY_CACHE_TTL = 5 * 60 * 1000;
+const NEARBY_CACHE_TTL = 10 * 60 * 1000;
 
+// Category tag definitions
+const CATEGORY_TAGS = {
+    mosques: { filter: `nwr["amenity"="place_of_worship"]["religion"="muslim"]`, label: 'mosques' },
+    hospitals: { filter: `nwr["amenity"~"hospital|clinic|doctors"]`, label: 'hospitals' },
+    police: { filter: `nwr["amenity"="police"]`, label: 'police' },
+    halal: { filter: null, label: 'halal' }, // special compound query
+    atms: { filter: `nwr["amenity"~"atm|bank"]`, label: 'atms' },
+    fuel: { filter: `nwr["amenity"="fuel"]`, label: 'fuel' },
+    pharmacy: { filter: `nwr["amenity"="pharmacy"]`, label: 'pharmacy' },
+};
+
+function parseNearbyElements(elements, userLat, userLng, category) {
+    return (elements || [])
+        .filter(el => {
+            const name = el.tags?.['name:en'] || el.tags?.['int_name'] || el.tags?.name;
+            return !!name;
+        })
+        .map(el => {
+            const name = el.tags['name:en'] || el.tags['int_name'] || el.tags.name;
+            const elLat = el.lat || el.center?.lat;
+            const elLng = el.lon || el.center?.lon;
+            if (!elLat || !elLng) return null;
+            const R = 6371000;
+            const dLat = (elLat - userLat) * Math.PI / 180;
+            const dLng2 = (elLng - userLng) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(elLat * Math.PI / 180) * Math.sin(dLng2 / 2) ** 2;
+            const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+            return {
+                name: el.tags.name, lat: elLat, lng: elLng,
+                type: el.tags.amenity || el.tags.tourism || category,
+                phone: el.tags.phone || '', cuisine: el.tags.cuisine || '',
+                distance: dist,
+                distanceText: dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`,
+            };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 10);
+}
+
+// GET /api/external/nearby-all?lat=24.86&lng=67.00&radius=5000
+// Fetches ALL categories in ONE Overpass query — no rate limiting
+exports.nearbyAll = async (req, res, next) => {
+    try {
+        const axios = require('axios');
+        const { lat, lng, radius: radiusParam } = req.query;
+        if (!lat || !lng) {
+            return res.status(400).json({ success: false, error: 'lat and lng required' });
+        }
+
+        const r = parseInt(radiusParam) || 5000;
+        const cacheKey = `all_${parseFloat(lat).toFixed(3)}_${parseFloat(lng).toFixed(3)}_${r}`;
+
+        // Check cache
+        const cached = nearbyCache.get(cacheKey);
+        if (cached && Date.now() - cached.ts < NEARBY_CACHE_TTL) {
+            return res.json({ success: true, data: cached.data, cached: true });
+        }
+
+        const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
+        const userLat = parseFloat(lat);
+        const userLng = parseFloat(lng);
+
+        // Single combined Overpass query for ALL categories
+        const overpassQuery = `[out:json][timeout:30];(
+nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});
+nwr["amenity"~"hospital|clinic|doctors"](around:${r},${lat},${lng});
+nwr["amenity"="pharmacy"](around:${r},${lat},${lng});
+nwr["amenity"="police"](around:${r},${lat},${lng});
+nwr["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim"](around:${r},${lat},${lng});
+nwr["amenity"="restaurant"]["diet:halal"="yes"](around:${r},${lat},${lng});
+nwr["amenity"~"atm|bank"](around:${r},${lat},${lng});
+nwr["amenity"="fuel"](around:${r},${lat},${lng});
+);out center 80;`;
+
+        const { data } = await axios.post(OVERPASS_API,
+            `data=${encodeURIComponent(overpassQuery)}`,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 25000 }
+        );
+
+        // Classify elements into categories
+        const allElements = data.elements || [];
+        const categorized = {
+            mosques: [], hospitals: [], pharmacy: [], police: [],
+            halal: [], atms: [], fuel: [],
+        };
+
+        for (const el of allElements) {
+            const amenity = el.tags?.amenity;
+            const religion = el.tags?.religion;
+            const cuisine = el.tags?.cuisine || '';
+            const dietHalal = el.tags?.['diet:halal'];
+
+            if (amenity === 'place_of_worship' && religion === 'muslim') categorized.mosques.push(el);
+            else if (/^(hospital|clinic|doctors)$/.test(amenity)) categorized.hospitals.push(el);
+            else if (amenity === 'pharmacy') categorized.pharmacy.push(el);
+            else if (amenity === 'police') categorized.police.push(el);
+            else if (amenity === 'restaurant' && (dietHalal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim/i.test(cuisine))) categorized.halal.push(el);
+            else if (/^(atm|bank)$/.test(amenity)) categorized.atms.push(el);
+            else if (amenity === 'fuel') categorized.fuel.push(el);
+        }
+
+        // Parse each category
+        const result = {};
+        for (const [cat, elements] of Object.entries(categorized)) {
+            result[cat] = parseNearbyElements(elements, userLat, userLng, cat);
+        }
+
+        // Cache
+        nearbyCache.set(cacheKey, { data: result, ts: Date.now() });
+
+        res.json({ success: true, data: result });
+    } catch (error) {
+        console.log('[nearby-all] Overpass error:', error.message);
+        res.json({ success: true, data: { mosques: [], hospitals: [], pharmacy: [], police: [], halal: [], atms: [], fuel: [] } });
+    }
+};
+
+// GET /api/external/nearby?lat=24.86&lng=67.00&category=mosques&radius=5000 (legacy single-category)
 exports.nearby = async (req, res, next) => {
     try {
         const axios = require('axios');
@@ -241,14 +360,12 @@ exports.nearby = async (req, res, next) => {
         const r = parseInt(radiusParam) || 5000;
         const cacheKey = `${lat}_${lng}_${category}_${r}`;
 
-        // Check cache first
         const cached = nearbyCache.get(cacheKey);
         if (cached && Date.now() - cached.ts < NEARBY_CACHE_TTL) {
             return res.json({ success: true, data: cached.data, count: cached.data.length, radius: r, cached: true });
         }
 
         const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
-
         const QUERIES = {
             mosques: `nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});`,
             hospitals: `nwr["amenity"~"hospital|clinic|doctors"](around:${r},${lat},${lng});`,
@@ -260,55 +377,16 @@ exports.nearby = async (req, res, next) => {
         };
 
         const query = QUERIES[category];
-        if (!query) {
-            return res.status(400).json({ success: false, error: 'Invalid category. Use: mosques, hospitals, police, halal, atms, fuel, pharmacy' });
-        }
+        if (!query) return res.status(400).json({ success: false, error: 'Invalid category' });
 
         const overpassQuery = `[out:json][timeout:25];${query}out center 15;`;
-
         const { data } = await axios.post(OVERPASS_API,
             `data=${encodeURIComponent(overpassQuery)}`,
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 20000 }
         );
 
-        const userLat = parseFloat(lat);
-        const userLng = parseFloat(lng);
-
-        const results = (data.elements || [])
-            .filter(el => {
-                const name = el.tags?.['name:en'] || el.tags?.['int_name'] || el.tags?.name;
-                return !!name;
-            })
-            .map(el => {
-                const name = el.tags['name:en'] || el.tags['int_name'] || el.tags.name;
-                const elLat = el.lat || el.center?.lat;
-                const elLng = el.lon || el.center?.lon;
-                if (!elLat || !elLng) return null;
-                // Haversine distance
-                const R = 6371000;
-                const dLat = (elLat - userLat) * Math.PI / 180;
-                const dLng2 = (elLng - userLng) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(elLat * Math.PI / 180) * Math.sin(dLng2 / 2) ** 2;
-                const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-
-                return {
-                    name: el.tags.name,
-                    lat: elLat,
-                    lng: elLng,
-                    type: el.tags.amenity || el.tags.tourism || category,
-                    phone: el.tags.phone || '',
-                    cuisine: el.tags.cuisine || '',
-                    distance: dist,
-                    distanceText: dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`,
-                };
-            })
-            .filter(Boolean)
-            .sort((a, b) => a.distance - b.distance)
-            .slice(0, 10);
-
-        // Cache the results
+        const results = parseNearbyElements(data.elements, parseFloat(lat), parseFloat(lng), category);
         nearbyCache.set(cacheKey, { data: results, ts: Date.now() });
-
         res.json({ success: true, data: results, count: results.length, radius: r });
     } catch (error) {
         console.log('[nearby] Overpass error:', error.message);

@@ -22,18 +22,18 @@ import { useWeather } from "@/hooks/useWeather";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-async function fetchNearbyFromBackend(lat, lng, category, radius = 5000) {
+async function fetchAllNearbyFromBackend(lat, lng, radius = 5000) {
   try {
     const res = await fetch(
-      `${API_URL}/api/external/nearby?lat=${lat}&lng=${lng}&category=${category}&radius=${radius}`,
-      { signal: AbortSignal.timeout(25000) },
+      `${API_URL}/api/external/nearby-all?lat=${lat}&lng=${lng}&radius=${radius}`,
+      { signal: AbortSignal.timeout(30000) },
     );
     const json = await res.json();
-    if (json.success && json.data?.length > 0) {
+    if (json.success && json.data) {
       return json.data;
     }
   } catch {}
-  return [];
+  return null;
 }
 
 const NEARBY_CACHE_TTL = 15 * 60 * 1000;
@@ -588,23 +588,19 @@ export default function DashboardPage() {
 
     setNearbyLoading(true);
 
-    // Fetch each category via backend API with delay to avoid Overpass rate limiting
+    // Fetch ALL categories in ONE Overpass request — no rate limiting
     const fetchAll = async () => {
-      const result = {};
-      for (let i = 0; i < NEARBY_CATEGORIES.length; i++) {
-        const cat = NEARBY_CATEGORIES[i];
-        // Add 1.5s delay between requests to avoid Overpass 429
-        if (i > 0) await new Promise((r) => setTimeout(r, 1500));
-        try {
-          const data = await fetchNearbyFromBackend(loc.lat, loc.lng, cat.key);
-          result[cat.key] = data;
-          setNearby((prev) => ({ ...prev, [cat.key]: data }));
-        } catch {
-          result[cat.key] = [];
-        }
+      const data = await fetchAllNearbyFromBackend(loc.lat, loc.lng);
+      if (data) {
+        setNearby(data);
+        setNearbyCache(cacheKey, data);
+      } else {
+        const empty = {};
+        NEARBY_CATEGORIES.forEach((cat) => {
+          empty[cat.key] = [];
+        });
+        setNearby(empty);
       }
-      setNearby(result);
-      setNearbyCache(cacheKey, result);
       setNearbyLoading(false);
     };
 
