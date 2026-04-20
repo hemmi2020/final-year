@@ -192,6 +192,161 @@ const EMERGENCY_CONTACTS = {
     tourist: "—",
     name: "International",
   },
+  // More countries
+  QA: {
+    police: "999",
+    ambulance: "999",
+    fire: "999",
+    tourist: "—",
+    name: "Qatar",
+  },
+  BD: {
+    police: "999",
+    ambulance: "199",
+    fire: "199",
+    tourist: "—",
+    name: "Bangladesh",
+  },
+  LK: {
+    police: "119",
+    ambulance: "110",
+    fire: "110",
+    tourist: "1912",
+    name: "Sri Lanka",
+  },
+  NP: {
+    police: "100",
+    ambulance: "102",
+    fire: "101",
+    tourist: "1144",
+    name: "Nepal",
+  },
+  CN: {
+    police: "110",
+    ambulance: "120",
+    fire: "119",
+    tourist: "12301",
+    name: "China",
+  },
+  KR: {
+    police: "112",
+    ambulance: "119",
+    fire: "119",
+    tourist: "1330",
+    name: "South Korea",
+  },
+  AU: {
+    police: "000",
+    ambulance: "000",
+    fire: "000",
+    tourist: "1300-555-135",
+    name: "Australia",
+  },
+  CA: {
+    police: "911",
+    ambulance: "911",
+    fire: "911",
+    tourist: "—",
+    name: "Canada",
+  },
+  SG: {
+    police: "999",
+    ambulance: "995",
+    fire: "995",
+    tourist: "1800-736-2000",
+    name: "Singapore",
+  },
+  GR: {
+    police: "100",
+    ambulance: "166",
+    fire: "199",
+    tourist: "171",
+    name: "Greece",
+  },
+  PT: {
+    police: "112",
+    ambulance: "112",
+    fire: "112",
+    tourist: "808-781-212",
+    name: "Portugal",
+  },
+  NL: {
+    police: "112",
+    ambulance: "112",
+    fire: "112",
+    tourist: "0900-400-4040",
+    name: "Netherlands",
+  },
+  MA: {
+    police: "19",
+    ambulance: "15",
+    fire: "15",
+    tourist: "—",
+    name: "Morocco",
+  },
+  JO: {
+    police: "911",
+    ambulance: "911",
+    fire: "911",
+    tourist: "—",
+    name: "Jordan",
+  },
+  OM: {
+    police: "9999",
+    ambulance: "9999",
+    fire: "9999",
+    tourist: "—",
+    name: "Oman",
+  },
+  KW: {
+    police: "112",
+    ambulance: "112",
+    fire: "112",
+    tourist: "—",
+    name: "Kuwait",
+  },
+  BH: {
+    police: "999",
+    ambulance: "999",
+    fire: "999",
+    tourist: "—",
+    name: "Bahrain",
+  },
+  MV: {
+    police: "119",
+    ambulance: "102",
+    fire: "118",
+    tourist: "—",
+    name: "Maldives",
+  },
+  KE: {
+    police: "999",
+    ambulance: "999",
+    fire: "999",
+    tourist: "—",
+    name: "Kenya",
+  },
+  ZA: {
+    police: "10111",
+    ambulance: "10177",
+    fire: "10177",
+    tourist: "083-123-6789",
+    name: "South Africa",
+  },
+  BR: {
+    police: "190",
+    ambulance: "192",
+    fire: "193",
+    tourist: "—",
+    name: "Brazil",
+  },
+  MX: {
+    police: "911",
+    ambulance: "911",
+    fire: "911",
+    tourist: "078",
+    name: "Mexico",
+  },
 };
 
 // ── Styles ───────────────────────────────────────────────────────────────────
@@ -626,112 +781,112 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Emergency Contacts ── */}
-      <div style={{ marginBottom: 40 }}>
-        <h2 style={styles.sectionTitle}>🚨 Emergency Contacts</h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: 16,
-          }}
-        >
-          {(() => {
-            const contacts =
-              EMERGENCY_CONTACTS[loc.countryCode] || EMERGENCY_CONTACTS.DEFAULT;
-            return [
-              {
-                emoji: "🚔",
-                label: "Police",
-                number: contacts.police,
-                color: "#3B82F6",
-              },
-              {
-                emoji: "🚑",
-                label: "Ambulance",
-                number: contacts.ambulance,
-                color: "#EF4444",
-              },
-              {
-                emoji: "🚒",
-                label: "Fire",
-                number: contacts.fire,
-                color: "#F59E0B",
-              },
-              {
-                emoji: "ℹ️",
-                label: "Tourist Helpline",
-                number: contacts.tourist,
-                color: "#10B981",
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                style={{
-                  background: "#fff",
-                  borderRadius: 16,
-                  padding: "18px 20px",
-                  boxShadow: cardShadow,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                }}
-              >
+      {EMERGENCY_CONTACTS[loc.countryCode] && (
+        <div style={{ marginBottom: 40 }}>
+          <h2 style={styles.sectionTitle}>
+            🚨 Emergency Contacts — {EMERGENCY_CONTACTS[loc.countryCode].name}
+          </h2>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+              gap: 16,
+            }}
+          >
+            {(() => {
+              const contacts = EMERGENCY_CONTACTS[loc.countryCode];
+              return [
+                {
+                  emoji: "🚔",
+                  label: "Police",
+                  number: contacts.police,
+                  color: "#3B82F6",
+                },
+                {
+                  emoji: "🚑",
+                  label: "Ambulance",
+                  number: contacts.ambulance,
+                  color: "#EF4444",
+                },
+                {
+                  emoji: "🚒",
+                  label: "Fire",
+                  number: contacts.fire,
+                  color: "#F59E0B",
+                },
+                ...(contacts.tourist && contacts.tourist !== "—"
+                  ? [
+                      {
+                        emoji: "ℹ️",
+                        label: "Tourist Helpline",
+                        number: contacts.tourist,
+                        color: "#10B981",
+                      },
+                    ]
+                  : []),
+              ].map((item) => (
                 <div
+                  key={item.label}
                   style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 12,
-                    background: `${item.color}15`,
+                    background: "#fff",
+                    borderRadius: 16,
+                    padding: "18px 20px",
+                    boxShadow: cardShadow,
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 22,
-                    flexShrink: 0,
+                    gap: 14,
                   }}
                 >
-                  {item.emoji}
-                </div>
-                <div>
-                  <p
+                  <div
                     style={{
-                      fontSize: 13,
-                      color: "#6B7280",
-                      margin: 0,
-                      fontWeight: 500,
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: `${item.color}15`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 22,
+                      flexShrink: 0,
                     }}
                   >
-                    {item.label}
-                  </p>
-                  <a
-                    href={`tel:${item.number}`}
-                    style={{
-                      fontSize: 20,
-                      fontWeight: 800,
-                      color: item.color,
-                      textDecoration: "none",
-                      display: "block",
-                      marginTop: 2,
-                    }}
-                  >
-                    {item.number}
-                  </a>
+                    {item.emoji}
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "#6B7280",
+                        margin: 0,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {item.label}
+                    </p>
+                    <a
+                      href={`tel:${item.number}`}
+                      style={{
+                        fontSize: 20,
+                        fontWeight: 800,
+                        color: item.color,
+                        textDecoration: "none",
+                        display: "block",
+                        marginTop: 2,
+                      }}
+                    >
+                      {item.number}
+                    </a>
+                  </div>
                 </div>
-              </div>
-            ));
-          })()}
-        </div>
-        {!loc.loading && (
+              ));
+            })()}
+          </div>
           <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 8 }}>
-            📍 Showing emergency numbers for{" "}
-            {
-              (
-                EMERGENCY_CONTACTS[loc.countryCode] ||
-                EMERGENCY_CONTACTS.DEFAULT
-              ).name
-            }
+            📍 Based on your detected location: {loc.city},{" "}
+            {EMERGENCY_CONTACTS[loc.countryCode].name}
           </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Main content: Recent Trips + Quick Actions ──────────────────── */}
       <div style={styles.mainGrid} data-dashboard-main="">
