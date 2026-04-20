@@ -293,16 +293,24 @@ exports.nearbyAll = async (req, res, next) => {
         const userLat = parseFloat(lat);
         const userLng = parseFloat(lng);
 
+        // Use wider radius for rare categories (police, halal, pharmacy)
+        const rClose = r;           // 5000m for common categories
+        const rWide = Math.round(r * 1.6);  // 8000m for rare categories
+
         // Single combined Overpass query for ALL categories
         const overpassQuery = `[out:json][timeout:30];(
-nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});
-nwr["amenity"~"hospital|clinic|doctors"](around:${r},${lat},${lng});
-nwr["amenity"="pharmacy"](around:${r},${lat},${lng});
-nwr["amenity"="police"](around:${r},${lat},${lng});
-nwr["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim"](around:${r},${lat},${lng});
-nwr["amenity"="restaurant"]["diet:halal"="yes"](around:${r},${lat},${lng});
-nwr["amenity"~"atm|bank"](around:${r},${lat},${lng});
-nwr["amenity"="fuel"](around:${r},${lat},${lng});
+nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${rClose},${lat},${lng});
+nwr["amenity"~"hospital|clinic|doctors"](around:${rClose},${lat},${lng});
+nwr["amenity"="pharmacy"](around:${rWide},${lat},${lng});
+nwr["amenity"="police"](around:${rWide},${lat},${lng});
+nwr["office"="government"]["government"="police"](around:${rWide},${lat},${lng});
+nwr["amenity"="restaurant"]["diet:halal"="yes"](around:${rWide},${lat},${lng});
+nwr["amenity"="restaurant"]["halal"="yes"](around:${rWide},${lat},${lng});
+nwr["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern"](around:${rWide},${lat},${lng});
+nwr["amenity"="fast_food"]["diet:halal"="yes"](around:${rWide},${lat},${lng});
+nwr["amenity"="fast_food"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim|kebab"](around:${rWide},${lat},${lng});
+nwr["amenity"~"atm|bank"](around:${rClose},${lat},${lng});
+nwr["amenity"="fuel"](around:${rClose},${lat},${lng});
 );out center 80;`;
 
         const { data } = await axios.post(OVERPASS_API,
@@ -322,12 +330,18 @@ nwr["amenity"="fuel"](around:${r},${lat},${lng});
             const religion = el.tags?.religion;
             const cuisine = el.tags?.cuisine || '';
             const dietHalal = el.tags?.['diet:halal'];
+            const office = el.tags?.office;
+            const government = el.tags?.government;
 
             if (amenity === 'place_of_worship' && religion === 'muslim') categorized.mosques.push(el);
             else if (/^(hospital|clinic|doctors)$/.test(amenity)) categorized.hospitals.push(el);
             else if (amenity === 'pharmacy') categorized.pharmacy.push(el);
-            else if (amenity === 'police') categorized.police.push(el);
-            else if (amenity === 'restaurant' && (dietHalal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim/i.test(cuisine))) categorized.halal.push(el);
+            else if (amenity === 'police' || (office === 'government' && government === 'police')) categorized.police.push(el);
+            else if (amenity === 'restaurant' || amenity === 'fast_food') {
+                if (dietHalal === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
+                    categorized.halal.push(el);
+                }
+            }
             else if (/^(atm|bank)$/.test(amenity)) categorized.atms.push(el);
             else if (amenity === 'fuel') categorized.fuel.push(el);
         }
@@ -369,8 +383,8 @@ exports.nearby = async (req, res, next) => {
         const QUERIES = {
             mosques: `nwr["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});`,
             hospitals: `nwr["amenity"~"hospital|clinic|doctors"](around:${r},${lat},${lng});`,
-            police: `nwr["amenity"="police"](around:${r},${lat},${lng});`,
-            halal: `(nwr["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim"](around:${r},${lat},${lng});nwr["amenity"="restaurant"]["diet:halal"="yes"](around:${r},${lat},${lng}););`,
+            police: `(nwr["amenity"="police"](around:${r},${lat},${lng});nwr["office"="government"]["government"="police"](around:${r},${lat},${lng}););`,
+            halal: `(nwr["amenity"="restaurant"]["diet:halal"="yes"](around:${r},${lat},${lng});nwr["amenity"="restaurant"]["halal"="yes"](around:${r},${lat},${lng});nwr["amenity"="restaurant"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern"](around:${r},${lat},${lng});nwr["amenity"="fast_food"]["diet:halal"="yes"](around:${r},${lat},${lng});nwr["amenity"="fast_food"]["cuisine"~"halal|pakistani|arabic|turkish|indian|muslim|kebab"](around:${r},${lat},${lng}););`,
             atms: `nwr["amenity"~"atm|bank"](around:${r},${lat},${lng});`,
             fuel: `nwr["amenity"="fuel"](around:${r},${lat},${lng});`,
             pharmacy: `nwr["amenity"="pharmacy"](around:${r},${lat},${lng});`,
