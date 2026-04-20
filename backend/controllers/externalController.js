@@ -300,57 +300,50 @@ exports.nearbyAll = async (req, res, next) => {
         const allRestaurants = [];
 
         // Helper to run one Overpass query
-        const runQuery = async (query) => {
+        const runQuery = async (label, query) => {
             try {
                 const { data } = await axios.post(OVERPASS_API,
                     `data=${encodeURIComponent(query)}`,
-                    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 20000 }
+                    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 15000 }
                 );
                 return data.elements || [];
             } catch (e) {
-                console.log('[nearby-all] Query failed:', e.message);
+                console.log(`[nearby-all] ${label} failed:`, e.message);
                 return [];
             }
         };
 
-        // BATCH 1: Common categories (mosques, hospitals, ATMs, fuel)
-        const q1 = `[out:json][timeout:20];(
-node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});
-node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});
-node["amenity"~"atm|bank"](around:${r},${lat},${lng});
-node["amenity"="fuel"](around:${r},${lat},${lng});
-);out body;`;
+        const delay = () => new Promise(resolve => setTimeout(resolve, 1200));
 
-        const batch1 = await runQuery(q1);
-        for (const el of batch1) {
-            const amenity = el.tags?.amenity;
-            const religion = el.tags?.religion;
-            if (amenity === 'place_of_worship' && religion === 'muslim') categorized.mosques.push(el);
-            else if (/^(hospital|clinic)$/.test(amenity)) categorized.hospitals.push(el);
-            else if (/^(atm|bank)$/.test(amenity)) categorized.atms.push(el);
-            else if (amenity === 'fuel') categorized.fuel.push(el);
+        // BATCH 1: Mosques + Hospitals + ATMs + Fuel
+        const b1 = await runQuery('batch1', `[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng}););out body;`);
+        for (const el of b1) {
+            const a = el.tags?.amenity;
+            if (a === 'place_of_worship' && el.tags?.religion === 'muslim') categorized.mosques.push(el);
+            else if (/^(hospital|clinic)$/.test(a)) categorized.hospitals.push(el);
+            else if (/^(atm|bank)$/.test(a)) categorized.atms.push(el);
+            else if (a === 'fuel') categorized.fuel.push(el);
         }
 
-        // 1.5s delay between queries
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await delay();
 
-        // BATCH 2: Rare + restaurants (police, pharmacy, restaurants)
-        const q2 = `[out:json][timeout:20];(
-node["amenity"="police"](around:${r},${lat},${lng});
-node["amenity"="pharmacy"](around:${r},${lat},${lng});
-node["amenity"="restaurant"](around:${r},${lat},${lng});
-node["amenity"="fast_food"](around:${r},${lat},${lng});
-);out body;`;
+        // BATCH 2: Police + Pharmacy (separate — these are rare, need their own query)
+        const b2 = await runQuery('batch2', `[out:json][timeout:15];(node["amenity"="police"](around:${r},${lat},${lng});node["amenity"="pharmacy"](around:${r},${lat},${lng}););out body;`);
+        for (const el of b2) {
+            const a = el.tags?.amenity;
+            if (a === 'police') categorized.police.push(el);
+            else if (a === 'pharmacy') categorized.pharmacy.push(el);
+        }
 
-        const batch2 = await runQuery(q2);
-        for (const el of batch2) {
-            const amenity = el.tags?.amenity;
+        await delay();
+
+        // BATCH 3: Restaurants + Fast food (separate — these return many results)
+        const b3 = await runQuery('batch3', `[out:json][timeout:15];(node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
+        for (const el of b3) {
+            const a = el.tags?.amenity;
             const cuisine = el.tags?.cuisine || '';
             const dietHalal = el.tags?.['diet:halal'];
-
-            if (amenity === 'police') categorized.police.push(el);
-            else if (amenity === 'pharmacy') categorized.pharmacy.push(el);
-            else if (amenity === 'restaurant' || amenity === 'fast_food') {
+            if (a === 'restaurant' || a === 'fast_food') {
                 allRestaurants.push(el);
                 if (dietHalal === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
                     categorized.halal.push(el);
@@ -363,7 +356,7 @@ node["amenity"="fast_food"](around:${r},${lat},${lng});
             categorized.halal = allRestaurants.slice(0, 15);
         }
 
-        // Parse each category
+        // Parse each category (sorts by distance, slices to top 10)
         const result = {};
         for (const [cat, elements] of Object.entries(categorized)) {
             result[cat] = parseNearbyElements(elements, userLat, userLng, cat);
