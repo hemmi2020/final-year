@@ -381,73 +381,20 @@ function ChatContent() {
     }
   };
 
-  const handleUserMessage = async (text) => {
-    if (!text.trim()) return;
-    const trimmed = text.trim();
-    const userMsg = { id: Date.now(), role: "user", content: trimmed };
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setTimeout(scrollToBottom, 50);
-
-    // Extract fields from user text
-    const extracted = extractFields(trimmed);
-    Object.entries(extracted).forEach(([field, value]) => {
-      if (value != null) {
-        updateField(field, value);
-      }
-    });
-
-    // Send to backend with tripState context
-    setTyping(true);
-    try {
-      const { data } = await chatAPI.send(trimmed, tripState);
-      const aiContent =
-        data.data?.message ||
-        data.data?.response ||
-        "I understand! Let me help you plan your trip.";
-
-      const aiMsg = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: aiContent,
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-
-      // Detect destination for map
-      extractDestinationFromText(aiContent + " " + trimmed).then((dest) => {
-        if (dest) setCurrentDestination(dest);
-      });
-
-      // After AI response, check if there's a next question to ask
-      // We need to check the updated state (after extracted fields are applied)
-      setTimeout(() => {
-        appendNextQuestionIfNeeded(extracted);
-      }, 300);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          role: "assistant",
-          content: "Sorry, something went wrong. Please try again.",
-        },
-      ]);
-    } finally {
-      setTyping(false);
-    }
+  // Acknowledgment messages for each field — no AI call needed
+  const ACK_MESSAGES = {
+    destination: (v) =>
+      `${v} — great choice! 🌍 That's going to be an amazing trip.`,
+    duration: (v) => `${v} sounds perfect! ⏱️ Plenty of time to explore.`,
+    travelCompanion: (v) => `${v} trip — love it! 🎒`,
+    vibe: (v) =>
+      `${Array.isArray(v) ? v.join(", ") : v} — I'll make sure to include all of that! ✨`,
+    budget: (v) =>
+      `${v} budget — got it! 💰 I'll find the best options for you.`,
   };
 
-  const appendNextQuestionIfNeeded = (justExtracted) => {
-    // Build a temporary state to check what's next
-    // The actual tripState may not have updated yet due to React batching
-    const tempState = { ...tripState };
-    if (justExtracted) {
-      Object.entries(justExtracted).forEach(([field, value]) => {
-        if (value != null) tempState[field] = value;
-      });
-    }
-
-    // Check if all required fields are filled
+  const advanceToNextQuestion = (updatedState) => {
+    // Check completion with the latest state
     const requiredFields = [
       "destination",
       "duration",
@@ -455,14 +402,13 @@ function ChatContent() {
       "vibe",
       "budget",
     ];
-    const allFilled = requiredFields.every((f) => tempState[f] != null);
-
+    const allFilled = requiredFields.every((f) => updatedState[f] != null);
     if (allFilled) {
-      // isComplete will trigger generation via useEffect
+      // isComplete useEffect will trigger generation
       return;
     }
 
-    // Find next unfilled field
+    // Find next unfilled field from the QUESTION_SEQUENCE
     const questionSequence = [
       {
         field: "destination",
@@ -499,7 +445,7 @@ function ChatContent() {
 
     let nextQ = null;
     for (const q of questionSequence) {
-      if (tempState[q.field] == null) {
+      if (updatedState[q.field] == null) {
         nextQ = q;
         break;
       }
@@ -507,13 +453,108 @@ function ChatContent() {
 
     if (nextQ) {
       const questionMsg = {
-        id: Date.now() + 2,
+        id: Date.now() + 3,
         role: "assistant",
         content: nextQ.prompt,
         chipType: nextQ.chipType,
         multiSelect: nextQ.multiSelect,
       };
       setMessages((prev) => [...prev, questionMsg]);
+    }
+  };
+
+  const handleUserMessage = async (text) => {
+    if (!text.trim()) return;
+    const trimmed = text.trim();
+    const userMsg = { id: Date.now(), role: "user", content: trimmed };
+    setMessages((prev) => [...prev, userMsg]);
+    setInput("");
+    setTimeout(scrollToBottom, 50);
+
+    // Extract fields from user text
+    const extracted = extractFields(trimmed);
+    const filledFields = Object.entries(extracted).filter(([, v]) => v != null);
+
+    // Update state for each extracted field
+    const updatedState = { ...tripState };
+    filledFields.forEach(([field, value]) => {
+      updateField(field, value);
+      updatedState[field] = value;
+    });
+
+    // If we extracted trip-planning fields, acknowledge locally (no AI call)
+    if (filledFields.length > 0) {
+      // Build a short acknowledgment from the first extracted field
+      const [firstField, firstValue] = filledFields[0];
+      const ackFn = ACK_MESSAGES[firstField];
+      const ackText = ackFn ? ackFn(firstValue) : "Got it! ✅";
+
+      const ackMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: ackText,
+      };
+      setMessages((prev) => [...prev, ackMsg]);
+
+      // Detect destination for map
+      if (extracted.destination) {
+        extractDestinationFromText(extracted.destination).then((dest) => {
+          if (dest) setCurrentDestination(dest);
+        });
+      }
+
+      // Advance to next question
+      setTimeout(() => advanceToNextQuestion(updatedState), 200);
+      return;
+    }
+
+    // No trip fields extracted — this is free-text chat, send to AI backend
+    setTyping(true);
+    try {
+      const { data } = await chatAPI.send(trimmed, tripState);
+      const aiContent =
+        data.data?.message ||
+        data.data?.response ||
+        "I understand! Let me help you plan your trip.";
+
+      // Strip any <component> tags from AI response to prevent duplicate UI inputs
+      const cleanContent = aiContent.replace(/<component[^>]*\/>/g, "").trim();
+
+      const aiMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: cleanContent || aiContent,
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+
+      // Try to extract fields from AI response too
+      const aiExtracted = extractFields(cleanContent);
+      const aiFilledFields = Object.entries(aiExtracted).filter(
+        ([, v]) => v != null,
+      );
+      aiFilledFields.forEach(([field, value]) => {
+        updateField(field, value);
+        updatedState[field] = value;
+      });
+
+      // Detect destination for map
+      extractDestinationFromText(cleanContent + " " + trimmed).then((dest) => {
+        if (dest) setCurrentDestination(dest);
+      });
+
+      // Advance to next question after AI response
+      setTimeout(() => advanceToNextQuestion(updatedState), 300);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: "Sorry, something went wrong. Please try again.",
+        },
+      ]);
+    } finally {
+      setTyping(false);
     }
   };
 
@@ -532,47 +573,24 @@ function ChatContent() {
     // Update the field
     updateField(chipType, value);
 
-    // Send to backend for contextual response
-    setTyping(true);
-    chatAPI
-      .send(displayValue, { ...tripState, [chipType]: value })
-      .then(({ data }) => {
-        const aiContent =
-          data.data?.message || data.data?.response || "Great choice!";
-        const aiMsg = {
-          id: Date.now() + 1,
-          role: "assistant",
-          content: aiContent,
-        };
-        setMessages((prev) => [...prev, aiMsg]);
+    // Build updated state
+    const updatedState = { ...tripState, [chipType]: value };
 
-        // Detect destination for map
-        if (chipType === "destination") {
-          extractDestinationFromText(displayValue).then((dest) => {
-            if (dest) setCurrentDestination(dest);
-          });
-        }
+    // Acknowledge locally — no AI call needed for chip selections
+    const ackFn = ACK_MESSAGES[chipType];
+    const ackText = ackFn ? ackFn(displayValue) : "Great choice! ✅";
+    const ackMsg = { id: Date.now() + 1, role: "assistant", content: ackText };
+    setMessages((prev) => [...prev, ackMsg]);
 
-        // Append next question
-        setTimeout(() => {
-          appendNextQuestionIfNeeded({ [chipType]: value });
-        }, 300);
-      })
-      .catch(() => {
-        // Even if backend fails, still append next question
-        const fallbackMsg = {
-          id: Date.now() + 1,
-          role: "assistant",
-          content: "Got it! Let's continue.",
-        };
-        setMessages((prev) => [...prev, fallbackMsg]);
-        setTimeout(() => {
-          appendNextQuestionIfNeeded({ [chipType]: value });
-        }, 300);
-      })
-      .finally(() => {
-        setTyping(false);
+    // Detect destination for map
+    if (chipType === "destination") {
+      extractDestinationFromText(displayValue).then((dest) => {
+        if (dest) setCurrentDestination(dest);
       });
+    }
+
+    // Advance to next question
+    setTimeout(() => advanceToNextQuestion(updatedState), 200);
   };
 
   const handleNewTrip = () => {
