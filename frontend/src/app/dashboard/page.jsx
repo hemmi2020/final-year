@@ -580,20 +580,29 @@ export default function DashboardPage() {
 
     const cacheKey = `nearby_${loc.lat.toFixed(2)}_${loc.lng.toFixed(2)}`;
     const cached = getNearbyCache(cacheKey);
+    // Only use cache if it has actual data (not all empty)
     if (cached) {
-      setNearby(cached);
-      setNearbyLoading(false);
-      return;
+      const hasData = Object.values(cached).some(
+        (arr) => Array.isArray(arr) && arr.length > 0,
+      );
+      if (hasData) {
+        setNearby(cached);
+        setNearbyLoading(false);
+        return;
+      }
     }
 
     setNearbyLoading(true);
 
-    // Fetch ALL categories in ONE Overpass request — no rate limiting
     const fetchAll = async () => {
       const data = await fetchAllNearbyFromBackend(loc.lat, loc.lng);
       if (data) {
+        // Only cache if at least one category has results
+        const hasData = Object.values(data).some(
+          (arr) => Array.isArray(arr) && arr.length > 0,
+        );
         setNearby(data);
-        setNearbyCache(cacheKey, data);
+        if (hasData) setNearbyCache(cacheKey, data);
       } else {
         const empty = {};
         NEARBY_CATEGORIES.forEach((cat) => {
