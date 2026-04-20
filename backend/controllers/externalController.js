@@ -317,7 +317,7 @@ exports.nearbyAll = async (req, res, next) => {
 
         const wait = () => new Promise(r => setTimeout(r, 1500));
 
-        // BATCH 1: Mosques + Hospitals only (2 types — very light)
+        // BATCH 1: Mosques + Hospitals (2 types — very light)
         const b1 = await runQuery('B1', `[out:json][timeout:10];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng}););out body;`);
         for (const el of b1) {
             if (el.tags?.amenity === 'place_of_worship') categorized.mosques.push(el);
@@ -325,24 +325,20 @@ exports.nearbyAll = async (req, res, next) => {
         }
         await wait();
 
-        // BATCH 2: ATMs + Fuel + Police + Pharmacy (4 types — all small result sets)
-        const b2 = await runQuery('B2', `[out:json][timeout:10];(node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng});node["amenity"="police"](around:${r},${lat},${lng});node["amenity"="pharmacy"](around:${r},${lat},${lng}););out body;`);
+        // BATCH 2: ATMs + Fuel + Police + Pharmacy + Restaurants + Fast food (ALL remaining)
+        const b2 = await runQuery('B2', `[out:json][timeout:15];(node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng});node["amenity"="police"](around:${r},${lat},${lng});node["amenity"="pharmacy"](around:${r},${lat},${lng});node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
         for (const el of b2) {
             const a = el.tags?.amenity;
             if (/^(atm|bank)$/.test(a)) categorized.atms.push(el);
             else if (a === 'fuel') categorized.fuel.push(el);
             else if (a === 'police') categorized.police.push(el);
             else if (a === 'pharmacy') categorized.pharmacy.push(el);
-        }
-        await wait();
-
-        // BATCH 3: Restaurants + Fast food (separate — can return many results)
-        const b3 = await runQuery('B3', `[out:json][timeout:10];(node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
-        for (const el of b3) {
-            allRestaurants.push(el);
-            const cuisine = el.tags?.cuisine || '';
-            if (el.tags?.['diet:halal'] === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
-                categorized.halal.push(el);
+            else if (a === 'restaurant' || a === 'fast_food') {
+                allRestaurants.push(el);
+                const cuisine = el.tags?.cuisine || '';
+                if (el.tags?.['diet:halal'] === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
+                    categorized.halal.push(el);
+                }
             }
         }
 
