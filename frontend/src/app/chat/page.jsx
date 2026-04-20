@@ -295,22 +295,11 @@ function ChatContent() {
       id: Date.now(),
       role: "assistant",
       content:
-        "Hey! 👋 I'm your AI travel planner. Let's create an amazing trip together!",
+        "Hey! 👋 I'm your AI travel planner. Let's create an amazing trip together!\n\nWhere would you like to go?",
+      chipType: "destination",
+      multiSelect: false,
     };
-
-    const nextQ = getNextQuestion();
-    if (nextQ) {
-      const questionMsg = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: nextQ.prompt,
-        chipType: nextQ.chipType,
-        multiSelect: nextQ.multiSelect,
-      };
-      setMessages([greeting, questionMsg]);
-    } else {
-      setMessages([greeting]);
-    }
+    setMessages([greeting]);
   }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Query param handled in initialization above
@@ -552,16 +541,22 @@ function ChatContent() {
         if (dest) setCurrentDestination(dest);
       });
 
-      // Only advance to next question if the AI response didn't already cover it
-      // If the AI just gave destination suggestions, don't ask "where do you want to go" again
-      const nextField = advanceToNextQuestion(updatedState, true); // dry-run check
-      const aiAlreadyAskedAboutField =
-        nextField === "destination" &&
-        /(?:destination|where|which city|which country|interested in visiting)/i.test(
-          cleanContent,
-        );
+      // Check if AI response already covers the next question topic
+      const nextField = advanceToNextQuestion(updatedState, true);
+      const FIELD_KEYWORDS = {
+        destination:
+          /(?:destination|where|which city|which country|interested in visiting|want to go|like to travel)/i,
+        duration: /(?:how long|how many days|duration|length of|stay for)/i,
+        travelCompanion:
+          /(?:who.*travel|solo|friends|family|couple|companion|traveling with)/i,
+        vibe: /(?:vibe|interests|activities|what kind|experience|prefer)/i,
+        budget: /(?:budget|spend|cost|price|expensive|cheap|luxury|mid-range)/i,
+      };
+      const fieldPattern = nextField && FIELD_KEYWORDS[nextField];
+      const aiAlreadyCoversNext =
+        fieldPattern && fieldPattern.test(cleanContent);
 
-      if (!aiAlreadyAskedAboutField) {
+      if (!aiAlreadyCoversNext) {
         setTimeout(() => advanceToNextQuestion(updatedState), 300);
       }
     } catch (err) {
@@ -589,6 +584,18 @@ function ChatContent() {
     // Add user message
     const userMsg = { id: Date.now(), role: "user", content: displayValue };
     setMessages((prev) => [...prev, userMsg]);
+
+    // Handle "Custom" duration — ask user to type instead of setting a meaningless value
+    if (chipType === "duration" && value === "Custom") {
+      const customMsg = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content:
+          "How many days would you like? Just type a number like '5 days' or '10 days'.",
+      };
+      setMessages((prev) => [...prev, userMsg, customMsg]);
+      return; // Don't update field, don't advance
+    }
 
     // Update the field
     updateField(chipType, value);
@@ -631,17 +638,11 @@ function ChatContent() {
       const greeting = {
         id: Date.now(),
         role: "assistant",
-        content:
-          "Hey Hamza! 👋 Let's plan a new trip! Where would you like to go?",
-      };
-      const questionMsg = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: "Where would you like to go? Tell me your dream destination!",
+        content: "Let's plan a new trip! 🌍 Where would you like to go?",
         chipType: "destination",
         multiSelect: false,
       };
-      setMessages([greeting, questionMsg]);
+      setMessages([greeting]);
     }, 100);
   };
 

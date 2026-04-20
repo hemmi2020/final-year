@@ -137,6 +137,25 @@ const BUDGET_PATTERNS = [
     { pattern: /\b(budget|cheap)\b/i, value: "Budget" },
 ];
 
+// Well-known destinations for quick matching
+const KNOWN_DESTINATIONS = [
+    "istanbul", "paris", "london", "dubai", "tokyo", "bali", "rome", "barcelona",
+    "new york", "bangkok", "maldives", "lahore", "karachi", "islamabad", "singapore",
+    "kuala lumpur", "sydney", "melbourne", "toronto", "vancouver", "amsterdam",
+    "berlin", "munich", "vienna", "prague", "budapest", "athens", "cairo",
+    "marrakech", "cape town", "nairobi", "mumbai", "delhi", "goa", "jaipur",
+    "seoul", "osaka", "hong kong", "shanghai", "beijing", "taipei", "hanoi",
+    "ho chi minh", "phuket", "chiang mai", "siem reap", "petra", "doha",
+    "riyadh", "jeddah", "muscat", "tbilisi", "baku", "tashkent", "zanzibar",
+    "santorini", "mykonos", "dubrovnik", "lisbon", "porto", "madrid", "seville",
+    "florence", "venice", "milan", "zurich", "geneva", "edinburgh", "dublin",
+    "reykjavik", "stockholm", "copenhagen", "oslo", "helsinki", "tallinn", "riga",
+    "warsaw", "krakow", "bucharest", "sofia", "belgrade", "sarajevo", "tirana",
+    "montenegro", "malta", "cyprus", "mauritius", "seychelles", "fiji",
+    "hawaii", "cancun", "mexico city", "bogota", "lima", "buenos aires",
+    "rio de janeiro", "sao paulo", "santiago", "cusco", "cartagena",
+];
+
 export function extractFields(text) {
     if (!text || typeof text !== "string" || text.trim() === "") {
         return {};
@@ -145,15 +164,15 @@ export function extractFields(text) {
     const result = {};
 
     // ── Destination detection ────────────────────────────────────────────────
-    // Match "to {Place}", "visit {Place}", "trip to {Place}", "go to {Place}"
+    // Match "to {Place}", "visit {Place}", "trip to {Place}", "go to {Place}" (case-insensitive)
     const destinationPatterns = [
-        /\b(?:trip\s+to|go\s+to|visit|travel\s+to|fly\s+to|heading\s+to)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)*)/,
+        /\b(?:trip\s+to|go\s+to|visit|travel\s+to|fly\s+to|heading\s+to)\s+([A-Za-z]+(?:\s+[A-Za-z]+)*)/i,
     ];
 
     for (const pat of destinationPatterns) {
         const match = text.match(pat);
         if (match) {
-            result.destination = match[1].trim();
+            result.destination = match[1].trim().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
             break;
         }
     }
@@ -182,6 +201,26 @@ export function extractFields(text) {
                     result.destination = candidate.trim();
                     break;
                 }
+            }
+        }
+    }
+
+    // Check against known destinations (case-insensitive)
+    if (!result.destination) {
+        const lower = text.toLowerCase().trim();
+        const found = KNOWN_DESTINATIONS.find(d => lower === d || lower.includes(d));
+        if (found) {
+            result.destination = found.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+    }
+
+    // Last resort: if text is 1-3 words, all start with uppercase, and no other fields matched
+    if (!result.destination && !result.duration && !result.travelCompanion && !result.budget) {
+        const words = text.trim().split(/\s+/);
+        if (words.length <= 3 && words.length >= 1) {
+            const looksLikePlace = words.every(w => /^[A-Z]/.test(w));
+            if (looksLikePlace) {
+                result.destination = text.trim();
             }
         }
     }

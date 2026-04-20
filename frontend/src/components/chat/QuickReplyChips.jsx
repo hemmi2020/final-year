@@ -5,6 +5,16 @@ import { useState } from "react";
 // ── Chip configurations per question type ──────────────────────────────────────
 
 const CHIP_CONFIGS = {
+  destination: [
+    "Istanbul",
+    "Dubai",
+    "Paris",
+    "Bali",
+    "Tokyo",
+    "London",
+    "Barcelona",
+    "Maldives",
+  ],
   duration: ["3 days", "1 week", "2 weeks", "Custom"],
   travelCompanion: ["Solo", "With friends", "Family", "Couple"],
   vibe: [
