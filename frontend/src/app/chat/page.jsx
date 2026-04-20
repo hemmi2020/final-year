@@ -320,20 +320,20 @@ function ChatContent() {
       isComplete &&
       !generationTriggered.current &&
       chatStage !== "generating" &&
-      chatStage !== "ready"
+      chatStage !== "ready" &&
+      tripState.destination // Extra guard: ensure destination exists in current state
     ) {
       generationTriggered.current = true;
-      triggerGeneration();
+      // Pass tripState directly to avoid any stale closure issues
+      triggerGenerationWithState(tripState);
     }
-  }, [isComplete, chatStage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isComplete, chatStage, tripState]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const triggerGeneration = async () => {
-    // Read latest tripState from ref (avoids stale closure)
-    const ts = tripStateRef.current;
-
+  const triggerGenerationWithState = async (ts) => {
     // Guard: don't call API without destination
-    if (!ts.destination) {
-      console.log("[triggerGeneration] No destination in tripState, aborting");
+    if (!ts || !ts.destination) {
+      console.log("[triggerGeneration] No destination, aborting");
+      generationTriggered.current = false;
       return;
     }
 
