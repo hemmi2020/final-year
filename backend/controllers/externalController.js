@@ -271,7 +271,7 @@ function parseNearbyElements(elements, userLat, userLng, category) {
 }
 
 // GET /api/external/nearby-all?lat=24.86&lng=67.00&radius=5000
-// Fetches ALL categories in ONE Overpass query — no rate limiting
+// Fetches ALL nearby categories via 3 small Overpass queries
 exports.nearbyAll = async (req, res, next) => {
     try {
         const axios = require('axios');
@@ -283,7 +283,6 @@ exports.nearbyAll = async (req, res, next) => {
         const r = parseInt(radiusParam) || 5000;
         const cacheKey = `all_${parseFloat(lat).toFixed(3)}_${parseFloat(lng).toFixed(3)}_${r}`;
 
-        // Check cache
         const cached = nearbyCache.get(cacheKey);
         if (cached && Date.now() - cached.ts < NEARBY_CACHE_TTL) {
             return res.json({ success: true, data: cached.data, cached: true });
@@ -293,87 +292,65 @@ exports.nearbyAll = async (req, res, next) => {
         const userLat = parseFloat(lat);
         const userLng = parseFloat(lng);
 
-        // Muslim-majority countries where all restaurants are halal by default
-        const MUSLIM_COUNTRIES = new Set([
-            'PK', 'SA', 'AE', 'TR', 'BD', 'EG', 'ID', 'MY', 'QA', 'KW',
-            'BH', 'OM', 'JO', 'MA', 'TN', 'DZ', 'IQ', 'SY', 'LY', 'SD',
-            'YE', 'AF', 'IR', 'MV', 'BN', 'SN', 'ML', 'NE', 'SO', 'DJ',
-        ]);
+        const MUSLIM_COUNTRIES = new Set(['PK', 'SA', 'AE', 'TR', 'BD', 'EG', 'ID', 'MY', 'QA', 'KW', 'BH', 'OM', 'JO', 'MA', 'TN', 'DZ', 'IQ', 'SY', 'LY', 'SD', 'YE', 'AF', 'IR', 'MV', 'BN', 'SN', 'ML', 'NE', 'SO', 'DJ']);
         const isMuslimCountry = MUSLIM_COUNTRIES.has((countryCode || '').toUpperCase());
 
-        const categorized = {
-            mosques: [], hospitals: [], pharmacy: [], police: [],
-            halal: [], atms: [], fuel: [],
-        };
+        const categorized = { mosques: [], hospitals: [], pharmacy: [], police: [], halal: [], atms: [], fuel: [] };
         const allRestaurants = [];
 
-        // Helper to run one Overpass query
         const runQuery = async (label, query) => {
             try {
-                const { data } = await axios.post(OVERPASS_API,
-                    `data=${encodeURIComponent(query)}`,
-                    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 15000 }
-                );
+                const { data } = await axios.post(OVERPASS_API, `data=${encodeURIComponent(query)}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 12000 });
+                console.log(`[nearby] ${label}: ${(data.elements || []).length} results`);
                 return data.elements || [];
-            } catch (e) {
-                console.log(`[nearby-all] ${label} failed:`, e.message);
-                return [];
-            }
+            } catch (e) { console.log(`[nearby] ${label} FAILED:`, e.message); return []; }
         };
 
-        const delay = () => new Promise(resolve => setTimeout(resolve, 1200));
+        const wait = () => new Promise(r => setTimeout(r, 1200));
 
-        // BATCH 1: Mosques + Hospitals + ATMs + Fuel + Restaurants (all in one, limited)
-        const b1 = await runQuery('batch1', `[out:json][timeout:15];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng});node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng});node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
+        // BATCH 1: Mosques + Hospitals only (2 types — very light)
+        const b1 = await runQuery('B1', `[out:json][timeout:10];(node["amenity"="place_of_worship"]["religion"="muslim"](around:${r},${lat},${lng});node["amenity"~"hospital|clinic"](around:${r},${lat},${lng}););out body;`);
         for (const el of b1) {
+            if (el.tags?.amenity === 'place_of_worship') categorized.mosques.push(el);
+            else categorized.hospitals.push(el);
+        }
+        await wait();
+
+        // BATCH 2: ATMs + Fuel + Police + Pharmacy (4 types — all small result sets)
+        const b2 = await runQuery('B2', `[out:json][timeout:10];(node["amenity"~"atm|bank"](around:${r},${lat},${lng});node["amenity"="fuel"](around:${r},${lat},${lng});node["amenity"="police"](around:${r},${lat},${lng});node["amenity"="pharmacy"](around:${r},${lat},${lng}););out body;`);
+        for (const el of b2) {
             const a = el.tags?.amenity;
-            if (a === 'place_of_worship' && el.tags?.religion === 'muslim') categorized.mosques.push(el);
-            else if (/^(hospital|clinic)$/.test(a)) categorized.hospitals.push(el);
-            else if (/^(atm|bank)$/.test(a)) categorized.atms.push(el);
+            if (/^(atm|bank)$/.test(a)) categorized.atms.push(el);
             else if (a === 'fuel') categorized.fuel.push(el);
-            else if (a === 'restaurant' || a === 'fast_food') {
-                allRestaurants.push(el);
-                const cuisine = el.tags?.cuisine || '';
-                const dietHalal = el.tags?.['diet:halal'];
-                if (dietHalal === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
-                    categorized.halal.push(el);
-                }
+            else if (a === 'police') categorized.police.push(el);
+            else if (a === 'pharmacy') categorized.pharmacy.push(el);
+        }
+        await wait();
+
+        // BATCH 3: Restaurants + Fast food (separate — can return many results)
+        const b3 = await runQuery('B3', `[out:json][timeout:10];(node["amenity"="restaurant"](around:${r},${lat},${lng});node["amenity"="fast_food"](around:${r},${lat},${lng}););out body;`);
+        for (const el of b3) {
+            allRestaurants.push(el);
+            const cuisine = el.tags?.cuisine || '';
+            if (el.tags?.['diet:halal'] === 'yes' || el.tags?.halal === 'yes' || /halal|pakistani|arabic|turkish|indian|muslim|kebab|middle_eastern/i.test(cuisine)) {
+                categorized.halal.push(el);
             }
         }
 
-        await delay();
-
-        // BATCH 2: Police + Pharmacy (separate — these are rare)
-        const b2 = await runQuery('batch2', `[out:json][timeout:15];(node["amenity"="police"](around:${r},${lat},${lng});node["amenity"="pharmacy"](around:${r},${lat},${lng}););out body;`);
-        for (const el of b2) {
-            const a = el.tags?.amenity;
-            if (a === 'police') categorized.police.push(el);
-            else if (a === 'pharmacy') categorized.pharmacy.push(el);
+        // Halal: Muslim countries → all restaurants are halal. Others → fallback to general.
+        if (isMuslimCountry || categorized.halal.length === 0) {
+            categorized.halal = allRestaurants;
         }
 
-        // Halal logic:
-        // Muslim-majority countries → ALL restaurants are halal by default
-        // Other countries → only halal-tagged, fallback to general with "verify" flag
-        if (isMuslimCountry) {
-            // In Muslim countries, all restaurants are halal
-            categorized.halal = allRestaurants.slice(0, 15);
-        } else if (categorized.halal.length === 0 && allRestaurants.length > 0) {
-            // Non-Muslim country, no halal-tagged found → show general restaurants as fallback
-            categorized.halal = allRestaurants.slice(0, 15);
-        }
-
-        // Parse each category (sorts by distance, slices to top 10)
         const result = {};
         for (const [cat, elements] of Object.entries(categorized)) {
             result[cat] = parseNearbyElements(elements, userLat, userLng, cat);
         }
 
-        // Cache
         nearbyCache.set(cacheKey, { data: result, ts: Date.now() });
-
         res.json({ success: true, data: result, isMuslimCountry });
     } catch (error) {
-        console.log('[nearby-all] Overpass error:', error.message);
+        console.log('[nearby-all] error:', error.message);
         res.json({ success: true, data: { mosques: [], hospitals: [], pharmacy: [], police: [], halal: [], atms: [], fuel: [] } });
     }
 };
