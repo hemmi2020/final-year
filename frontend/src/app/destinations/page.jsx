@@ -15,6 +15,11 @@ import {
   Loader2,
   ArrowRight,
   Plane,
+  Clock,
+  Globe,
+  Sun,
+  ExternalLink,
+  Star,
 } from "lucide-react";
 
 async function fetchWithRetry(fn, retries = 3, delay = 1000) {
@@ -351,266 +356,739 @@ export default function DestinationsPage() {
       )}
 
       {/* Search Results */}
-      {result && !loading && (
-        <div style={{ marginBottom: 60 }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 24,
-              flexWrap: "wrap",
-              gap: 12,
-            }}
-          >
-            <div>
-              <h2 style={{ fontSize: 28, fontWeight: 800, color: "#0A0A0A" }}>
-                {result.displayName?.split(",")[0]}
-              </h2>
-              <p style={{ fontSize: 14, color: "#9CA3AF" }}>
-                {result.displayName}
-              </p>
-            </div>
-            <button
-              onClick={() => router.push("/chat")}
-              className="btn-orange"
-              style={{
-                padding: "12px 28px",
-                fontSize: 14,
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <Plane size={16} /> Plan a Trip Here
-            </button>
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-              gap: 20,
-            }}
-          >
-            {/* Weather */}
-            {weather && (
+      {result &&
+        !loading &&
+        (() => {
+          const cityName = result.displayName?.split(",")[0] || query;
+          const heroImg = `https://source.unsplash.com/1200x400/?${encodeURIComponent(cityName + " city skyline")}`;
+          return (
+            <div style={{ marginBottom: 60 }}>
+              {/* Hero Banner */}
               <div
-                className="card"
-                style={{ padding: 24, textAlign: "center" }}
+                style={{
+                  position: "relative",
+                  borderRadius: 20,
+                  overflow: "hidden",
+                  marginBottom: 28,
+                  height: 320,
+                  background: `url(${heroImg}) center/cover no-repeat`,
+                  backgroundColor: "#1a1a2e",
+                }}
               >
-                <Cloud
-                  size={32}
-                  style={{ color: "var(--orange)", margin: "0 auto 12px" }}
-                />
-                <p style={{ fontSize: 40, fontWeight: 800, color: "#0A0A0A" }}>
-                  {tempUnit === "F"
-                    ? Math.round((weather.temp * 9) / 5 + 32)
-                    : Math.round(weather.temp)}
-                  °{tempUnit}
-                </p>
-                <p
+                <div
                   style={{
-                    fontSize: 15,
-                    color: "#6B7280",
-                    textTransform: "capitalize",
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(transparent 30%, rgba(0,0,0,0.75))",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 32,
+                    left: 32,
+                    right: 32,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-end",
+                    flexWrap: "wrap",
+                    gap: 16,
                   }}
                 >
-                  {weather.description}
-                </p>
+                  <div>
+                    <h2
+                      style={{
+                        fontSize: 40,
+                        fontWeight: 800,
+                        color: "#FFFFFF",
+                        margin: 0,
+                        textShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                      }}
+                    >
+                      {cityName}
+                    </h2>
+                    <p
+                      style={{
+                        fontSize: 15,
+                        color: "rgba(255,255,255,0.85)",
+                        margin: "6px 0 0",
+                      }}
+                    >
+                      <MapPin
+                        size={14}
+                        style={{
+                          display: "inline",
+                          verticalAlign: "middle",
+                          marginRight: 4,
+                        }}
+                      />
+                      {result.displayName}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/chat?destination=${encodeURIComponent(cityName)}`,
+                      )
+                    }
+                    className="btn-orange"
+                    style={{
+                      padding: "14px 32px",
+                      fontSize: 15,
+                      fontWeight: 700,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      borderRadius: 50,
+                      boxShadow: "0 4px 16px rgba(255,69,0,0.4)",
+                    }}
+                  >
+                    <Plane size={18} /> Plan a Trip Here
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick Stats Row */}
+              {weather && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: 16,
+                    marginBottom: 32,
+                  }}
+                >
+                  <div
+                    className="card"
+                    style={{
+                      padding: "20px 24px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: "var(--orange-bg)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Cloud size={22} style={{ color: "var(--orange)" }} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>
+                        Current Weather
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 800,
+                          color: "#0A0A0A",
+                          margin: "2px 0 0",
+                        }}
+                      >
+                        {tempUnit === "F"
+                          ? Math.round((weather.temp * 9) / 5 + 32)
+                          : Math.round(weather.temp)}
+                        °{tempUnit}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "#6B7280",
+                          margin: 0,
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {weather.description}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className="card"
+                    style={{
+                      padding: "20px 24px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: "#EEF2FF",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Globe size={22} style={{ color: "#4F46E5" }} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>
+                        Details
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#0A0A0A",
+                          margin: "2px 0 0",
+                        }}
+                      >
+                        💧 {weather.humidity}% humidity
+                      </p>
+                      <p style={{ fontSize: 12, color: "#6B7280", margin: 0 }}>
+                        💨 Wind {weather.windSpeed} m/s
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className="card"
+                    style={{
+                      padding: "20px 24px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        background: "#FEF3C7",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Sun size={22} style={{ color: "#D97706" }} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 13, color: "#9CA3AF", margin: 0 }}>
+                        Feels Like
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 22,
+                          fontWeight: 800,
+                          color: "#0A0A0A",
+                          margin: "2px 0 0",
+                        }}
+                      >
+                        {tempUnit === "F"
+                          ? Math.round((weather.feelsLike * 9) / 5 + 32)
+                          : Math.round(weather.feelsLike)}
+                        °{tempUnit}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Restaurants Section */}
+              <div style={{ marginBottom: 36 }}>
                 <div
                   style={{
                     display: "flex",
-                    justifyContent: "center",
-                    gap: 16,
-                    marginTop: 8,
-                    fontSize: 13,
-                    color: "#9CA3AF",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 18,
                   }}
                 >
-                  <span>Feels {Math.round(weather.feelsLike)}°</span>
-                  <span>💧 {weather.humidity}%</span>
-                  <span>💨 {weather.windSpeed} m/s</span>
-                </div>
-              </div>
-            )}
-
-            {/* Restaurants */}
-            <div className="card" style={{ padding: 24 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 16,
-                }}
-              >
-                <Utensils size={20} style={{ color: "var(--orange)" }} />
-                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
-                  Restaurants
-                </h3>
-              </div>
-              {restaurants.length > 0 ? (
-                restaurants.map((r, i) => (
                   <div
-                    key={i}
                     style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: "var(--orange-bg)",
                       display: "flex",
-                      justifyContent: "space-between",
                       alignItems: "center",
-                      padding: "10px 0",
-                      borderBottom:
-                        i < restaurants.length - 1
-                          ? "1px solid #F0F0F0"
-                          : "none",
+                      justifyContent: "center",
                     }}
                   >
-                    <div>
-                      <p
+                    <Utensils size={18} style={{ color: "var(--orange)" }} />
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 800,
+                      color: "#0A0A0A",
+                      margin: 0,
+                    }}
+                  >
+                    Restaurants in {cityName}
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#9CA3AF",
+                      background: "#F5F5F5",
+                      padding: "3px 10px",
+                      borderRadius: 99,
+                    }}
+                  >
+                    {restaurants.length} found
+                  </span>
+                </div>
+                {restaurants.length > 0 ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(280px, 1fr))",
+                      gap: 16,
+                    }}
+                  >
+                    {restaurants.map((r, i) => (
+                      <div
+                        key={i}
+                        className="card"
                         style={{
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: "#0A0A0A",
+                          padding: 20,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 12,
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          cursor: "default",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 8px 24px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "";
                         }}
                       >
-                        {r.name}
-                      </p>
-                      {r.cuisine && (
-                        <p style={{ fontSize: 12, color: "#9CA3AF" }}>
-                          {r.cuisine}
-                        </p>
-                      )}
-                    </div>
-                    <div style={{ display: "flex", gap: 4 }}>
-                      {r.dietary?.halal && (
-                        <span
+                        <div
                           style={{
-                            fontSize: 10,
-                            padding: "2px 8px",
-                            borderRadius: 99,
-                            background: "#E8F5E9",
-                            color: "#2E7D32",
-                            fontWeight: 600,
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
                           }}
                         >
-                          Halal
-                        </span>
-                      )}
-                      {r.dietary?.vegan && (
-                        <span
+                          <div style={{ flex: 1 }}>
+                            <p
+                              style={{
+                                fontSize: 16,
+                                fontWeight: 700,
+                                color: "#0A0A0A",
+                                margin: 0,
+                              }}
+                            >
+                              {r.name}
+                            </p>
+                            {r.cuisine && (
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: "var(--orange)",
+                                  background: "var(--orange-bg)",
+                                  padding: "3px 10px",
+                                  borderRadius: 99,
+                                  marginTop: 6,
+                                }}
+                              >
+                                {r.cuisine}
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            style={{ display: "flex", gap: 4, flexShrink: 0 }}
+                          >
+                            {r.dietary?.halal && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  padding: "4px 10px",
+                                  borderRadius: 99,
+                                  background: "#E8F5E9",
+                                  color: "#2E7D32",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                ☪ Halal
+                              </span>
+                            )}
+                            {r.dietary?.vegan && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  padding: "4px 10px",
+                                  borderRadius: 99,
+                                  background: "#E3F2FD",
+                                  color: "#1565C0",
+                                  fontWeight: 700,
+                                }}
+                              >
+                                🌱 Vegan
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {r.address && (
+                          <p
+                            style={{
+                              fontSize: 12,
+                              color: "#9CA3AF",
+                              margin: 0,
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            <MapPin
+                              size={11}
+                              style={{
+                                display: "inline",
+                                verticalAlign: "middle",
+                                marginRight: 3,
+                              }}
+                            />
+                            {r.address}
+                          </p>
+                        )}
+                        <a
+                          href={`https://www.google.com/maps/search/${encodeURIComponent(r.name + " " + cityName)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           style={{
-                            fontSize: 10,
-                            padding: "2px 8px",
-                            borderRadius: 99,
-                            background: "#E3F2FD",
-                            color: "#1565C0",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontSize: 13,
                             fontWeight: 600,
+                            color: "var(--orange)",
+                            textDecoration: "none",
+                            marginTop: "auto",
                           }}
                         >
-                          Vegan
-                        </span>
-                      )}
-                    </div>
+                          <ExternalLink size={13} /> View on Google Maps
+                        </a>
+                      </div>
+                    ))}
                   </div>
-                ))
-              ) : (
-                <p style={{ fontSize: 14, color: "#9CA3AF" }}>
-                  No restaurants found
-                </p>
-              )}
-            </div>
+                ) : (
+                  <div
+                    className="card"
+                    style={{ padding: 32, textAlign: "center" }}
+                  >
+                    <Utensils
+                      size={28}
+                      style={{ color: "#D1D5DB", margin: "0 auto 8px" }}
+                    />
+                    <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+                      No restaurants found for this destination
+                    </p>
+                  </div>
+                )}
+              </div>
 
-            {/* Attractions */}
-            <div className="card" style={{ padding: 24 }}>
+              {/* Attractions Section */}
+              <div style={{ marginBottom: 36 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 18,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: "#EEF2FF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Landmark size={18} style={{ color: "#4F46E5" }} />
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 800,
+                      color: "#0A0A0A",
+                      margin: 0,
+                    }}
+                  >
+                    Top Attractions
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#9CA3AF",
+                      background: "#F5F5F5",
+                      padding: "3px 10px",
+                      borderRadius: 99,
+                    }}
+                  >
+                    {attractions.length} found
+                  </span>
+                </div>
+                {attractions.length > 0 ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(280px, 1fr))",
+                      gap: 16,
+                    }}
+                  >
+                    {attractions.map((a, i) => {
+                      const typeColors = {
+                        museum: { bg: "#EDE9FE", color: "#7C3AED" },
+                        park: { bg: "#DCFCE7", color: "#16A34A" },
+                        temple: { bg: "#FEF3C7", color: "#D97706" },
+                        church: { bg: "#FEF3C7", color: "#D97706" },
+                        mosque: { bg: "#D1FAE5", color: "#059669" },
+                        monument: { bg: "#FFE4E6", color: "#E11D48" },
+                        castle: { bg: "#F3E8FF", color: "#9333EA" },
+                        default: { bg: "#F0F9FF", color: "#0284C7" },
+                      };
+                      const typeKey = (a.type || "").toLowerCase();
+                      const badge = typeColors[typeKey] || typeColors.default;
+                      return (
+                        <div
+                          key={i}
+                          className="card"
+                          style={{
+                            padding: 20,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 10,
+                            transition: "transform 0.2s, box-shadow 0.2s",
+                            cursor: "default",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform =
+                              "translateY(-2px)";
+                            e.currentTarget.style.boxShadow =
+                              "0 8px 24px rgba(0,0,0,0.1)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "";
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
+                            }}
+                          >
+                            <p
+                              style={{
+                                fontSize: 16,
+                                fontWeight: 700,
+                                color: "#0A0A0A",
+                                margin: 0,
+                                flex: 1,
+                              }}
+                            >
+                              {a.name}
+                            </p>
+                            {a.type && (
+                              <span
+                                style={{
+                                  fontSize: 11,
+                                  fontWeight: 700,
+                                  padding: "4px 10px",
+                                  borderRadius: 99,
+                                  background: badge.bg,
+                                  color: badge.color,
+                                  textTransform: "capitalize",
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {a.type}
+                              </span>
+                            )}
+                          </div>
+                          {a.description && (
+                            <p
+                              style={{
+                                fontSize: 13,
+                                color: "#6B7280",
+                                margin: 0,
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {a.description.length > 120
+                                ? a.description.slice(0, 120) + "..."
+                                : a.description}
+                            </p>
+                          )}
+                          <div
+                            style={{
+                              display: "flex",
+                              gap: 12,
+                              marginTop: "auto",
+                            }}
+                          >
+                            <a
+                              href={`https://www.google.com/maps/search/${encodeURIComponent(a.name + " " + cityName)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: "var(--orange)",
+                                textDecoration: "none",
+                              }}
+                            >
+                              <ExternalLink size={13} /> Maps
+                            </a>
+                            {a.wikipedia && (
+                              <a
+                                href={a.wikipedia}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  fontSize: 13,
+                                  fontWeight: 600,
+                                  color: "#4F46E5",
+                                  textDecoration: "none",
+                                }}
+                              >
+                                <Globe size={13} /> Wikipedia
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div
+                    className="card"
+                    style={{ padding: 32, textAlign: "center" }}
+                  >
+                    <Landmark
+                      size={28}
+                      style={{ color: "#D1D5DB", margin: "0 auto 8px" }}
+                    />
+                    <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+                      No attractions found for this destination
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom CTA */}
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 16,
+                  textAlign: "center",
+                  padding: "36px 24px",
+                  background:
+                    "linear-gradient(135deg, #FF4500 0%, #FF6B35 50%, #FF8C00 100%)",
+                  borderRadius: 20,
+                  marginBottom: 8,
                 }}
               >
-                <Landmark size={20} style={{ color: "var(--orange)" }} />
-                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>
-                  Attractions
+                <h3
+                  style={{
+                    fontSize: 26,
+                    fontWeight: 800,
+                    color: "#FFFFFF",
+                    marginBottom: 8,
+                  }}
+                >
+                  Ready to explore {cityName}?
                 </h3>
-              </div>
-              {attractions.length > 0 ? (
-                attractions.map((a, i) => (
-                  <a
-                    key={i}
-                    href={`https://www.google.com/maps/search/${encodeURIComponent(a.name + " " + (result.displayName?.split(",")[0] || ""))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "block",
-                      padding: "10px 0",
-                      borderBottom:
-                        i < attractions.length - 1
-                          ? "1px solid #F0F0F0"
-                          : "none",
-                      cursor: "pointer",
-                      textDecoration: "none",
-                      color: "inherit",
-                      borderRadius: 6,
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#F9FAFB")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
-                  >
-                    <p
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 600,
-                        color: "#0A0A0A",
-                      }}
-                    >
-                      {a.name}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: 12,
-                        color: "#9CA3AF",
-                        textTransform: "capitalize",
-                      }}
-                    >
-                      {a.type}
-                    </p>
-                  </a>
-                ))
-              ) : (
-                <p style={{ fontSize: 14, color: "#9CA3AF" }}>
-                  No attractions found
+                <p
+                  style={{
+                    fontSize: 15,
+                    color: "rgba(255,255,255,0.85)",
+                    marginBottom: 24,
+                  }}
+                >
+                  Let our AI build a personalized itinerary just for you
                 </p>
-              )}
-            </div>
-          </div>
+                <button
+                  onClick={() =>
+                    router.push(
+                      `/chat?destination=${encodeURIComponent(cityName)}`,
+                    )
+                  }
+                  style={{
+                    padding: "16px 40px",
+                    fontSize: 16,
+                    fontWeight: 700,
+                    background: "#FFFFFF",
+                    color: "#FF4500",
+                    border: "none",
+                    borderRadius: 50,
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 10,
+                    fontFamily: "inherit",
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                    transition: "transform 0.2s",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.transform = "scale(1.03)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.transform = "scale(1)")
+                  }
+                >
+                  <Plane size={20} /> Plan a Trip to {cityName}
+                </button>
+              </div>
 
-          <button
-            onClick={() => {
-              setResult(null);
-              setQuery("");
-              useDestinationStore.getState().clearDestination();
-            }}
-            style={{
-              display: "block",
-              margin: "32px auto 0",
-              color: "var(--orange)",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              fontSize: 15,
-              fontWeight: 600,
-              fontFamily: "inherit",
-            }}
-          >
-            ← Back to all destinations
-          </button>
-        </div>
-      )}
+              <button
+                onClick={() => {
+                  setResult(null);
+                  setQuery("");
+                  useDestinationStore.getState().clearDestination();
+                }}
+                style={{
+                  display: "block",
+                  margin: "24px auto 0",
+                  color: "var(--orange)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 15,
+                  fontWeight: 600,
+                  fontFamily: "inherit",
+                }}
+              >
+                ← Back to all destinations
+              </button>
+            </div>
+          );
+        })()}
 
       {/* Destination Grid — beautiful cards with images */}
       {!result && !loading && (

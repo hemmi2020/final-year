@@ -284,6 +284,26 @@ function ChatContent() {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
+    // If there's a destination param from destinations page, auto-fill and skip to duration
+    const destParam = searchParams.get("destination");
+    if (destParam) {
+      updateField("destination", destParam);
+      const greeting = {
+        id: Date.now(),
+        role: "assistant",
+        content: `Great choice! Let's plan your trip to ${destParam}! 🌍`,
+      };
+      const durationQ = {
+        id: Date.now() + 1,
+        role: "assistant",
+        content: "How long would you like your trip to be?",
+        chipType: "duration",
+        multiSelect: false,
+      };
+      setMessages([greeting, durationQ]);
+      return;
+    }
+
     // If there's a query param, skip the greeting+question — handleUserMessage will handle it
     const q = searchParams.get("q");
     if (q) {
