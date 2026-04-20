@@ -277,11 +277,25 @@ function ChatContent() {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
+    // If there's a query param, skip the greeting+question — handleUserMessage will handle it
+    const q = searchParams.get("q");
+    if (q) {
+      const greeting = {
+        id: Date.now(),
+        role: "assistant",
+        content: "Hey! 👋 Let me help you with that...",
+      };
+      setMessages([greeting]);
+      // Process the query after a tick
+      setTimeout(() => handleUserMessage(q), 200);
+      return;
+    }
+
     const greeting = {
       id: Date.now(),
       role: "assistant",
       content:
-        "Hey Hamza! 👋 I'm your AI travel planner. Let's create an amazing trip together! I'll ask you a few quick questions to build your perfect itinerary.",
+        "Hey! 👋 I'm your AI travel planner. Let's create an amazing trip together!",
     };
 
     const nextQ = getNextQuestion();
@@ -299,14 +313,7 @@ function ChatContent() {
     }
   }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle query param
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const q = searchParams.get("q");
-    if (q && hasInitialized.current && messages.length > 0) {
-      handleUserMessage(q);
-    }
-  }, [isAuthenticated, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Query param handled in initialization above
 
   useEffect(() => {
     setTimeout(scrollToBottom, 100);
@@ -393,7 +400,7 @@ function ChatContent() {
       `${v} budget — got it! 💰 I'll find the best options for you.`,
   };
 
-  const advanceToNextQuestion = (updatedState) => {
+  const advanceToNextQuestion = (updatedState, dryRun = false) => {
     // Check completion with the latest state
     const requiredFields = [
       "destination",
@@ -405,7 +412,7 @@ function ChatContent() {
     const allFilled = requiredFields.every((f) => updatedState[f] != null);
     if (allFilled) {
       // isComplete useEffect will trigger generation
-      return;
+      return dryRun ? null : undefined;
     }
 
     // Find next unfilled field from the QUESTION_SEQUENCE
@@ -450,6 +457,9 @@ function ChatContent() {
         break;
       }
     }
+
+    // Dry run — just return the field name without appending
+    if (dryRun) return nextQ?.field || null;
 
     if (nextQ) {
       const questionMsg = {
@@ -542,8 +552,18 @@ function ChatContent() {
         if (dest) setCurrentDestination(dest);
       });
 
-      // Advance to next question after AI response
-      setTimeout(() => advanceToNextQuestion(updatedState), 300);
+      // Only advance to next question if the AI response didn't already cover it
+      // If the AI just gave destination suggestions, don't ask "where do you want to go" again
+      const nextField = advanceToNextQuestion(updatedState, true); // dry-run check
+      const aiAlreadyAskedAboutField =
+        nextField === "destination" &&
+        /(?:destination|where|which city|which country|interested in visiting)/i.test(
+          cleanContent,
+        );
+
+      if (!aiAlreadyAskedAboutField) {
+        setTimeout(() => advanceToNextQuestion(updatedState), 300);
+      }
     } catch (err) {
       setMessages((prev) => [
         ...prev,
