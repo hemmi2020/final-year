@@ -145,14 +145,23 @@ exports.generateItinerary = async (user, params) => {
         airlineLogo: firstFlight.airlineLogo || '',
     } : null);
 
-    // Build heroImage from itinerary or generate Unsplash URL based on destination
-    const heroImage = itinerary.heroImage || `https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80&fit=crop`;
+    // Build heroImage — use Unsplash source API for destination-specific photo
+    const heroImage = itinerary.heroImage && !itinerary.heroImage.includes('placeholder')
+        ? itinerary.heroImage
+        : `https://source.unsplash.com/800x600/?${encodeURIComponent(destination + ' travel landmark')}`;
+
+    // Also add destination-specific hotel image if missing
+    const hotel = itinerary.hotel || null;
+    if (hotel && !hotel.image) {
+        hotel.image = `https://source.unsplash.com/600x400/?${encodeURIComponent(destination + ' hotel')}`;
+    }
 
     // Cache the result for 24 hours
     await cacheAIResponse(cacheKey, {
         ...itinerary,
         flight,
         returnFlight,
+        hotel: hotel || itinerary.hotel,
         heroImage,
         aiGenerated: true,
         metadata: {
@@ -177,6 +186,7 @@ exports.generateItinerary = async (user, params) => {
         ...itinerary,
         flight,
         returnFlight,
+        hotel: hotel || itinerary.hotel,
         heroImage,
         aiGenerated: true,
         metadata: {
