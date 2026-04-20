@@ -226,6 +226,10 @@ exports.detectLocation = async (req, res, next) => {
 };
 
 // GET /api/external/nearby?lat=24.86&lng=67.00&category=mosques&radius=10000
+// In-memory cache for nearby results (5 min TTL)
+const nearbyCache = new Map();
+const NEARBY_CACHE_TTL = 5 * 60 * 1000;
+
 exports.nearby = async (req, res, next) => {
     try {
         const axios = require('axios');
@@ -234,7 +238,15 @@ exports.nearby = async (req, res, next) => {
             return res.status(400).json({ success: false, error: 'lat, lng, and category required' });
         }
 
-        const r = parseInt(radiusParam) || 10000;
+        const r = parseInt(radiusParam) || 5000;
+        const cacheKey = `${lat}_${lng}_${category}_${r}`;
+
+        // Check cache first
+        const cached = nearbyCache.get(cacheKey);
+        if (cached && Date.now() - cached.ts < NEARBY_CACHE_TTL) {
+            return res.json({ success: true, data: cached.data, count: cached.data.length, radius: r, cached: true });
+        }
+
         const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
 
         const QUERIES = {
@@ -265,7 +277,7 @@ exports.nearby = async (req, res, next) => {
         const results = (data.elements || [])
             .filter(el => {
                 const name = el.tags?.['name:en'] || el.tags?.['int_name'] || el.tags?.name;
-                return !!name; // Just require a name exists, don't filter by language
+                return !!name;
             })
             .map(el => {
                 const name = el.tags['name:en'] || el.tags['int_name'] || el.tags.name;
@@ -294,9 +306,12 @@ exports.nearby = async (req, res, next) => {
             .sort((a, b) => a.distance - b.distance)
             .slice(0, 10);
 
+        // Cache the results
+        nearbyCache.set(cacheKey, { data: results, ts: Date.now() });
+
         res.json({ success: true, data: results, count: results.length, radius: r });
     } catch (error) {
         console.log('[nearby] Overpass error:', error.message);
-        res.json({ success: true, data: [], count: 0, radius: parseInt(req.query.radius) || 10000 });
+        res.json({ success: true, data: [], count: 0, radius: parseInt(req.query.radius) || 5000 });
     }
 };

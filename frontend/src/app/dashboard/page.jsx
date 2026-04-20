@@ -22,20 +22,17 @@ import { useWeather } from "@/hooks/useWeather";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-async function fetchNearbyFromBackend(lat, lng, category, radius = 3000) {
-  // Try with initial radius, then expand if empty
-  for (const r of [radius, 5000, 8000]) {
-    try {
-      const res = await fetch(
-        `${API_URL}/api/external/nearby?lat=${lat}&lng=${lng}&category=${category}&radius=${r}`,
-        { signal: AbortSignal.timeout(20000) },
-      );
-      const json = await res.json();
-      if (json.success && json.data?.length > 0) {
-        return json.data;
-      }
-    } catch {}
-  }
+async function fetchNearbyFromBackend(lat, lng, category, radius = 5000) {
+  try {
+    const res = await fetch(
+      `${API_URL}/api/external/nearby?lat=${lat}&lng=${lng}&category=${category}&radius=${radius}`,
+      { signal: AbortSignal.timeout(25000) },
+    );
+    const json = await res.json();
+    if (json.success && json.data?.length > 0) {
+      return json.data;
+    }
+  } catch {}
   return [];
 }
 
@@ -588,14 +585,16 @@ export default function DashboardPage() {
 
     setNearbyLoading(true);
 
-    // Fetch each category via backend API (no CORS, server-side Overpass)
+    // Fetch each category via backend API with delay to avoid Overpass rate limiting
     const fetchAll = async () => {
       const result = {};
-      for (const cat of NEARBY_CATEGORIES) {
+      for (let i = 0; i < NEARBY_CATEGORIES.length; i++) {
+        const cat = NEARBY_CATEGORIES[i];
+        // Add 1.5s delay between requests to avoid Overpass 429
+        if (i > 0) await new Promise((r) => setTimeout(r, 1500));
         try {
           const data = await fetchNearbyFromBackend(loc.lat, loc.lng, cat.key);
           result[cat.key] = data;
-          // Update UI progressively as each category loads
           setNearby((prev) => ({ ...prev, [cat.key]: data }));
         } catch {
           result[cat.key] = [];
