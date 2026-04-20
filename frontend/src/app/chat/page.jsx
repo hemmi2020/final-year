@@ -261,6 +261,7 @@ function ChatContent() {
   const hasInitialized = useRef(false);
   const generationTriggered = useRef(false);
   const tripStateRef = useRef(tripState);
+  const wasCompleteOnMount = useRef(isComplete); // Track if already complete on mount
 
   // Keep ref in sync with latest tripState
   useEffect(() => {
@@ -314,17 +315,21 @@ function ChatContent() {
     setTimeout(scrollToBottom, 100);
   }, [messages, typing]);
 
-  // Auto-trigger generation when isComplete becomes true
+  // Auto-trigger generation when isComplete becomes true (NOT on page load from session restore)
   useEffect(() => {
+    // Skip if it was already complete when the page loaded (session restore)
+    if (wasCompleteOnMount.current) {
+      wasCompleteOnMount.current = false; // Reset so future completions work
+      return;
+    }
     if (
       isComplete &&
       !generationTriggered.current &&
       chatStage !== "generating" &&
       chatStage !== "ready" &&
-      tripState.destination // Extra guard: ensure destination exists in current state
+      tripState.destination
     ) {
       generationTriggered.current = true;
-      // Pass tripState directly to avoid any stale closure issues
       triggerGenerationWithState(tripState);
     }
   }, [isComplete, chatStage, tripState]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -645,6 +650,7 @@ function ChatContent() {
     setIsSaved(false);
     setShareModalOpen(false);
     generationTriggered.current = false;
+    wasCompleteOnMount.current = false;
     hasInitialized.current = false;
 
     // Re-initialize with greeting
