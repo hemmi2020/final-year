@@ -22,15 +22,18 @@ import { useWeather } from "@/hooks/useWeather";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-async function fetchAllNearbyFromBackend(lat, lng, radius = 5000) {
+async function fetchAllNearbyFromBackend(lat, lng, countryCode, radius = 5000) {
   try {
     const res = await fetch(
-      `${API_URL}/api/external/nearby-all?lat=${lat}&lng=${lng}&radius=${radius}`,
+      `${API_URL}/api/external/nearby-all?lat=${lat}&lng=${lng}&radius=${radius}&countryCode=${countryCode || ""}`,
       { signal: AbortSignal.timeout(30000) },
     );
     const json = await res.json();
     if (json.success && json.data) {
-      return json.data;
+      return {
+        categories: json.data,
+        isMuslimCountry: json.isMuslimCountry || false,
+      };
     }
   } catch {}
   return null;
@@ -572,6 +575,7 @@ export default function DashboardPage() {
   // Nearby places
   const [nearby, setNearby] = useState({});
   const [nearbyLoading, setNearbyLoading] = useState(true);
+  const [isMuslimCountry, setIsMuslimCountry] = useState(false);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
@@ -599,13 +603,19 @@ export default function DashboardPage() {
     setNearbyLoading(true);
 
     const fetchAll = async () => {
-      const data = await fetchAllNearbyFromBackend(loc.lat, loc.lng);
-      if (data) {
+      const result = await fetchAllNearbyFromBackend(
+        loc.lat,
+        loc.lng,
+        loc.countryCode,
+      );
+      if (result) {
+        const data = result.categories;
         // Only cache if at least 3 categories have results
         const filledCount = Object.values(data).filter(
           (arr) => Array.isArray(arr) && arr.length > 0,
         ).length;
         setNearby(data);
+        setIsMuslimCountry(result.isMuslimCountry);
         if (filledCount >= 3) setNearbyCache(cacheKey, data);
       } else {
         const empty = {};
@@ -769,6 +779,21 @@ export default function DashboardPage() {
                 <>
                   {cat.key === "halal" &&
                     items.length > 0 &&
+                    isMuslimCountry && (
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: "#10B981",
+                          margin: "0 0 8px",
+                          fontWeight: 500,
+                        }}
+                      >
+                        ✅ All restaurants in this region are halal by default.
+                      </p>
+                    )}
+                  {cat.key === "halal" &&
+                    items.length > 0 &&
+                    !isMuslimCountry &&
                     !items.some(
                       (p) =>
                         p.cuisine &&

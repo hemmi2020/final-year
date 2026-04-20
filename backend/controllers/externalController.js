@@ -275,7 +275,7 @@ function parseNearbyElements(elements, userLat, userLng, category) {
 exports.nearbyAll = async (req, res, next) => {
     try {
         const axios = require('axios');
-        const { lat, lng, radius: radiusParam } = req.query;
+        const { lat, lng, radius: radiusParam, countryCode } = req.query;
         if (!lat || !lng) {
             return res.status(400).json({ success: false, error: 'lat and lng required' });
         }
@@ -292,6 +292,14 @@ exports.nearbyAll = async (req, res, next) => {
         const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
         const userLat = parseFloat(lat);
         const userLng = parseFloat(lng);
+
+        // Muslim-majority countries where all restaurants are halal by default
+        const MUSLIM_COUNTRIES = new Set([
+            'PK', 'SA', 'AE', 'TR', 'BD', 'EG', 'ID', 'MY', 'QA', 'KW',
+            'BH', 'OM', 'JO', 'MA', 'TN', 'DZ', 'IQ', 'SY', 'LY', 'SD',
+            'YE', 'AF', 'IR', 'MV', 'BN', 'SN', 'ML', 'NE', 'SO', 'DJ',
+        ]);
+        const isMuslimCountry = MUSLIM_COUNTRIES.has((countryCode || '').toUpperCase());
 
         const categorized = {
             mosques: [], hospitals: [], pharmacy: [], police: [],
@@ -343,15 +351,16 @@ exports.nearbyAll = async (req, res, next) => {
             else if (a === 'pharmacy') categorized.pharmacy.push(el);
         }
 
-        // Halal: always show restaurants — in Muslim countries all are halal by default
-        // If specific halal-tagged ones found, use those. Otherwise use all restaurants.
-        if (categorized.halal.length === 0) {
+        // Halal logic:
+        // Muslim-majority countries → ALL restaurants are halal by default
+        // Other countries → only halal-tagged, fallback to general with "verify" flag
+        if (isMuslimCountry) {
+            // In Muslim countries, all restaurants are halal
+            categorized.halal = allRestaurants.slice(0, 15);
+        } else if (categorized.halal.length === 0 && allRestaurants.length > 0) {
+            // Non-Muslim country, no halal-tagged found → show general restaurants as fallback
             categorized.halal = allRestaurants.slice(0, 15);
         }
-
-        // If restaurants batch failed entirely (429/timeout), halal is still empty
-        // In that case, use restaurants from Batch 1 area (some may be near mosques/hospitals)
-        // Or just accept empty — the frontend shows "None found nearby" which is honest
 
         // Parse each category (sorts by distance, slices to top 10)
         const result = {};
@@ -362,7 +371,7 @@ exports.nearbyAll = async (req, res, next) => {
         // Cache
         nearbyCache.set(cacheKey, { data: result, ts: Date.now() });
 
-        res.json({ success: true, data: result });
+        res.json({ success: true, data: result, isMuslimCountry });
     } catch (error) {
         console.log('[nearby-all] Overpass error:', error.message);
         res.json({ success: true, data: { mosques: [], hospitals: [], pharmacy: [], police: [], halal: [], atms: [], fuel: [] } });
