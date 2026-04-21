@@ -285,7 +285,13 @@ exports.nearbyAll = async (req, res, next) => {
 
         const cached = nearbyCache.get(cacheKey);
         if (cached && Date.now() - cached.ts < NEARBY_CACHE_TTL) {
-            return res.json({ success: true, data: cached.data, cached: true });
+            // Only use cache if at least 4 categories have data
+            const filledCats = Object.values(cached.data).filter(arr => Array.isArray(arr) && arr.length > 0).length;
+            if (filledCats >= 4) {
+                return res.json({ success: true, data: cached.data, cached: true });
+            }
+            // Stale/partial cache — delete and refetch
+            nearbyCache.delete(cacheKey);
         }
 
         const OVERPASS_API = 'https://overpass-api.de/api/interpreter';
@@ -352,7 +358,11 @@ exports.nearbyAll = async (req, res, next) => {
             result[cat] = parseNearbyElements(elements, userLat, userLng, cat);
         }
 
-        nearbyCache.set(cacheKey, { data: result, ts: Date.now() });
+        // Only cache if at least 4 categories have data
+        const filledCats = Object.values(result).filter(arr => arr.length > 0).length;
+        if (filledCats >= 4) {
+            nearbyCache.set(cacheKey, { data: result, ts: Date.now() });
+        }
         res.json({ success: true, data: result, isMuslimCountry });
     } catch (error) {
         console.log('[nearby-all] error:', error.message);
