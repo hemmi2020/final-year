@@ -228,7 +228,7 @@ exports.detectLocation = async (req, res, next) => {
 // GET /api/external/nearby?lat=24.86&lng=67.00&category=mosques&radius=10000
 // In-memory cache for nearby results (10 min TTL)
 const nearbyCache = new Map();
-const NEARBY_CACHE_TTL = 10 * 60 * 1000;
+const NEARBY_CACHE_TTL = 30 * 60 * 1000;
 
 // Category tag definitions
 const CATEGORY_TAGS = {
