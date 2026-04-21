@@ -9,6 +9,51 @@ const { getPreferences, buildSearchTags, cacheAIResponse, getCachedAIResponse, g
 const { itineraryPrompt, chatPrompt } = require('./prompts');
 const { searchNearbyPlaces } = require('./tools');
 
+// Destination images — real Unsplash photo URLs (source.unsplash.com is deprecated)
+const DESTINATION_IMAGES = {
+    istanbul: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&q=80&fit=crop',
+    paris: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80&fit=crop',
+    dubai: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80&fit=crop',
+    tokyo: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80&fit=crop',
+    london: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80&fit=crop',
+    bali: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80&fit=crop',
+    rome: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80&fit=crop',
+    barcelona: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80&fit=crop',
+    'new york': 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80&fit=crop',
+    bangkok: 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=800&q=80&fit=crop',
+    maldives: 'https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80&fit=crop',
+    singapore: 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=800&q=80&fit=crop',
+    lahore: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=80&fit=crop',
+    karachi: 'https://images.unsplash.com/photo-1572688824905-5b0e8c13e8d0?w=800&q=80&fit=crop',
+    islamabad: 'https://images.unsplash.com/photo-1603912699214-92627f304eb6?w=800&q=80&fit=crop',
+    marrakech: 'https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=800&q=80&fit=crop',
+    cairo: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=800&q=80&fit=crop',
+    athens: 'https://images.unsplash.com/photo-1555993539-1732b0258235?w=800&q=80&fit=crop',
+    amsterdam: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=800&q=80&fit=crop',
+    sydney: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&q=80&fit=crop',
+    'kuala lumpur': 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80&fit=crop',
+    seoul: 'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=800&q=80&fit=crop',
+    petra: 'https://images.unsplash.com/photo-1579606032821-4e6161c81571?w=800&q=80&fit=crop',
+    santorini: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&q=80&fit=crop',
+    prague: 'https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800&q=80&fit=crop',
+    vienna: 'https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=800&q=80&fit=crop',
+    lisbon: 'https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=800&q=80&fit=crop',
+};
+const DEFAULT_TRAVEL_IMAGE = 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80&fit=crop';
+const DEFAULT_HOTEL_IMAGE = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80&fit=crop';
+
+function getDestinationImage(destination, type = 'city') {
+    if (!destination) return type === 'hotel' ? DEFAULT_HOTEL_IMAGE : DEFAULT_TRAVEL_IMAGE;
+    const key = destination.toLowerCase().trim();
+    const img = DESTINATION_IMAGES[key];
+    if (img) return img;
+    // Try partial match
+    for (const [k, v] of Object.entries(DESTINATION_IMAGES)) {
+        if (key.includes(k) || k.includes(key)) return v;
+    }
+    return type === 'hotel' ? DEFAULT_HOTEL_IMAGE : DEFAULT_TRAVEL_IMAGE;
+}
+
 let openai = null;
 const getOpenAI = () => {
     if (!openai && process.env.OPENAI_API_KEY) {
@@ -148,12 +193,12 @@ exports.generateItinerary = async (user, params) => {
     // Build heroImage — use Unsplash source API for destination-specific photo
     const heroImage = itinerary.heroImage && !itinerary.heroImage.includes('placeholder')
         ? itinerary.heroImage
-        : `https://source.unsplash.com/800x600/?${encodeURIComponent(destination + ' travel landmark')}`;
+        : getDestinationImage(destination);
 
     // Also add destination-specific hotel image if missing
     const hotel = itinerary.hotel || null;
     if (hotel && !hotel.image) {
-        hotel.image = `https://source.unsplash.com/600x400/?${encodeURIComponent(destination + ' hotel')}`;
+        hotel.image = getDestinationImage(destination, 'hotel');
     }
 
     // Cache the result for 24 hours
