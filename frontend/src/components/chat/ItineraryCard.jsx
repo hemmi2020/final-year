@@ -54,7 +54,17 @@ export default function ItineraryCard({
   const displayOrigin = routeOrigin || origin || "Origin";
   const displayDestination = routeDestination || destination || "Destination";
 
-  const showHeroImage = heroImage && !imageError;
+  // Resolve hero image — skip deprecated source.unsplash.com URLs
+  const resolvedHeroImage = (() => {
+    if (
+      heroImage &&
+      !heroImage.includes("source.unsplash.com") &&
+      heroImage.startsWith("http")
+    )
+      return heroImage;
+    return getCityImg(destination);
+  })();
+  const showHeroImage = resolvedHeroImage && !imageError;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -78,6 +88,52 @@ export default function ItineraryCard({
   const bookingHotelUrl = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(destination || "")}`;
   const googleMapsUrl = (placeName) =>
     `https://www.google.com/maps/search/${encodeURIComponent(placeName)}`;
+
+  // City-specific images for hotel/hero fallback
+  const CITY_IMAGES = {
+    istanbul:
+      "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80&fit=crop",
+    paris:
+      "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80&fit=crop",
+    dubai:
+      "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80&fit=crop",
+    tokyo:
+      "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80&fit=crop",
+    london:
+      "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80&fit=crop",
+    bali: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80&fit=crop",
+    rome: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80&fit=crop",
+    barcelona:
+      "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600&q=80&fit=crop",
+    maldives:
+      "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80&fit=crop",
+    singapore:
+      "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&q=80&fit=crop",
+    karachi:
+      "https://images.unsplash.com/photo-1572688824905-5b0e8c13e8d0?w=600&q=80&fit=crop",
+    lahore:
+      "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&q=80&fit=crop",
+  };
+  const DEFAULT_HOTEL_IMG =
+    "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80&fit=crop";
+
+  function getCityImg(dest) {
+    if (!dest) return DEFAULT_HOTEL_IMG;
+    const d = dest.toLowerCase();
+    return (
+      CITY_IMAGES[d] ||
+      Object.entries(CITY_IMAGES).find(([k]) => d.includes(k))?.[1] ||
+      DEFAULT_HOTEL_IMG
+    );
+  }
+
+  // Resolve hotel image — use hotel.image if valid, else city image, else default hotel
+  const resolvedHotelImage = (() => {
+    const img = itinerary?.hotel?.image;
+    if (img && !img.includes("source.unsplash.com") && img.startsWith("http"))
+      return img;
+    return getCityImg(destination);
+  })();
 
   const statItems = [
     { emoji: "📅", label: "Days", value: totalDays },
@@ -120,7 +176,7 @@ export default function ItineraryCard({
         >
           {showHeroImage ? (
             <img
-              src={heroImage}
+              src={resolvedHeroImage}
               alt={`${displayDestination} destination`}
               onError={() => setImageError(true)}
               style={{
@@ -505,7 +561,7 @@ export default function ItineraryCard({
               boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
             }}
           >
-            {/* Hotel image or gradient fallback */}
+            {/* Hotel image */}
             <div
               style={{
                 width: "100%",
@@ -513,28 +569,26 @@ export default function ItineraryCard({
                 overflow: "hidden",
               }}
             >
-              {itinerary.hotel.image ? (
-                <img
-                  src={itinerary.hotel.image}
-                  alt={itinerary.hotel.name || "Hotel"}
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.nextSibling.style.display = "block";
-                  }}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              ) : null}
+              <img
+                src={resolvedHotelImage}
+                alt={itinerary.hotel.name || "Hotel"}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextSibling.style.display = "block";
+                }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
               <div
                 style={{
                   width: "100%",
                   height: "100%",
                   background:
                     "linear-gradient(135deg, #FF4500 0%, #FF6B35 100%)",
-                  display: itinerary.hotel.image ? "none" : "block",
+                  display: "none",
                 }}
               />
             </div>
