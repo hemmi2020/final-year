@@ -304,18 +304,26 @@ exports.nearbyAll = async (req, res, next) => {
         const categorized = { mosques: [], hospitals: [], pharmacy: [], police: [], halal: [], atms: [], fuel: [] };
         const allRestaurants = [];
 
-        const runQuery = async (label, query, retries = 1) => {
-            for (let attempt = 0; attempt <= retries; attempt++) {
+        // Multiple Overpass servers — if main fails, try mirrors
+        const OVERPASS_SERVERS = [
+            'https://overpass-api.de/api/interpreter',
+            'https://overpass.kumi.systems/api/interpreter',
+            'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+        ];
+
+        const runQuery = async (label, query) => {
+            for (let i = 0; i < OVERPASS_SERVERS.length; i++) {
+                const server = OVERPASS_SERVERS[i];
                 try {
-                    if (attempt > 0) {
-                        console.log(`[nearby] ${label} retry #${attempt}...`);
-                        await new Promise(r => setTimeout(r, 2500));
+                    if (i > 0) {
+                        console.log(`[nearby] ${label} trying server ${i + 1}...`);
+                        await new Promise(r => setTimeout(r, 1000));
                     }
-                    const { data } = await axios.post(OVERPASS_API, `data=${encodeURIComponent(query)}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 15000 });
-                    console.log(`[nearby] ${label}: ${(data.elements || []).length} results`);
+                    const { data } = await axios.post(server, `data=${encodeURIComponent(query)}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 15000 });
+                    console.log(`[nearby] ${label}: ${(data.elements || []).length} results (server ${i + 1})`);
                     return data.elements || [];
                 } catch (e) {
-                    console.log(`[nearby] ${label} attempt ${attempt} FAILED:`, e.message);
+                    console.log(`[nearby] ${label} server ${i + 1} FAILED:`, e.message);
                 }
             }
             return [];
