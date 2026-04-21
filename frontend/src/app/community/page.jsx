@@ -26,6 +26,141 @@ const SORT_OPTIONS = [
   { value: "budget-high", label: "Budget: High → Low" },
 ];
 
+const CITY_IMGS = {
+  istanbul:
+    "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80&fit=crop",
+  paris:
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80&fit=crop",
+  dubai:
+    "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80&fit=crop",
+  tokyo:
+    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80&fit=crop",
+  london:
+    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80&fit=crop",
+  bali: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80&fit=crop",
+  rome: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80&fit=crop",
+  barcelona:
+    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600&q=80&fit=crop",
+  "new york":
+    "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&q=80&fit=crop",
+  bangkok:
+    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80&fit=crop",
+  maldives:
+    "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80&fit=crop",
+  marrakech:
+    "https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=600&q=80&fit=crop",
+  singapore:
+    "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&q=80&fit=crop",
+  karachi:
+    "https://images.unsplash.com/photo-1572688824905-5b0e8c13e8d0?w=600&q=80&fit=crop",
+  lahore:
+    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&q=80&fit=crop",
+  islamabad:
+    "https://images.unsplash.com/photo-1603912699214-92627f304eb6?w=600&q=80&fit=crop",
+  cairo:
+    "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=600&q=80&fit=crop",
+  sydney:
+    "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=600&q=80&fit=crop",
+};
+
+function getCityImage(destination) {
+  if (!destination) return null;
+  const d = destination.toLowerCase();
+  return (
+    CITY_IMGS[d] ||
+    Object.entries(CITY_IMGS).find(([k]) => d.includes(k))?.[1] ||
+    null
+  );
+}
+
+function CommunityCardHeader({ trip }) {
+  const imgUrl = trip.heroImage || getCityImage(trip.destination);
+  return (
+    <div
+      style={{
+        height: 160,
+        position: "relative",
+        overflow: "hidden",
+        background: imgUrl
+          ? `url(${imgUrl}) center/cover no-repeat`
+          : "linear-gradient(135deg, #FF4500, #FF6B35, #F7C948)",
+      }}
+    >
+      {!imgUrl && (
+        <MapPin
+          size={40}
+          style={{
+            color: "rgba(255,255,255,0.3)",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%,-50%)",
+          }}
+        />
+      )}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(transparent 50%, rgba(0,0,0,0.5))",
+        }}
+      />
+      <div style={{ position: "absolute", bottom: 12, left: 14 }}>
+        <p
+          style={{
+            fontSize: 18,
+            fontWeight: 800,
+            color: "#FFF",
+            margin: 0,
+            textShadow: "0 1px 4px rgba(0,0,0,0.4)",
+          }}
+        >
+          {trip.destination}
+        </p>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          display: "flex",
+          gap: 6,
+        }}
+      >
+        {trip.aiGenerated && (
+          <span
+            style={{
+              padding: "3px 10px",
+              borderRadius: 99,
+              background: "rgba(255,255,255,0.25)",
+              color: "#FFF",
+              fontSize: 11,
+              fontWeight: 600,
+              backdropFilter: "blur(4px)",
+            }}
+          >
+            ✨ AI
+          </span>
+        )}
+        <span
+          style={{
+            padding: "3px 10px",
+            borderRadius: 99,
+            background: "rgba(255,255,255,0.25)",
+            color: "#FFF",
+            fontSize: 11,
+            fontWeight: 600,
+            textTransform: "capitalize",
+            backdropFilter: "blur(4px)",
+          }}
+        >
+          {trip.status}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function CommunityPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
@@ -237,57 +372,8 @@ export default function CommunityPage() {
         >
           {trips.map((trip) => (
             <div key={trip._id} className="card" style={{ overflow: "hidden" }}>
-              {/* Card header gradient */}
-              <div
-                style={{
-                  height: 140,
-                  background:
-                    "linear-gradient(135deg, #FF4500, #FF6B35, #F7C948)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
-                }}
-              >
-                <MapPin size={40} style={{ color: "rgba(255,255,255,0.3)" }} />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: 12,
-                    right: 12,
-                    display: "flex",
-                    gap: 6,
-                  }}
-                >
-                  {trip.aiGenerated && (
-                    <span
-                      style={{
-                        padding: "3px 10px",
-                        borderRadius: 99,
-                        background: "rgba(255,255,255,0.2)",
-                        color: "#FFF",
-                        fontSize: 11,
-                        fontWeight: 600,
-                      }}
-                    >
-                      ✨ AI
-                    </span>
-                  )}
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      borderRadius: 99,
-                      background: "rgba(255,255,255,0.2)",
-                      color: "#FFF",
-                      fontSize: 11,
-                      fontWeight: 600,
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {trip.status}
-                  </span>
-                </div>
-              </div>
+              {/* Card header — destination image or gradient fallback */}
+              <CommunityCardHeader trip={trip} />
 
               <div style={{ padding: 20 }}>
                 {/* Author */}
