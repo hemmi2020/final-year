@@ -54,12 +54,13 @@ export default function ItineraryCard({
   const displayOrigin = routeOrigin || origin || "Origin";
   const displayDestination = routeDestination || destination || "Destination";
 
-  // Resolve hero image — skip deprecated source.unsplash.com URLs
+  // Resolve hero image — skip deprecated/placeholder URLs, always use city fallback
   const resolvedHeroImage = (() => {
     if (
       heroImage &&
       !heroImage.includes("source.unsplash.com") &&
-      heroImage.startsWith("http")
+      !heroImage.includes("placeholder") &&
+      heroImage.startsWith("https://images.unsplash.com/photo-")
     )
       return heroImage;
     return getCityImg(destination);
@@ -127,10 +128,15 @@ export default function ItineraryCard({
     );
   }
 
-  // Resolve hotel image — use hotel.image if valid, else city image, else default hotel
+  // Resolve hotel image — skip deprecated/placeholder URLs
   const resolvedHotelImage = (() => {
     const img = itinerary?.hotel?.image;
-    if (img && !img.includes("source.unsplash.com") && img.startsWith("http"))
+    if (
+      img &&
+      !img.includes("source.unsplash.com") &&
+      !img.includes("placeholder") &&
+      img.startsWith("https://images.unsplash.com/photo-")
+    )
       return img;
     return getCityImg(destination);
   })();
