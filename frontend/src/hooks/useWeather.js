@@ -100,7 +100,9 @@ export function useWeather({ lat, lng, city, unit = "C" } = {}) {
             // Try OpenWeatherMap first (if API key exists)
             if (apiKey) {
                 try {
-                    const queryParam = city ? `q=${encodeURIComponent(city)}` : `lat=${lat}&lon=${lng}`;
+                    // Clean city name — remove brackets/parentheses that APIs don't understand
+                    const cleanCity = city ? city.replace(/\s*\(.*?\)\s*/g, '').trim() : null;
+                    const queryParam = cleanCity ? `q=${encodeURIComponent(cleanCity)}` : `lat=${lat}&lon=${lng}`;
                     const url = `https://api.openweathermap.org/data/2.5/weather?${queryParam}&appid=${apiKey}&units=metric`;
                     console.log("[useWeather] Trying OpenWeatherMap:", city || `${lat},${lng}`);
                     const res = await fetch(url, { signal: AbortSignal.timeout(5000) });

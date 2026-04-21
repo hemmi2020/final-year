@@ -335,26 +335,8 @@ function ChatContent() {
     setTimeout(scrollToBottom, 100);
   }, [messages, typing]);
 
-  // Auto-trigger generation when isComplete becomes true (NOT on page load from session restore)
-  useEffect(() => {
-    // Skip if it was already complete when the page loaded (session restore)
-    if (wasCompleteOnMount.current) {
-      wasCompleteOnMount.current = false; // Reset so future completions work
-      return;
-    }
-    if (
-      isComplete &&
-      !generationTriggered.current &&
-      chatStage !== "generating" &&
-      chatStage !== "ready" &&
-      tripState.destination
-    ) {
-      generationTriggered.current = true;
-      triggerGenerationWithState(tripState);
-    }
-  }, [isComplete, chatStage, tripState]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const triggerGenerationWithState = async (ts) => {
+  // Define triggerGenerationWithState BEFORE the useEffect that calls it
+  async function triggerGenerationWithState(ts) {
     // Guard: don't call API without destination
     if (!ts || !ts.destination) {
       console.log("[triggerGeneration] No destination, aborting");
@@ -415,7 +397,25 @@ function ChatContent() {
       };
       setMessages((prev) => [...prev, errorMsg]);
     }
-  };
+  }
+
+  // Auto-trigger generation when isComplete becomes true (NOT on page load from session restore)
+  useEffect(() => {
+    if (wasCompleteOnMount.current) {
+      wasCompleteOnMount.current = false;
+      return;
+    }
+    if (
+      isComplete &&
+      !generationTriggered.current &&
+      chatStage !== "generating" &&
+      chatStage !== "ready" &&
+      tripState.destination
+    ) {
+      generationTriggered.current = true;
+      triggerGenerationWithState(tripState);
+    }
+  }, [isComplete, chatStage, tripState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Acknowledgment messages for each field — no AI call needed
   const ACK_MESSAGES = {
