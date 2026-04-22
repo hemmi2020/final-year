@@ -235,7 +235,7 @@ export default function DestinationsPage() {
 
       // UNESCO World Heritage Sites (Overpass call 2)
       try {
-        const unescoRes = await externalAPI.unesco(loc.lat, loc.lng, 150000);
+        const unescoRes = await externalAPI.unesco(loc.lat, loc.lng, 200);
         const unescoData = unescoRes.data.data?.slice(0, 8) || [];
         setUnescoSites(unescoData);
         setCache(`dest_unesco_${cityKey}`, unescoData);
@@ -1220,9 +1220,9 @@ export default function DestinationsPage() {
                           >
                             <ExternalLink size={13} /> Maps
                           </a>
-                          {site.wikipedia && (
+                          {site.unescoId && (
                             <a
-                              href={site.wikipedia}
+                              href={`https://whc.unesco.org/en/list/${site.unescoId}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{
@@ -1235,7 +1235,7 @@ export default function DestinationsPage() {
                                 textDecoration: "none",
                               }}
                             >
-                              <Globe size={13} /> Wikipedia
+                              <Globe size={13} /> UNESCO Page
                             </a>
                           )}
                         </div>

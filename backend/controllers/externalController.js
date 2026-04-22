@@ -434,97 +434,129 @@ exports.nearby = async (req, res, next) => {
     }
 };
 
-// GET /api/external/unesco?lat=35.67&lng=139.76&radius=100000
-// Fetches UNESCO World Heritage Sites near coordinates via Overpass API
+// GET /api/external/unesco?lat=35.67&lng=139.76&radius=200
+// Fetches UNESCO World Heritage Sites near coordinates via UNESCO DataHub API
 exports.unesco = async (req, res, next) => {
     try {
         const axios = require('axios');
-        const { lat, lng, radius: radiusParam } = req.query;
+        const { lat, lng, radius: radiusParam, countryCode } = req.query;
         if (!lat || !lng) {
             return res.status(400).json({ success: false, error: 'lat and lng required' });
         }
 
-        const r = parseInt(radiusParam) || 100000; // Default 100km radius for UNESCO sites
+        const radiusKm = parseInt(radiusParam) || 200;
         const userLat = parseFloat(lat);
         const userLng = parseFloat(lng);
-        const cacheKey = `unesco_${userLat.toFixed(2)}_${userLng.toFixed(2)}_${r}`;
+        const cacheKey = `unesco_${userLat.toFixed(2)}_${userLng.toFixed(2)}_${radiusKm}`;
 
         const cached = nearbyCache.get(cacheKey);
         if (cached && Date.now() - cached.ts < NEARBY_CACHE_TTL) {
             return res.json({ success: true, data: cached.data, cached: true });
         }
 
-        // Overpass query for UNESCO World Heritage Sites
-        // Tags: heritage=world_heritage / heritage:operator=whc / whc:inscription_date=*
-        const overpassQuery = `[out:json][timeout:20];(
-            nwr["heritage"="world_heritage"](around:${r},${lat},${lng});
-            nwr["heritage:operator"="whc"](around:${r},${lat},${lng});
-            nwr["whc:inscription_date"](around:${r},${lat},${lng});
-        );out center 20;`;
+        let results = [];
 
-        const OVERPASS_SERVERS = [
-            'https://overpass-api.de/api/interpreter',
-            'https://overpass.private.coffee/api/interpreter',
-        ];
+        // Strategy 1: Geo-distance query via UNESCO DataHub API
+        try {
+            const geoFilter = `within_distance(coordinates,geom'POINT(${userLng} ${userLat})',${radiusKm}km)`;
+            const url = `https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/records`;
+            const { data } = await axios.get(url, {
+                params: {
+                    select: 'name_en,short_description_en,date_inscribed,category,criteria_txt,states_names,iso_codes,coordinates,main_image_url,id_no',
+                    where: geoFilter,
+                    limit: 15,
+                    order_by: 'date_inscribed DESC',
+                },
+                headers: { 'User-Agent': 'TravelApp/1.0 (unesco-search)' },
+                timeout: 10000,
+            });
 
-        let elements = [];
-        for (let i = 0; i < OVERPASS_SERVERS.length; i++) {
-            try {
-                if (i > 0) await new Promise(resolve => setTimeout(resolve, 1000));
-                const { data } = await axios.post(OVERPASS_SERVERS[i],
-                    `data=${encodeURIComponent(overpassQuery)}`,
-                    {
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'User-Agent': 'TravelApp/1.0 (unesco-search)',
-                        },
-                        timeout: 20000,
+            if (data.results && data.results.length > 0) {
+                results = data.results.map(r => {
+                    const siteLat = r.coordinates?.lat;
+                    const siteLng = r.coordinates?.lon;
+                    let dist = null;
+                    let distanceText = '';
+                    if (siteLat && siteLng) {
+                        const R = 6371000;
+                        const dLat = (siteLat - userLat) * Math.PI / 180;
+                        const dLng2 = (siteLng - userLng) * Math.PI / 180;
+                        const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(siteLat * Math.PI / 180) * Math.sin(dLng2 / 2) ** 2;
+                        dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+                        distanceText = dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`;
                     }
-                );
-                elements = data.elements || [];
-                console.log(`[unesco] ${elements.length} results (server ${i + 1})`);
-                break;
-            } catch (e) {
-                console.log(`[unesco] server ${i + 1} FAILED:`, e.message);
+                    return {
+                        name: r.name_en || 'Unknown Site',
+                        description: (r.short_description_en || '').slice(0, 200),
+                        inscriptionDate: r.date_inscribed ? r.date_inscribed.split('-')[0] : '',
+                        category: r.category || '',
+                        criteria: r.criteria_txt || '',
+                        country: r.states_names || '',
+                        lat: siteLat,
+                        lng: siteLng,
+                        image: r.main_image_url || '',
+                        unescoId: r.id_no || '',
+                        distance: dist,
+                        distanceText,
+                    };
+                }).filter(r => r.name !== 'Unknown Site').sort((a, b) => (a.distance || 0) - (b.distance || 0));
+                console.log(`[unesco] DataHub geo-query: ${results.length} results`);
             }
+        } catch (e) {
+            console.log('[unesco] DataHub geo-query failed:', e.message);
         }
 
-        // Deduplicate by name and parse results
-        const seen = new Set();
-        const results = elements
-            .map(el => {
-                const name = el.tags?.['name:en'] || el.tags?.['int_name'] || el.tags?.name;
-                if (!name || seen.has(name)) return null;
-                seen.add(name);
+        // Strategy 2: Fallback — filter by country code (ISO)
+        if (results.length === 0 && countryCode) {
+            try {
+                const isoCode = countryCode.toLowerCase();
+                const url = `https://data.unesco.org/api/explore/v2.1/catalog/datasets/whc001/records`;
+                const { data } = await axios.get(url, {
+                    params: {
+                        select: 'name_en,short_description_en,date_inscribed,category,criteria_txt,states_names,iso_codes,coordinates,main_image_url,id_no',
+                        where: `iso_codes like '${isoCode}'`,
+                        limit: 15,
+                        order_by: 'date_inscribed DESC',
+                    },
+                    headers: { 'User-Agent': 'TravelApp/1.0 (unesco-search)' },
+                    timeout: 10000,
+                });
 
-                const elLat = el.lat || el.center?.lat;
-                const elLng = el.lon || el.center?.lon;
-                if (!elLat || !elLng) return null;
-
-                // Calculate distance
-                const R = 6371000;
-                const dLat = (elLat - userLat) * Math.PI / 180;
-                const dLng2 = (elLng - userLng) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(elLat * Math.PI / 180) * Math.sin(dLng2 / 2) ** 2;
-                const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-
-                return {
-                    name,
-                    lat: elLat,
-                    lng: elLng,
-                    type: el.tags?.heritage || 'world_heritage',
-                    description: el.tags?.['description:en'] || el.tags?.description || '',
-                    inscriptionDate: el.tags?.['whc:inscription_date'] || '',
-                    criteria: el.tags?.['whc:criteria_string'] || '',
-                    wikipedia: el.tags?.wikipedia ? `https://en.wikipedia.org/wiki/${el.tags.wikipedia.replace(/^en:/, '')}` : '',
-                    website: el.tags?.website || '',
-                    distance: dist,
-                    distanceText: dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`,
-                };
-            })
-            .filter(Boolean)
-            .sort((a, b) => a.distance - b.distance)
-            .slice(0, 15);
+                if (data.results && data.results.length > 0) {
+                    results = data.results.map(r => {
+                        const siteLat = r.coordinates?.lat;
+                        const siteLng = r.coordinates?.lon;
+                        let dist = null;
+                        let distanceText = '';
+                        if (siteLat && siteLng) {
+                            const R = 6371000;
+                            const dLat = (siteLat - userLat) * Math.PI / 180;
+                            const dLng2 = (siteLng - userLng) * Math.PI / 180;
+                            const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(siteLat * Math.PI / 180) * Math.sin(dLng2 / 2) ** 2;
+                            dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+                            distanceText = dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`;
+                        }
+                        return {
+                            name: r.name_en || 'Unknown Site',
+                            description: (r.short_description_en || '').slice(0, 200),
+                            inscriptionDate: r.date_inscribed ? r.date_inscribed.split('-')[0] : '',
+                            category: r.category || '',
+                            criteria: r.criteria_txt || '',
+                            country: r.states_names || '',
+                            lat: siteLat,
+                            lng: siteLng,
+                            image: r.main_image_url || '',
+                            unescoId: r.id_no || '',
+                            distance: dist,
+                            distanceText,
+                        };
+                    }).filter(r => r.name !== 'Unknown Site').sort((a, b) => (a.distance || 0) - (b.distance || 0));
+                    console.log(`[unesco] DataHub country fallback (${countryCode}): ${results.length} results`);
+                }
+            } catch (e) {
+                console.log('[unesco] DataHub country fallback failed:', e.message);
+            }
+        }
 
         if (results.length > 0) {
             nearbyCache.set(cacheKey, { data: results, ts: Date.now() });

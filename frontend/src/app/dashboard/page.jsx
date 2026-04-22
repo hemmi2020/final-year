@@ -654,7 +654,7 @@ export default function DashboardPage() {
     const fetchUnesco = async () => {
       try {
         const res = await fetch(
-          `${API_URL}/api/external/unesco?lat=${loc.lat}&lng=${loc.lng}&radius=150000`,
+          `${API_URL}/api/external/unesco?lat=${loc.lat}&lng=${loc.lng}&radius=200&countryCode=${loc.countryCode || ""}`,
           { signal: AbortSignal.timeout(25000) },
         );
         const json = await res.json();
@@ -928,6 +928,26 @@ export default function DashboardPage() {
                   gap: 10,
                 }}
               >
+                {site.image && (
+                  <div
+                    style={{
+                      borderRadius: 12,
+                      overflow: "hidden",
+                      height: 140,
+                      background: "#f3f4f6",
+                    }}
+                  >
+                    <img
+                      src={site.image}
+                      alt={site.name}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </div>
+                )}
                 <div
                   style={{
                     display: "flex",
@@ -946,28 +966,51 @@ export default function DashboardPage() {
                     >
                       🏛️ {site.name}
                     </p>
-                    {site.inscriptionDate && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: "#D97706",
-                          background: "#FEF3C7",
-                          padding: "3px 10px",
-                          borderRadius: 99,
-                          display: "inline-block",
-                          marginTop: 6,
-                        }}
-                      >
-                        Inscribed: {site.inscriptionDate}
-                      </span>
-                    )}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 6,
+                        marginTop: 6,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      {site.inscriptionDate && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#D97706",
+                            background: "#FEF3C7",
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                          }}
+                        >
+                          {site.inscriptionDate}
+                        </span>
+                      )}
+                      {site.category && (
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: "#4F46E5",
+                            background: "#EEF2FF",
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                          }}
+                        >
+                          {site.category}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span
-                    style={{ fontSize: 12, color: "#9CA3AF", flexShrink: 0 }}
-                  >
-                    {site.distanceText}
-                  </span>
+                  {site.distanceText && (
+                    <span
+                      style={{ fontSize: 12, color: "#9CA3AF", flexShrink: 0 }}
+                    >
+                      {site.distanceText}
+                    </span>
+                  )}
                 </div>
                 {site.description && (
                   <p
@@ -978,33 +1021,30 @@ export default function DashboardPage() {
                       lineHeight: 1.5,
                     }}
                   >
-                    {site.description.length > 120
-                      ? site.description.slice(0, 120) + "..."
+                    {site.description.length > 150
+                      ? site.description.slice(0, 150) + "..."
                       : site.description}
                   </p>
                 )}
-                {site.criteria && (
-                  <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>
-                    Criteria: {site.criteria}
-                  </p>
-                )}
                 <div style={{ display: "flex", gap: 12, marginTop: "auto" }}>
-                  <a
-                    href={`https://www.google.com/maps/search/${encodeURIComponent(site.name)}+${site.lat},${site.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      fontSize: 12,
-                      color: "#FF4500",
-                      textDecoration: "none",
-                      fontWeight: 600,
-                    }}
-                  >
-                    View on Map ↗
-                  </a>
-                  {site.wikipedia && (
+                  {site.lat && site.lng && (
                     <a
-                      href={site.wikipedia}
+                      href={`https://www.google.com/maps/search/${encodeURIComponent(site.name)}+${site.lat},${site.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: 12,
+                        color: "#FF4500",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      View on Map ↗
+                    </a>
+                  )}
+                  {site.unescoId && (
+                    <a
+                      href={`https://whc.unesco.org/en/list/${site.unescoId}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -1014,7 +1054,7 @@ export default function DashboardPage() {
                         fontWeight: 600,
                       }}
                     >
-                      Wikipedia ↗
+                      UNESCO Page ↗
                     </a>
                   )}
                 </div>
