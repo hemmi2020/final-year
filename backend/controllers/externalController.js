@@ -305,10 +305,11 @@ exports.nearbyAll = async (req, res, next) => {
         const allRestaurants = [];
 
         // Multiple Overpass servers — if main fails, try mirrors
+        // Note: overpass.kumi.systems moved to overpass.private.coffee
+        // Note: maps.mail.ru suspended since March 2026
         const OVERPASS_SERVERS = [
             'https://overpass-api.de/api/interpreter',
-            'https://overpass.kumi.systems/api/interpreter',
-            'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+            'https://overpass.private.coffee/api/interpreter',
         ];
 
         const runQuery = async (label, query) => {
@@ -319,7 +320,13 @@ exports.nearbyAll = async (req, res, next) => {
                         console.log(`[nearby] ${label} trying server ${i + 1}...`);
                         await new Promise(r => setTimeout(r, 1000));
                     }
-                    const { data } = await axios.post(server, `data=${encodeURIComponent(query)}`, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 15000 });
+                    const { data } = await axios.post(server, `data=${encodeURIComponent(query)}`, {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'User-Agent': 'TravelApp/1.0 (nearby-places)',
+                        },
+                        timeout: 20000,
+                    });
                     console.log(`[nearby] ${label}: ${(data.elements || []).length} results (server ${i + 1})`);
                     return data.elements || [];
                 } catch (e) {
