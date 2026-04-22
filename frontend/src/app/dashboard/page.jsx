@@ -68,6 +68,8 @@ const NEARBY_CATEGORIES = [
   { key: "halal", emoji: "🍽️", title: "Halal Restaurants" },
   { key: "atms", emoji: "🏧", title: "ATMs & Banks" },
   { key: "fuel", emoji: "⛽", title: "Petrol Stations" },
+  { key: "ngos", emoji: "🤝", title: "NGOs & Charities" },
+  { key: "parking", emoji: "🅿️", title: "Parking" },
 ];
 
 // ── Emergency contacts by country code ────────────────────────────────────
