@@ -433,3 +433,106 @@ exports.nearby = async (req, res, next) => {
         res.json({ success: true, data: [], count: 0, radius: parseInt(req.query.radius) || 5000 });
     }
 };
+
+// GET /api/external/unesco?lat=35.67&lng=139.76&radius=100000
+// Fetches UNESCO World Heritage Sites near coordinates via Overpass API
+exports.unesco = async (req, res, next) => {
+    try {
+        const axios = require('axios');
+        const { lat, lng, radius: radiusParam } = req.query;
+        if (!lat || !lng) {
+            return res.status(400).json({ success: false, error: 'lat and lng required' });
+        }
+
+        const r = parseInt(radiusParam) || 100000; // Default 100km radius for UNESCO sites
+        const userLat = parseFloat(lat);
+        const userLng = parseFloat(lng);
+        const cacheKey = `unesco_${userLat.toFixed(2)}_${userLng.toFixed(2)}_${r}`;
+
+        const cached = nearbyCache.get(cacheKey);
+        if (cached && Date.now() - cached.ts < NEARBY_CACHE_TTL) {
+            return res.json({ success: true, data: cached.data, cached: true });
+        }
+
+        // Overpass query for UNESCO World Heritage Sites
+        // Tags: heritage=world_heritage / heritage:operator=whc / whc:inscription_date=*
+        const overpassQuery = `[out:json][timeout:20];(
+            nwr["heritage"="world_heritage"](around:${r},${lat},${lng});
+            nwr["heritage:operator"="whc"](around:${r},${lat},${lng});
+            nwr["whc:inscription_date"](around:${r},${lat},${lng});
+        );out center 20;`;
+
+        const OVERPASS_SERVERS = [
+            'https://overpass-api.de/api/interpreter',
+            'https://overpass.private.coffee/api/interpreter',
+        ];
+
+        let elements = [];
+        for (let i = 0; i < OVERPASS_SERVERS.length; i++) {
+            try {
+                if (i > 0) await new Promise(resolve => setTimeout(resolve, 1000));
+                const { data } = await axios.post(OVERPASS_SERVERS[i],
+                    `data=${encodeURIComponent(overpassQuery)}`,
+                    {
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'User-Agent': 'TravelApp/1.0 (unesco-search)',
+                        },
+                        timeout: 20000,
+                    }
+                );
+                elements = data.elements || [];
+                console.log(`[unesco] ${elements.length} results (server ${i + 1})`);
+                break;
+            } catch (e) {
+                console.log(`[unesco] server ${i + 1} FAILED:`, e.message);
+            }
+        }
+
+        // Deduplicate by name and parse results
+        const seen = new Set();
+        const results = elements
+            .map(el => {
+                const name = el.tags?.['name:en'] || el.tags?.['int_name'] || el.tags?.name;
+                if (!name || seen.has(name)) return null;
+                seen.add(name);
+
+                const elLat = el.lat || el.center?.lat;
+                const elLng = el.lon || el.center?.lon;
+                if (!elLat || !elLng) return null;
+
+                // Calculate distance
+                const R = 6371000;
+                const dLat = (elLat - userLat) * Math.PI / 180;
+                const dLng2 = (elLng - userLng) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(userLat * Math.PI / 180) * Math.cos(elLat * Math.PI / 180) * Math.sin(dLng2 / 2) ** 2;
+                const dist = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+
+                return {
+                    name,
+                    lat: elLat,
+                    lng: elLng,
+                    type: el.tags?.heritage || 'world_heritage',
+                    description: el.tags?.['description:en'] || el.tags?.description || '',
+                    inscriptionDate: el.tags?.['whc:inscription_date'] || '',
+                    criteria: el.tags?.['whc:criteria_string'] || '',
+                    wikipedia: el.tags?.wikipedia ? `https://en.wikipedia.org/wiki/${el.tags.wikipedia.replace(/^en:/, '')}` : '',
+                    website: el.tags?.website || '',
+                    distance: dist,
+                    distanceText: dist < 1000 ? `${dist}m` : `${(dist / 1000).toFixed(1)}km`,
+                };
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 15);
+
+        if (results.length > 0) {
+            nearbyCache.set(cacheKey, { data: results, ts: Date.now() });
+        }
+
+        res.json({ success: true, data: results, count: results.length });
+    } catch (error) {
+        console.log('[unesco] error:', error.message);
+        res.json({ success: true, data: [], count: 0 });
+    }
+};

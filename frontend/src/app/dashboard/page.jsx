@@ -580,6 +580,11 @@ export default function DashboardPage() {
   const [isMuslimCountry, setIsMuslimCountry] = useState(false);
   const fetchedRef = useRef(false);
 
+  // UNESCO World Heritage Sites
+  const [unescoSites, setUnescoSites] = useState([]);
+  const [unescoLoading, setUnescoLoading] = useState(true);
+  const unescoFetchedRef = useRef(false);
+
   useEffect(() => {
     if (!loc.lat || !loc.lng || fetchedRef.current) return;
     fetchedRef.current = true;
@@ -630,6 +635,37 @@ export default function DashboardPage() {
     };
 
     fetchAll();
+  }, [loc.lat, loc.lng]);
+
+  // UNESCO World Heritage Sites fetch
+  useEffect(() => {
+    if (!loc.lat || !loc.lng || unescoFetchedRef.current) return;
+    unescoFetchedRef.current = true;
+
+    const cacheKey = `unesco_${loc.lat.toFixed(2)}_${loc.lng.toFixed(2)}`;
+    const cached = getNearbyCache(cacheKey);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      setUnescoSites(cached);
+      setUnescoLoading(false);
+      return;
+    }
+
+    setUnescoLoading(true);
+    const fetchUnesco = async () => {
+      try {
+        const res = await fetch(
+          `${API_URL}/api/external/unesco?lat=${loc.lat}&lng=${loc.lng}&radius=150000`,
+          { signal: AbortSignal.timeout(25000) },
+        );
+        const json = await res.json();
+        if (json.success && json.data?.length > 0) {
+          setUnescoSites(json.data);
+          setNearbyCache(cacheKey, json.data);
+        }
+      } catch {}
+      setUnescoLoading(false);
+    };
+    fetchUnesco();
   }, [loc.lat, loc.lng]);
 
   // Auth check + trips fetch
@@ -839,6 +875,153 @@ export default function DashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* ── UNESCO World Heritage Sites ─────────────────────────────────── */}
+      <div style={{ marginBottom: 40 }}>
+        <h2 style={styles.sectionTitle}>
+          🏛️ UNESCO World Heritage Sites Near You
+        </h2>
+        {unescoLoading ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gap: 20,
+            }}
+          >
+            {[1, 2, 3].map((i) => (
+              <div key={i} style={styles.nearbyCard}>
+                <div style={{ ...styles.skeleton, width: "70%", height: 18 }} />
+                <div
+                  style={{ ...styles.skeleton, width: "90%", marginTop: 12 }}
+                />
+                <div
+                  style={{ ...styles.skeleton, width: "50%", marginTop: 8 }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : unescoSites.length === 0 ? (
+          <div
+            style={{ ...styles.nearbyCard, textAlign: "center", padding: 32 }}
+          >
+            <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+              No UNESCO World Heritage Sites found within 150km of your location
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+              gap: 20,
+            }}
+          >
+            {unescoSites.map((site, i) => (
+              <div
+                key={i}
+                style={{
+                  ...styles.nearbyCard,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <div style={{ flex: 1 }}>
+                    <p
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: "#0A0A0A",
+                        margin: 0,
+                      }}
+                    >
+                      🏛️ {site.name}
+                    </p>
+                    {site.inscriptionDate && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: "#D97706",
+                          background: "#FEF3C7",
+                          padding: "3px 10px",
+                          borderRadius: 99,
+                          display: "inline-block",
+                          marginTop: 6,
+                        }}
+                      >
+                        Inscribed: {site.inscriptionDate}
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    style={{ fontSize: 12, color: "#9CA3AF", flexShrink: 0 }}
+                  >
+                    {site.distanceText}
+                  </span>
+                </div>
+                {site.description && (
+                  <p
+                    style={{
+                      fontSize: 13,
+                      color: "#6B7280",
+                      margin: 0,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {site.description.length > 120
+                      ? site.description.slice(0, 120) + "..."
+                      : site.description}
+                  </p>
+                )}
+                {site.criteria && (
+                  <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>
+                    Criteria: {site.criteria}
+                  </p>
+                )}
+                <div style={{ display: "flex", gap: 12, marginTop: "auto" }}>
+                  <a
+                    href={`https://www.google.com/maps/search/${encodeURIComponent(site.name)}+${site.lat},${site.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 12,
+                      color: "#FF4500",
+                      textDecoration: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    View on Map ↗
+                  </a>
+                  {site.wikipedia && (
+                    <a
+                      href={site.wikipedia}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: 12,
+                        color: "#4F46E5",
+                        textDecoration: "none",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Wikipedia ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Emergency Contacts ── */}

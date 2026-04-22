@@ -79,6 +79,7 @@ export const externalAPI = {
     flights: (from, to, date, options) => api.get('/api/external/flights', { params: { from, to, date, ...options } }),
     hotels: (city, checkin, checkout, options) => api.get('/api/external/hotels', { params: { city, checkin, checkout, ...options } }),
     bookingAttractions: (city) => api.get('/api/external/booking-attractions', { params: { city } }),
+    unesco: (lat, lng, radius, config) => api.get('/api/external/unesco', { params: { lat, lng, radius }, ...config }),
 };
 
 // ─── Groups ───

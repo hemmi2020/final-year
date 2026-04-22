@@ -167,6 +167,7 @@ export default function DestinationsPage() {
   const [weather, setWeather] = useState(null);
   const [restaurants, setRestaurants] = useState([]);
   const [attractions, setAttractions] = useState([]);
+  const [unescoSites, setUnescoSites] = useState([]);
 
   useEffect(() => {
     return () => {
@@ -180,6 +181,7 @@ export default function DestinationsPage() {
     setWeather(null);
     setRestaurants([]);
     setAttractions([]);
+    setUnescoSites([]);
 
     const cityKey = name.toLowerCase().replace(/\s+/g, "_");
 
@@ -187,9 +189,11 @@ export default function DestinationsPage() {
     const cachedWeather = getCached(`dest_weather_${cityKey}`);
     const cachedRestaurants = getCached(`dest_restaurants_${cityKey}`);
     const cachedAttractions = getCached(`dest_attractions_${cityKey}`);
+    const cachedUnesco = getCached(`dest_unesco_${cityKey}`);
     if (cachedWeather) setWeather(cachedWeather);
     if (cachedRestaurants) setRestaurants(cachedRestaurants);
     if (cachedAttractions) setAttractions(cachedAttractions);
+    if (cachedUnesco) setUnescoSites(cachedUnesco);
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
@@ -229,7 +233,18 @@ export default function DestinationsPage() {
       // Small delay to avoid Overpass 429
       await new Promise((r) => setTimeout(r, 1500));
 
-      // Restaurants (Overpass call 2)
+      // UNESCO World Heritage Sites (Overpass call 2)
+      try {
+        const unescoRes = await externalAPI.unesco(loc.lat, loc.lng, 150000);
+        const unescoData = unescoRes.data.data?.slice(0, 8) || [];
+        setUnescoSites(unescoData);
+        setCache(`dest_unesco_${cityKey}`, unescoData);
+      } catch {}
+
+      // Small delay to avoid Overpass 429
+      await new Promise((r) => setTimeout(r, 1500));
+
+      // Restaurants (Overpass call 3)
       try {
         const rest = await externalAPI.places(
           name,
@@ -1041,6 +1056,208 @@ export default function DestinationsPage() {
                     />
                     <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
                       No attractions found for this destination
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* UNESCO World Heritage Sites Section */}
+              <div style={{ marginBottom: 36 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    marginBottom: 18,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      background: "#FEF3C7",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <span style={{ fontSize: 18 }}>🏛️</span>
+                  </div>
+                  <h3
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 800,
+                      color: "#0A0A0A",
+                      margin: 0,
+                    }}
+                  >
+                    UNESCO World Heritage Sites
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#9CA3AF",
+                      background: "#F5F5F5",
+                      padding: "3px 10px",
+                      borderRadius: 99,
+                    }}
+                  >
+                    {unescoSites.length} found
+                  </span>
+                </div>
+                {unescoSites.length > 0 ? (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fill, minmax(280px, 1fr))",
+                      gap: 16,
+                    }}
+                  >
+                    {unescoSites.map((site, i) => (
+                      <div
+                        key={i}
+                        className="card"
+                        style={{
+                          padding: 20,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 10,
+                          borderLeft: "4px solid #D97706",
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          cursor: "default",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 8px 24px rgba(0,0,0,0.1)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow = "";
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: 16,
+                              fontWeight: 700,
+                              color: "#0A0A0A",
+                              margin: 0,
+                              flex: 1,
+                            }}
+                          >
+                            {site.name}
+                          </p>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              padding: "4px 10px",
+                              borderRadius: 99,
+                              background: "#FEF3C7",
+                              color: "#D97706",
+                              flexShrink: 0,
+                            }}
+                          >
+                            UNESCO
+                          </span>
+                        </div>
+                        {site.inscriptionDate && (
+                          <p
+                            style={{
+                              fontSize: 12,
+                              color: "#D97706",
+                              margin: 0,
+                              fontWeight: 600,
+                            }}
+                          >
+                            Inscribed: {site.inscriptionDate}
+                          </p>
+                        )}
+                        {site.description && (
+                          <p
+                            style={{
+                              fontSize: 13,
+                              color: "#6B7280",
+                              margin: 0,
+                              lineHeight: 1.5,
+                            }}
+                          >
+                            {site.description.length > 120
+                              ? site.description.slice(0, 120) + "..."
+                              : site.description}
+                          </p>
+                        )}
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 12,
+                            marginTop: "auto",
+                          }}
+                        >
+                          <a
+                            href={`https://www.google.com/maps/search/${encodeURIComponent(site.name + " " + cityName)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 5,
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: "var(--orange)",
+                              textDecoration: "none",
+                            }}
+                          >
+                            <ExternalLink size={13} /> Maps
+                          </a>
+                          {site.wikipedia && (
+                            <a
+                              href={site.wikipedia}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: "#4F46E5",
+                                textDecoration: "none",
+                              }}
+                            >
+                              <Globe size={13} /> Wikipedia
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div
+                    className="card"
+                    style={{ padding: 32, textAlign: "center" }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 28,
+                        display: "block",
+                        marginBottom: 8,
+                      }}
+                    >
+                      🏛️
+                    </span>
+                    <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+                      No UNESCO World Heritage Sites found near {cityName}
                     </p>
                   </div>
                 )}
