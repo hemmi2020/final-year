@@ -663,6 +663,7 @@ function ChatContent() {
   };
 
   const handleNewTrip = () => {
+    chatAPI.clear().catch(() => {});
     reset();
     setMessages([]);
     setInput("");
@@ -672,7 +673,7 @@ function ChatContent() {
     setIsSaved(false);
     setShareModalOpen(false);
     generationTriggered.current = false;
-    wasCompleteOnMount.current = false;
+    wasCompleteOnMount.current = true;
     hasInitialized.current = false;
 
     // Re-initialize with greeting
@@ -686,6 +687,7 @@ function ChatContent() {
         multiSelect: false,
       };
       setMessages([greeting]);
+      wasCompleteOnMount.current = false;
     }, 100);
   };
 

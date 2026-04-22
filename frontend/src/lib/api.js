@@ -55,6 +55,7 @@ export const tripsAPI = {
 // ─── Chat ───
 export const chatAPI = {
     send: (message, tripState) => api.post('/api/chat', { message, tripState }),
+    clear: () => api.delete('/api/chat'),
 };
 
 // ─── Users ───

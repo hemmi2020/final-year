@@ -1,4 +1,5 @@
 const { chat, generateItinerary: generateAI } = require('../services/ai/agent');
+const { clearConversation } = require('../services/memory/memoryService');
 const Trip = require('../models/Trip');
 
 // Simple per-user rate limiter for generate endpoint (max 1 request per 10 seconds)
@@ -86,6 +87,16 @@ exports.generateItinerary = async (req, res, next) => {
         });
 
         res.json({ success: true, data: { trip, itinerary } });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// DELETE /api/chat
+exports.clearChat = async (req, res, next) => {
+    try {
+        await clearConversation(req.user._id.toString());
+        res.json({ success: true });
     } catch (error) {
         next(error);
     }
