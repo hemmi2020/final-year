@@ -419,7 +419,7 @@ exports.nearby = async (req, res, next) => {
         const overpassQuery = `[out:json][timeout:25];${query}out center 15;`;
         const { data } = await axios.post(OVERPASS_API,
             `data=${encodeURIComponent(overpassQuery)}`,
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 20000 }
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'TravelApp/1.0 (nearby-single)' }, timeout: 20000 }
         );
 
         const results = parseNearbyElements(data.elements, parseFloat(lat), parseFloat(lng), category);

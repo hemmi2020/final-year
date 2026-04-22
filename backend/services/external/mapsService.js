@@ -260,7 +260,7 @@ exports.searchPlaces = async (query, lat, lng, options = {}) => {
         try {
             const { data } = await axios.post(OVERPASS_API,
                 `data=${encodeURIComponent(overpassQuery)}`,
-                { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 25000 }
+                { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'TravelApp/1.0 (places-search)' }, timeout: 25000 }
             );
 
             let results = (data.elements || [])
@@ -344,7 +344,7 @@ exports.findAttractions = async (lat, lng, radius = 10000) => {
 
         const { data } = await axios.post(OVERPASS_API,
             `data=${encodeURIComponent(overpassQuery)}`,
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 25000 }
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'TravelApp/1.0 (attractions-search)' }, timeout: 25000 }
         );
 
         const results = (data.elements || [])
