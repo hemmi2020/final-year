@@ -22,6 +22,59 @@ import { useWeather } from "@/hooks/useWeather";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+// Weather icon mapping (from useWeather.js)
+const FORECAST_ICON_MAP = {
+  "01d": "☀️",
+  "01n": "🌙",
+  "02d": "⛅",
+  "02n": "☁️",
+  "03d": "☁️",
+  "03n": "☁️",
+  "04d": "☁️",
+  "04n": "☁️",
+  "09d": "🌧️",
+  "09n": "🌧️",
+  "10d": "🌦️",
+  "10n": "🌧️",
+  "11d": "⛈️",
+  "11n": "⛈️",
+  "13d": "❄️",
+  "13n": "❄️",
+  "50d": "🌫️",
+  "50n": "🌫️",
+  // wttr.in codes
+  113: "☀️",
+  116: "⛅",
+  119: "☁️",
+  122: "☁️",
+  143: "🌫️",
+  176: "🌦️",
+  179: "🌨️",
+  182: "🌨️",
+  200: "⛈️",
+  227: "❄️",
+  230: "❄️",
+  248: "🌫️",
+  260: "🌫️",
+  263: "🌦️",
+  266: "🌦️",
+  293: "🌦️",
+  296: "🌧️",
+  299: "🌧️",
+  302: "🌧️",
+  305: "🌧️",
+  308: "🌧️",
+  311: "🌧️",
+  314: "🌧️",
+  353: "🌦️",
+  356: "🌧️",
+  359: "🌧️",
+  386: "⛈️",
+  389: "⛈️",
+  392: "⛈️",
+  395: "❄️",
+};
+
 async function fetchAllNearbyFromBackend(lat, lng, countryCode, radius = 5000) {
   try {
     const res = await fetch(
@@ -593,6 +646,16 @@ export default function DashboardPage() {
   const [foodLoading, setFoodLoading] = useState(false);
   const [foodSearched, setFoodSearched] = useState(false);
 
+  // Attractions Near You
+  const [attractions, setAttractions] = useState([]);
+  const [attractionsLoading, setAttractionsLoading] = useState(true);
+
+  // 7-Day Forecast + Weather Alerts
+  const [forecast, setForecast] = useState([]);
+  const [forecastLoading, setForecastLoading] = useState(true);
+  const [weatherAlert, setWeatherAlert] = useState(null);
+  const [alertDismissed, setAlertDismissed] = useState(false);
+
   // Currency Exchange Rates
   const [rates, setRates] = useState(null);
   const [ratesLoading, setRatesLoading] = useState(true);
@@ -682,6 +745,84 @@ export default function DashboardPage() {
     };
     fetchUnesco();
   }, [loc.lat, loc.lng]);
+
+  // Attractions Near You fetch
+  const attractionsFetchedRef = useRef(false);
+  useEffect(() => {
+    if (!loc.lat || !loc.lng || attractionsFetchedRef.current) return;
+    attractionsFetchedRef.current = true;
+
+    const cacheKey = `attractions_${loc.lat.toFixed(2)}_${loc.lng.toFixed(2)}`;
+    const cached = getNearbyCache(cacheKey);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      setAttractions(cached);
+      setAttractionsLoading(false);
+      return;
+    }
+
+    setAttractionsLoading(true);
+    const fetchAttractions = async () => {
+      try {
+        const res = await externalAPI.attractions(loc.lat, loc.lng);
+        const data = res.data?.data || [];
+        if (data.length > 0) {
+          setAttractions(data);
+          setNearbyCache(cacheKey, data);
+        }
+      } catch {}
+      setAttractionsLoading(false);
+    };
+    fetchAttractions();
+  }, [loc.lat, loc.lng]);
+
+  // 7-Day Forecast fetch
+  const forecastFetchedRef = useRef(false);
+  useEffect(() => {
+    if (!loc.lat || !loc.lng || forecastFetchedRef.current) return;
+    forecastFetchedRef.current = true;
+
+    const cacheKey = `forecast_${loc.lat.toFixed(2)}_${loc.lng.toFixed(2)}`;
+    const cached = getNearbyCache(cacheKey);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      setForecast(cached);
+      setForecastLoading(false);
+      return;
+    }
+
+    setForecastLoading(true);
+    const fetchForecast = async () => {
+      try {
+        const res = await externalAPI.forecast(loc.lat, loc.lng, 7);
+        const data = res.data?.data || [];
+        if (data.length > 0) {
+          setForecast(data);
+          setNearbyCache(cacheKey, data);
+        }
+      } catch {}
+      setForecastLoading(false);
+    };
+    fetchForecast();
+  }, [loc.lat, loc.lng]);
+
+  // Weather alert detection
+  useEffect(() => {
+    if (!weather.condition) return;
+    const condition = weather.condition.toLowerCase();
+    const severeWords = ["rain", "storm", "thunder", "snow", "extreme"];
+    const match = severeWords.find((w) => condition.includes(w));
+    if (match) {
+      const severity = ["storm", "thunder", "extreme"].some((w) =>
+        condition.includes(w),
+      )
+        ? "severe"
+        : "warning";
+      setWeatherAlert({
+        condition: weather.condition,
+        city: weather.city || loc.city,
+        severity,
+      });
+    }
+  }, [weather.condition, weather.city, loc.city]);
 
   // Currency Exchange Rates fetch
   useEffect(() => {
@@ -883,6 +1024,172 @@ export default function DashboardPage() {
           </p>
           <p style={styles.statSub}>Auto-detected from IP</p>
         </div>
+      </div>
+
+      {/* ── Weather Alert Banner (conditional) ───────────────────────── */}
+      {weatherAlert && !alertDismissed && (
+        <div
+          style={{
+            marginBottom: 24,
+            padding: "16px 20px",
+            borderRadius: 12,
+            background:
+              weatherAlert.severity === "severe"
+                ? "linear-gradient(135deg, #FEE2E2, #FECACA)"
+                : "linear-gradient(135deg, #FEF3C7, #FDE68A)",
+            border:
+              weatherAlert.severity === "severe"
+                ? "1px solid #FECACA"
+                : "1px solid #FDE68A",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: weatherAlert.severity === "severe" ? "#991B1B" : "#92400E",
+              margin: 0,
+              flex: 1,
+            }}
+          >
+            ⚠️ Weather Alert — {weatherAlert.city}: {weatherAlert.condition}.
+            Take precautions.
+          </p>
+          <button
+            onClick={() => setAlertDismissed(true)}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: 20,
+              cursor: "pointer",
+              color: weatherAlert.severity === "severe" ? "#991B1B" : "#92400E",
+              padding: "4px 8px",
+              lineHeight: 1,
+              flexShrink: 0,
+            }}
+            aria-label="Dismiss weather alert"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── 7-Day Forecast ──────────────────────────────────────────────── */}
+      <div style={{ marginBottom: 32 }}>
+        <h2 style={styles.sectionTitle}>🌤️ 7-Day Forecast</h2>
+        {forecastLoading ? (
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              overflowX: "auto",
+              paddingBottom: 8,
+            }}
+          >
+            {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <div
+                key={i}
+                style={{
+                  minWidth: 120,
+                  background: "#fff",
+                  borderRadius: 16,
+                  padding: 16,
+                  boxShadow: cardShadow,
+                  textAlign: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    ...styles.skeleton,
+                    width: "60%",
+                    margin: "0 auto 8px",
+                  }}
+                />
+                <div
+                  style={{
+                    ...styles.skeleton,
+                    width: "40%",
+                    height: 28,
+                    margin: "0 auto 8px",
+                  }}
+                />
+                <div
+                  style={{ ...styles.skeleton, width: "80%", margin: "0 auto" }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : forecast.length === 0 ? (
+          <div
+            style={{ ...styles.nearbyCard, textAlign: "center", padding: 32 }}
+          >
+            <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+              Forecast data unavailable
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              overflowX: "auto",
+              paddingBottom: 8,
+            }}
+          >
+            {forecast.map((day, i) => {
+              const dayName = new Date(day.date).toLocaleDateString("en-US", {
+                weekday: "short",
+              });
+              const iconEmoji = FORECAST_ICON_MAP[day.icon] || "🌡️";
+              return (
+                <div
+                  key={i}
+                  style={{
+                    minWidth: 120,
+                    background: "#fff",
+                    borderRadius: 16,
+                    padding: 16,
+                    boxShadow: cardShadow,
+                    textAlign: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#6B7280",
+                      margin: "0 0 6px",
+                    }}
+                  >
+                    {dayName}
+                  </p>
+                  <div style={{ fontSize: 32, marginBottom: 6 }}>
+                    {iconEmoji}
+                  </div>
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#0A0A0A",
+                      margin: "0 0 2px",
+                    }}
+                  >
+                    {day.temp !== undefined ? `${day.temp}°C` : "—"}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#9CA3AF", margin: 0 }}>
+                    {day.description || ""}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Near You Right Now ──────────────────────────────────────────── */}
@@ -1220,6 +1527,146 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* ── Attractions Near You ────────────────────────────────────────── */}
+      <div style={{ marginBottom: 40 }}>
+        <h2 style={styles.sectionTitle}>🏛️ Attractions Near You</h2>
+        {attractionsLoading ? (
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              overflowX: "auto",
+              paddingBottom: 8,
+            }}
+          >
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                style={{
+                  minWidth: 240,
+                  background: "#fff",
+                  borderRadius: 16,
+                  padding: 20,
+                  boxShadow: cardShadow,
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ ...styles.skeleton, width: "70%", height: 18 }} />
+                <div
+                  style={{ ...styles.skeleton, width: "40%", marginTop: 10 }}
+                />
+                <div
+                  style={{ ...styles.skeleton, width: "50%", marginTop: 8 }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : attractions.length === 0 ? (
+          <div
+            style={{ ...styles.nearbyCard, textAlign: "center", padding: 32 }}
+          >
+            <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+              No attractions found nearby
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              overflowX: "auto",
+              paddingBottom: 8,
+            }}
+          >
+            {attractions.map((attraction, i) => {
+              const typeBadgeColors = {
+                museum: { bg: "#EEF2FF", color: "#4F46E5" },
+                viewpoint: { bg: "#ECFDF5", color: "#059669" },
+                monument: { bg: "#FEF3C7", color: "#D97706" },
+                castle: { bg: "#FEE2E2", color: "#DC2626" },
+                park: { bg: "#D1FAE5", color: "#065F46" },
+                temple: { bg: "#FFF7ED", color: "#C2410C" },
+                church: { bg: "#F3E8FF", color: "#7C3AED" },
+                mosque: { bg: "#E0F2FE", color: "#0284C7" },
+                ruins: { bg: "#F5F5F4", color: "#78716C" },
+              };
+              const type = (attraction.type || "attraction").toLowerCase();
+              const badge = typeBadgeColors[type] || {
+                bg: "#F3F4F6",
+                color: "#374151",
+              };
+              return (
+                <div
+                  key={i}
+                  style={{
+                    minWidth: 240,
+                    background: "#fff",
+                    borderRadius: 16,
+                    padding: 20,
+                    boxShadow: cardShadow,
+                    flexShrink: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#0A0A0A",
+                      margin: 0,
+                    }}
+                  >
+                    {attraction.name}
+                  </p>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 6,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: badge.color,
+                        background: badge.bg,
+                        padding: "3px 10px",
+                        borderRadius: 99,
+                      }}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </span>
+                    {attraction.distanceText && (
+                      <span style={{ fontSize: 12, color: "#9CA3AF" }}>
+                        📍 {attraction.distanceText}
+                      </span>
+                    )}
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/search/${encodeURIComponent(attraction.name)}+${attraction.lat},${attraction.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: 12,
+                      color: "#FF4500",
+                      textDecoration: "none",
+                      fontWeight: 600,
+                      marginTop: "auto",
+                    }}
+                  >
+                    View on Map ↗
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── UNESCO World Heritage Sites ─────────────────────────────────── */}
