@@ -797,7 +797,7 @@ export default function ItineraryCard({
                           : undefined,
                     },
                   );
-                  const results = res.data?.flights || res.data || [];
+                  const results = res.data?.data || res.data?.flights || [];
                   setFlightResults(
                     Array.isArray(results) ? results.slice(0, 5) : [],
                   );
@@ -1448,7 +1448,7 @@ export default function ItineraryCard({
                         hotelLocation !== "any" ? hotelLocation : undefined,
                     },
                   );
-                  const results = res.data?.hotels || res.data || [];
+                  const results = res.data?.data || res.data?.hotels || [];
                   setHotelResults(
                     Array.isArray(results) ? results.slice(0, 4) : [],
                   );
@@ -2305,7 +2305,7 @@ export default function ItineraryCard({
                           : undefined,
                     },
                   );
-                  const results = res.data?.flights || res.data || [];
+                  const results = res.data?.data || res.data?.flights || [];
                   setReturnFlightResults(
                     Array.isArray(results) ? results.slice(0, 5) : [],
                   );

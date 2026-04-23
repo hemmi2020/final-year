@@ -585,6 +585,13 @@ export default function DashboardPage() {
   const [unescoLoading, setUnescoLoading] = useState(true);
   const unescoFetchedRef = useRef(false);
 
+  // Currency Exchange Rates
+  const [rates, setRates] = useState(null);
+  const [ratesLoading, setRatesLoading] = useState(true);
+  const [convertFrom, setConvertFrom] = useState("PKR");
+  const [convertTo, setConvertTo] = useState("USD");
+  const [convertAmount, setConvertAmount] = useState(10000);
+
   useEffect(() => {
     if (!loc.lat || !loc.lng || fetchedRef.current) return;
     fetchedRef.current = true;
@@ -667,6 +674,60 @@ export default function DashboardPage() {
     };
     fetchUnesco();
   }, [loc.lat, loc.lng]);
+
+  // Currency Exchange Rates fetch
+  useEffect(() => {
+    const CURRENCY_CACHE_KEY = "currency_rates_pkr";
+    const CURRENCY_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+    const fetchRates = async () => {
+      // Check localStorage cache first
+      try {
+        const raw = localStorage.getItem(CURRENCY_CACHE_KEY);
+        if (raw) {
+          const cached = JSON.parse(raw);
+          if (Date.now() - cached.ts < CURRENCY_CACHE_TTL && cached.data) {
+            setRates(cached.data);
+            setRatesLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      // Fetch fresh rates
+      try {
+        const res = await fetch("https://open.er-api.com/v6/latest/PKR", {
+          signal: AbortSignal.timeout(10000),
+        });
+        const json = await res.json();
+        if (json.result === "success" && json.rates) {
+          const rateData = {
+            rates: json.rates,
+            time_last_update_unix: json.time_last_update_unix,
+          };
+          setRates(rateData);
+          try {
+            localStorage.setItem(
+              CURRENCY_CACHE_KEY,
+              JSON.stringify({ data: rateData, ts: Date.now() }),
+            );
+          } catch {}
+        }
+      } catch (e) {
+        console.log("[Dashboard] Currency rates fetch failed:", e.message);
+      }
+      setRatesLoading(false);
+    };
+
+    fetchRates();
+  }, []);
+
+  // Auto-detect user's home currency for converter
+  useEffect(() => {
+    if (loc.currency && loc.currency !== "PKR") {
+      setConvertTo(loc.currency);
+    }
+  }, [loc.currency]);
 
   // Auth check + trips fetch
   useEffect(() => {
@@ -1061,6 +1122,322 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* ── Live Currency Rates ── */}
+      <div style={{ marginBottom: 40 }}>
+        <h2 style={styles.sectionTitle}>💱 Live Currency Rates</h2>
+        {ratesLoading ? (
+          <div style={{ ...styles.nearbyCard, padding: 24 }}>
+            <div style={{ ...styles.skeleton, width: "60%", height: 18 }} />
+            <div style={{ ...styles.skeleton, width: "80%", marginTop: 12 }} />
+            <div style={{ ...styles.skeleton, width: "70%", marginTop: 8 }} />
+            <div style={{ ...styles.skeleton, width: "75%", marginTop: 8 }} />
+          </div>
+        ) : !rates ? (
+          <div
+            style={{ ...styles.nearbyCard, textAlign: "center", padding: 32 }}
+          >
+            <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+              Unable to load currency rates. Try again later.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Rate Cards Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: 16,
+                marginBottom: 24,
+              }}
+            >
+              {[
+                { code: "USD", flag: "🇺🇸" },
+                { code: "AED", flag: "🇦🇪" },
+                { code: "GBP", flag: "🇬🇧" },
+                { code: "EUR", flag: "🇪🇺" },
+                { code: "SAR", flag: "🇸🇦" },
+                { code: "TRY", flag: "🇹🇷" },
+                { code: "INR", flag: "🇮🇳" },
+                { code: "MYR", flag: "🇲🇾" },
+              ].map(({ code, flag }) => {
+                const rate = rates.rates?.[code];
+                return (
+                  <div
+                    key={code}
+                    style={{
+                      background: "#fff",
+                      borderRadius: 16,
+                      padding: "16px 20px",
+                      boxShadow: cardShadow,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div>
+                      <p
+                        style={{
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#374151",
+                          margin: 0,
+                        }}
+                      >
+                        PKR 100 = {code} {rate ? (100 * rate).toFixed(2) : "—"}
+                      </p>
+                      <p
+                        style={{
+                          fontSize: 12,
+                          color: "#9CA3AF",
+                          margin: "4px 0 0",
+                        }}
+                      >
+                        {code}
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 28 }}>{flag}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quick Convert Section */}
+            <div
+              style={{
+                background: "#fff",
+                borderRadius: 16,
+                padding: 24,
+                boxShadow: cardShadow,
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: "#0A0A0A",
+                  margin: "0 0 16px",
+                }}
+              >
+                ⚡ Quick Convert
+              </h3>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  alignItems: "flex-end",
+                }}
+              >
+                {/* Amount Input */}
+                <div style={{ flex: "1 1 140px", minWidth: 120 }}>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#6B7280",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Amount
+                  </label>
+                  <input
+                    type="number"
+                    value={convertAmount}
+                    onChange={(e) =>
+                      setConvertAmount(Number(e.target.value) || 0)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 10,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: "#0A0A0A",
+                      outline: "none",
+                      fontFamily: "inherit",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+
+                {/* From Currency */}
+                <div style={{ flex: "1 1 120px", minWidth: 100 }}>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#6B7280",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    From
+                  </label>
+                  <select
+                    value={convertFrom}
+                    onChange={(e) => setConvertFrom(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 10,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "#0A0A0A",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {[
+                      "PKR",
+                      "USD",
+                      "AED",
+                      "GBP",
+                      "EUR",
+                      "SAR",
+                      "TRY",
+                      "INR",
+                      "MYR",
+                    ].map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Swap arrow */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    paddingBottom: 4,
+                  }}
+                >
+                  <span style={{ fontSize: 20, color: "#9CA3AF" }}>→</span>
+                </div>
+
+                {/* To Currency */}
+                <div style={{ flex: "1 1 120px", minWidth: 100 }}>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#6B7280",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    To
+                  </label>
+                  <select
+                    value={convertTo}
+                    onChange={(e) => setConvertTo(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 10,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "#0A0A0A",
+                      background: "#fff",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {[
+                      "PKR",
+                      "USD",
+                      "AED",
+                      "GBP",
+                      "EUR",
+                      "SAR",
+                      "TRY",
+                      "INR",
+                      "MYR",
+                    ].map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Result */}
+                <div style={{ flex: "1 1 180px", minWidth: 160 }}>
+                  <label
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "#6B7280",
+                      display: "block",
+                      marginBottom: 6,
+                    }}
+                  >
+                    Result
+                  </label>
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      background: "#F9FAFB",
+                      border: "1px solid #E5E7EB",
+                      borderRadius: 10,
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: "#FF4500",
+                    }}
+                  >
+                    {(() => {
+                      if (
+                        !rates.rates ||
+                        !rates.rates[convertFrom] ||
+                        !rates.rates[convertTo]
+                      )
+                        return "—";
+                      if (convertFrom === convertTo)
+                        return `${convertAmount.toLocaleString()} ${convertTo}`;
+                      // All rates are relative to PKR (base), so:
+                      // PKR -> X: amount * rates[X]
+                      // X -> PKR: amount / rates[X]
+                      // X -> Y: amount / rates[X] * rates[Y]
+                      const fromRate =
+                        convertFrom === "PKR" ? 1 : rates.rates[convertFrom];
+                      const toRate =
+                        convertTo === "PKR" ? 1 : rates.rates[convertTo];
+                      const result = (convertAmount / fromRate) * toRate;
+                      return `${result.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${convertTo}`;
+                    })()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Updated timestamp */}
+            <p style={{ fontSize: 12, color: "#9CA3AF", marginTop: 10 }}>
+              {(() => {
+                if (!rates.time_last_update_unix) return "";
+                const mins = Math.round(
+                  (Date.now() / 1000 - rates.time_last_update_unix) / 60,
+                );
+                if (mins < 1) return "Updated: just now";
+                if (mins < 60)
+                  return `Updated: ${mins} minute${mins !== 1 ? "s" : ""} ago`;
+                const hrs = Math.round(mins / 60);
+                return `Updated: ${hrs} hour${hrs !== 1 ? "s" : ""} ago`;
+              })()}
+              {" · "}Source: open.er-api.com · Cached for 1 hour
+            </p>
+          </>
         )}
       </div>
 
