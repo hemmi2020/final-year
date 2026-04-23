@@ -479,3 +479,67 @@
 }
 
 /* Dark mode removed — light theme only */
+
+/* ── Mobile Responsive Overrides ── */
+@media (max-width: 768px) {
+
+  /* Dashboard stats grid */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Nearby grid */
+  .nearby-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Main content grid (trips + quick actions) */
+  [data-dashboard-main] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Chat page — hide map on mobile */
+  .lg\:max-w-\[580px\] {
+    max-width: 100% !important;
+  }
+
+  /* General container padding */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Ensure inputs are full width */
+  input,
+  textarea,
+  select {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Touch-friendly tap targets */
+  button,
+  a {
+    min-height: 44px;
+  }
+
+  /* Font size minimum */
+  p,
+  span,
+  label {
+    font-size: max(14px, inherit);
+  }
+}
+
+@media (max-width: 640px) {
+
+  /* Stack horizontal scroll sections vertically on small phones */
+  .forecast-scroll,
+  .attractions-scroll {
+    flex-wrap: wrap !important;
+  }
+
+  /* Settings page — single column */
+  .settings-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
