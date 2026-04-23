@@ -15,6 +15,9 @@ import {
   Globe,
   ChevronLeft,
   ChevronRight,
+  MessageCircle,
+  Trash2,
+  Send,
 } from "lucide-react";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
@@ -71,6 +74,19 @@ function getCityImage(destination) {
     Object.entries(CITY_IMGS).find(([k]) => d.includes(k))?.[1] ||
     null
   );
+}
+
+function timeAgo(date) {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
 }
 
 function CommunityCardHeader({ trip }) {
@@ -172,6 +188,9 @@ export default function CommunityPage() {
   const [pagination, setPagination] = useState({});
   const [loginOpen, setLoginOpen] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [expandedComments, setExpandedComments] = useState({});
+  const [commentTexts, setCommentTexts] = useState({});
+  const [commentLoading, setCommentLoading] = useState({});
 
   const fetchTrips = async (p = 1) => {
     setLoading(true);
@@ -230,6 +249,49 @@ export default function CommunityPage() {
 
   const getLikeCount = (trip) =>
     (trip.tags || []).filter((t) => t.startsWith("like:")).length;
+
+  const getCommentCount = (trip) => (trip.comments || []).length;
+
+  const toggleComments = (tripId) => {
+    setExpandedComments((prev) => ({ ...prev, [tripId]: !prev[tripId] }));
+  };
+
+  const handleAddComment = async (tripId) => {
+    const text = (commentTexts[tripId] || "").trim();
+    if (!text) return;
+    if (!isAuthenticated) {
+      setLoginOpen(true);
+      return;
+    }
+    setCommentLoading((prev) => ({ ...prev, [tripId]: true }));
+    try {
+      const { data } = await communityAPI.addComment(tripId, text);
+      setTrips((prev) =>
+        prev.map((t) => (t._id === tripId ? { ...t, comments: data.data } : t)),
+      );
+      setCommentTexts((prev) => ({ ...prev, [tripId]: "" }));
+    } catch {}
+    setCommentLoading((prev) => ({ ...prev, [tripId]: false }));
+  };
+
+  const handleDeleteComment = async (tripId, commentId) => {
+    if (!isAuthenticated) return;
+    try {
+      await communityAPI.deleteComment(tripId, commentId);
+      setTrips((prev) =>
+        prev.map((t) =>
+          t._id === tripId
+            ? {
+                ...t,
+                comments: (t.comments || []).filter((c) => c._id !== commentId),
+              }
+            : t,
+        ),
+      );
+    } catch {}
+  };
+
+  const currentUserId = useAuthStore.getState().user?._id;
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 24px" }}>
@@ -529,6 +591,44 @@ export default function CommunityPage() {
                     <Heart size={15} /> {getLikeCount(trip)}
                   </button>
                   <button
+                    onClick={() => toggleComments(trip._id)}
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      padding: "8px 0",
+                      borderRadius: 50,
+                      border: expandedComments[trip._id]
+                        ? "1.5px solid var(--orange)"
+                        : "1.5px solid var(--border)",
+                      background: expandedComments[trip._id]
+                        ? "var(--orange-bg)"
+                        : "#FFF",
+                      cursor: "pointer",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: expandedComments[trip._id]
+                        ? "var(--orange)"
+                        : "var(--text-body)",
+                      fontFamily: "inherit",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "var(--orange)";
+                      e.currentTarget.style.color = "var(--orange)";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!expandedComments[trip._id]) {
+                        e.currentTarget.style.borderColor = "var(--border)";
+                        e.currentTarget.style.color = "var(--text-body)";
+                      }
+                    }}
+                  >
+                    <MessageCircle size={15} /> {getCommentCount(trip)}
+                  </button>
+                  <button
                     onClick={() => handleClone(trip._id)}
                     style={{
                       flex: 1,
@@ -596,6 +696,195 @@ export default function CommunityPage() {
                     View
                   </button>
                 </div>
+
+                {/* Comment Section */}
+                {expandedComments[trip._id] && (
+                  <div
+                    style={{
+                      marginTop: 16,
+                      paddingTop: 16,
+                      borderTop: "1px solid var(--border)",
+                    }}
+                  >
+                    {/* Comment input */}
+                    <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                      <input
+                        value={commentTexts[trip._id] || ""}
+                        onChange={(e) =>
+                          setCommentTexts((prev) => ({
+                            ...prev,
+                            [trip._id]: e.target.value,
+                          }))
+                        }
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleAddComment(trip._id)
+                        }
+                        placeholder="Write a comment..."
+                        maxLength={500}
+                        style={{
+                          flex: 1,
+                          padding: "8px 14px",
+                          borderRadius: 50,
+                          border: "1.5px solid var(--border)",
+                          fontSize: 13,
+                          fontFamily: "inherit",
+                          outline: "none",
+                          background: "#FFF",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                      <button
+                        onClick={() => handleAddComment(trip._id)}
+                        disabled={
+                          commentLoading[trip._id] ||
+                          !(commentTexts[trip._id] || "").trim()
+                        }
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: "50%",
+                          border: "none",
+                          background: (commentTexts[trip._id] || "").trim()
+                            ? "var(--orange)"
+                            : "#E5E7EB",
+                          color: "#FFF",
+                          cursor: (commentTexts[trip._id] || "").trim()
+                            ? "pointer"
+                            : "not-allowed",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "all 0.2s",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Send size={14} />
+                      </button>
+                    </div>
+
+                    {/* Comment list */}
+                    <div
+                      style={{
+                        maxHeight: 240,
+                        overflowY: "auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 10,
+                      }}
+                    >
+                      {(trip.comments || []).length === 0 ? (
+                        <p
+                          style={{
+                            fontSize: 13,
+                            color: "var(--text-muted)",
+                            textAlign: "center",
+                            padding: "12px 0",
+                          }}
+                        >
+                          No comments yet. Be the first!
+                        </p>
+                      ) : (
+                        (trip.comments || []).map((comment) => (
+                          <div
+                            key={comment._id}
+                            style={{
+                              display: "flex",
+                              gap: 8,
+                              alignItems: "flex-start",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: "50%",
+                                background: "var(--orange)",
+                                color: "#FFF",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                flexShrink: 0,
+                              }}
+                            >
+                              {comment.user?.name?.[0]?.toUpperCase() || "U"}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  marginBottom: 2,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    color: "var(--text-primary)",
+                                  }}
+                                >
+                                  {comment.user?.name || "User"}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: 11,
+                                    color: "var(--text-muted)",
+                                  }}
+                                >
+                                  {timeAgo(comment.createdAt)}
+                                </span>
+                              </div>
+                              <p
+                                style={{
+                                  fontSize: 13,
+                                  color: "var(--text-body)",
+                                  margin: 0,
+                                  lineHeight: 1.4,
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                {comment.text}
+                              </p>
+                            </div>
+                            {currentUserId &&
+                              comment.user?._id === currentUserId && (
+                                <button
+                                  onClick={() =>
+                                    handleDeleteComment(trip._id, comment._id)
+                                  }
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color: "var(--text-muted)",
+                                    padding: 4,
+                                    borderRadius: 4,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    transition: "color 0.2s",
+                                    flexShrink: 0,
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.color = "#EF4444";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.color =
+                                      "var(--text-muted)";
+                                  }}
+                                  title="Delete comment"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}

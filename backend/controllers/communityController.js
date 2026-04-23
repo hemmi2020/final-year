@@ -29,6 +29,7 @@ exports.getPublicTrips = async (req, res, next) => {
         const [trips, total] = await Promise.all([
             Trip.find(filter)
                 .populate('user', 'name avatar')
+                .populate('comments.user', 'name avatar')
                 .skip(skip).limit(limit)
                 .sort(sortMap[sort] || sortMap.newest),
             Trip.countDocuments(filter),
@@ -80,7 +81,8 @@ exports.unpublishTrip = async (req, res, next) => {
 exports.getPublicTrip = async (req, res, next) => {
     try {
         const trip = await Trip.findOne({ _id: req.params.id, isPublic: true })
-            .populate('user', 'name avatar');
+            .populate('user', 'name avatar')
+            .populate('comments.user', 'name avatar');
         if (!trip) return res.status(404).json({ success: false, error: 'Trip not found or not public' });
         res.json({ success: true, data: trip });
     } catch (error) {
@@ -111,6 +113,36 @@ exports.cloneTrip = async (req, res, next) => {
         });
 
         res.status(201).json({ success: true, data: cloned });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// POST /api/community/trips/:id/comment — add a comment
+exports.addComment = async (req, res, next) => {
+    try {
+        const trip = await Trip.findOne({ _id: req.params.id, isPublic: true });
+        if (!trip) return res.status(404).json({ success: false, error: 'Trip not found' });
+        trip.comments.push({ user: req.user._id, text: req.body.text });
+        await trip.save();
+        const populated = await Trip.findById(trip._id).populate('comments.user', 'name avatar');
+        res.json({ success: true, data: populated.comments });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// DELETE /api/community/trips/:id/comment/:commentId — delete own comment
+exports.deleteComment = async (req, res, next) => {
+    try {
+        const trip = await Trip.findById(req.params.id);
+        if (!trip) return res.status(404).json({ success: false, error: 'Trip not found' });
+        const comment = trip.comments.id(req.params.commentId);
+        if (!comment) return res.status(404).json({ success: false, error: 'Comment not found' });
+        if (comment.user.toString() !== req.user._id.toString()) return res.status(403).json({ success: false, error: 'Not your comment' });
+        comment.deleteOne();
+        await trip.save();
+        res.json({ success: true, data: { message: 'Comment deleted' } });
     } catch (error) {
         next(error);
     }

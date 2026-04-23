@@ -86,6 +86,11 @@ const tripSchema = new mongoose.Schema({
     heroImage: String,
     communityNote: String,
     isAnonymous: { type: Boolean, default: false },
+    comments: [{
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        text: { type: String, required: true, maxlength: 500 },
+        createdAt: { type: Date, default: Date.now },
+    }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Trip', tripSchema);

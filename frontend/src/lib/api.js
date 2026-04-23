@@ -123,4 +123,6 @@ export const communityAPI = {
     unpublish: (id) => api.post(`/api/community/trips/${id}/unpublish`),
     clone: (id) => api.post(`/api/community/trips/${id}/clone`),
     like: (id) => api.post(`/api/community/trips/${id}/like`),
+    addComment: (id, text) => api.post(`/api/community/trips/${id}/comment`, { text }),
+    deleteComment: (tripId, commentId) => api.delete(`/api/community/trips/${tripId}/comment/${commentId}`),
 };
