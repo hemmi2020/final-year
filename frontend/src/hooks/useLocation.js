@@ -43,7 +43,9 @@ if (typeof document !== 'undefined') {
     });
 }
 
-function buildResult(data) {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+function buildResult(data, source) {
     const cc = data.countryCode;
     const curr = data.currency || COUNTRY_CURRENCY[cc] || "USD";
     return {
@@ -55,7 +57,96 @@ function buildResult(data) {
         currency: curr,
         flag: countryCodeToFlag(cc),
         timezone: data.timezone ?? null,
+        locationSource: source,
     };
+}
+
+// Try GPS geolocation (returns a promise that resolves with coords or rejects)
+function tryGPS() {
+    return new Promise((resolve, reject) => {
+        if (typeof navigator === 'undefined' || !navigator.geolocation) {
+            return reject(new Error('Geolocation not available'));
+        }
+
+        // Check if we've already been denied — skip the prompt
+        const asked = typeof localStorage !== 'undefined' && localStorage.getItem('gps_permission_asked');
+        if (asked === 'denied') {
+            return reject(new Error('GPS previously denied'));
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                // Store that permission was granted
+                try { localStorage.setItem('gps_permission_asked', 'granted'); } catch { }
+                resolve({
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                });
+            },
+            (err) => {
+                // Store that permission was denied/failed so we don't re-prompt
+                try { localStorage.setItem('gps_permission_asked', 'denied'); } catch { }
+                reject(err);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 300000, // 5 min cache
+            }
+        );
+    });
+}
+
+// Reverse geocode GPS coordinates via backend
+async function reverseGeocode(lat, lng) {
+    const res = await fetch(
+        `${API_URL}/api/external/reverse-geocode?lat=${lat}&lng=${lng}`,
+        { signal: AbortSignal.timeout(5000) }
+    );
+    const json = await res.json();
+    if (json.success && json.data) {
+        return json.data; // expects { city, country, countryCode, ... }
+    }
+    throw new Error('Reverse geocode failed');
+}
+
+// IP-based detection (existing logic, extracted for reuse)
+async function detectLocationByIP() {
+    // PRIMARY: Use own backend (no CORS, detects real client IP including VPN)
+    try {
+        const res = await fetch(`${API_URL}/api/external/detect-location`, {
+            signal: AbortSignal.timeout(8000),
+        });
+        const json = await res.json();
+        if (json.success && json.data?.countryCode) {
+            console.log("[useLocation] Backend detect-location success:", json.data.city, json.data.country);
+            return buildResult(json.data, 'ip');
+        }
+    } catch (e) { console.log("[useLocation] Backend detect-location failed:", e.message); }
+
+    // FALLBACK 1: freeipapi.com (direct, may have CORS issues)
+    try {
+        const res = await fetch("https://freeipapi.com/api/json", { signal: AbortSignal.timeout(5000) });
+        const data = await res.json();
+        if (data.countryCode) {
+            console.log("[useLocation] freeipapi.com success:", data.cityName, data.countryName);
+            return buildResult({ ...data, city: data.cityName, country: data.countryName, lat: data.latitude, lng: data.longitude, currency: data.currencies?.[0], timezone: data.timeZones?.[0] }, 'ip');
+        }
+    } catch (e) { console.log("[useLocation] freeipapi.com failed:", e.message); }
+
+    // FALLBACK 2: ipwhois.app
+    try {
+        const res = await fetch("https://ipwhois.app/json/", { signal: AbortSignal.timeout(5000) });
+        const data = await res.json();
+        if (data.success !== false && data.country_code) {
+            console.log("[useLocation] ipwhois.app success:", data.city, data.country);
+            return buildResult({ countryCode: data.country_code, city: data.city, country: data.country, lat: data.latitude, lng: data.longitude, currency: data.currency_code }, 'ip');
+        }
+    } catch (e) { console.log("[useLocation] ipwhois.app failed:", e.message); }
+
+    // Hard fallback
+    console.log("[useLocation] All APIs failed, using hard fallback: PK/Karachi/PKR");
+    return buildResult({ countryCode: "PK", city: "Karachi", country: "Pakistan", lat: 24.8607, lng: 67.0011, currency: "PKR", timezone: "Asia/Karachi" }, 'ip');
 }
 
 async function detectLocation() {
@@ -63,46 +154,56 @@ async function detectLocation() {
     if (locationPromise) return locationPromise;
 
     locationPromise = (async () => {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-
-        // PRIMARY: Use own backend (no CORS, detects real client IP including VPN)
+        // Step 1: Try GPS first (higher accuracy)
         try {
-            const res = await fetch(`${API_URL}/api/external/detect-location`, {
-                signal: AbortSignal.timeout(8000),
-            });
-            const json = await res.json();
-            if (json.success && json.data?.countryCode) {
-                console.log("[useLocation] Backend detect-location success:", json.data.city, json.data.country);
-                cachedData = buildResult(json.data);
-                return cachedData;
-            }
-        } catch (e) { console.log("[useLocation] Backend detect-location failed:", e.message); }
+            const gpsCoords = await tryGPS();
+            console.log("[useLocation] GPS success:", gpsCoords.lat, gpsCoords.lng);
 
-        // FALLBACK 1: freeipapi.com (direct, may have CORS issues)
-        try {
-            const res = await fetch("https://freeipapi.com/api/json", { signal: AbortSignal.timeout(5000) });
-            const data = await res.json();
-            if (data.countryCode) {
-                console.log("[useLocation] freeipapi.com success:", data.cityName, data.countryName);
-                cachedData = buildResult({ ...data, city: data.cityName, country: data.countryName, lat: data.latitude, lng: data.longitude, currency: data.currencies?.[0], timezone: data.timeZones?.[0] });
+            // Step 2: Reverse geocode to get city/country
+            try {
+                const geoData = await reverseGeocode(gpsCoords.lat, gpsCoords.lng);
+                console.log("[useLocation] Reverse geocode success:", geoData.city, geoData.country);
+                cachedData = buildResult({
+                    lat: gpsCoords.lat,
+                    lng: gpsCoords.lng,
+                    city: geoData.city,
+                    country: geoData.country,
+                    countryCode: geoData.countryCode,
+                    currency: geoData.currency,
+                    timezone: geoData.timezone,
+                }, 'gps');
                 return cachedData;
+            } catch (rgErr) {
+                console.log("[useLocation] Reverse geocode failed, using GPS coords with IP fallback for city/country:", rgErr.message);
+                // GPS coords are good but reverse geocode failed
+                // Get IP data for city/country info, but keep GPS coordinates
+                try {
+                    const ipData = await detectLocationByIP();
+                    cachedData = {
+                        ...ipData,
+                        lat: gpsCoords.lat,
+                        lng: gpsCoords.lng,
+                        locationSource: 'gps',
+                    };
+                    return cachedData;
+                } catch {
+                    // Even IP failed — use GPS coords with minimal info
+                    cachedData = buildResult({
+                        lat: gpsCoords.lat,
+                        lng: gpsCoords.lng,
+                        countryCode: null,
+                        city: null,
+                        country: null,
+                    }, 'gps');
+                    return cachedData;
+                }
             }
-        } catch (e) { console.log("[useLocation] freeipapi.com failed:", e.message); }
+        } catch (gpsErr) {
+            console.log("[useLocation] GPS failed/denied, falling back to IP detection:", gpsErr.message);
+        }
 
-        // FALLBACK 2: ipwhois.app
-        try {
-            const res = await fetch("https://ipwhois.app/json/", { signal: AbortSignal.timeout(5000) });
-            const data = await res.json();
-            if (data.success !== false && data.country_code) {
-                console.log("[useLocation] ipwhois.app success:", data.city, data.country);
-                cachedData = buildResult({ countryCode: data.country_code, city: data.city, country: data.country, lat: data.latitude, lng: data.longitude, currency: data.currency_code });
-                return cachedData;
-            }
-        } catch (e) { console.log("[useLocation] ipwhois.app failed:", e.message); }
-
-        // Hard fallback
-        console.log("[useLocation] All APIs failed, using hard fallback: PK/Karachi/PKR");
-        cachedData = buildResult({ countryCode: "PK", city: "Karachi", country: "Pakistan", lat: 24.8607, lng: 67.0011, currency: "PKR", timezone: "Asia/Karachi" });
+        // Step 3: GPS failed — fall through to existing IP detection
+        cachedData = await detectLocationByIP();
         return cachedData;
     })();
 
@@ -112,7 +213,8 @@ async function detectLocation() {
 export function useLocation() {
     const [state, setState] = useState({
         lat: null, lng: null, city: null, country: null,
-        countryCode: null, currency: null, flag: "🌐", timezone: null, loading: true, error: null,
+        countryCode: null, currency: null, flag: "🌐", timezone: null,
+        loading: true, error: null, locationSource: null,
     });
 
     useEffect(() => {

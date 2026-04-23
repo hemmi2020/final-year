@@ -29,6 +29,38 @@ const NAV_LINKS = [
   { href: "/about", label: "About" },
 ];
 
+const NOTIF_ICONS = { weather: "🌧️", community: "❤️", trip: "✈️", food: "🍽️" };
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
+
+function getInitialNotifications() {
+  return [
+    {
+      id: "notif-weather-1",
+      type: "weather",
+      message: "Check weather conditions for your upcoming trips",
+      time: Date.now() - 3600000,
+      read: false,
+    },
+    {
+      id: "notif-community-1",
+      type: "community",
+      message: "Welcome to TravelAI! Start planning your first trip",
+      time: Date.now() - 7200000,
+      read: false,
+    },
+  ];
+}
+
 export default function Navigation() {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,11 +69,13 @@ export default function Navigation() {
   const [userDropdown, setUserDropdown] = useState(false);
   const [flagTooltip, setFlagTooltip] = useState(false);
   const [tempPopover, setTempPopover] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
   const { user, isAuthenticated, logout, updateUser } = useAuthStore();
   const { tempUnit } = require("@/store/preferenceStore").usePreferenceStore();
   const dropRef = useRef(null);
 
-  // Live data hooks — ALWAYS user's home location from IP, never destination
+  // Live data hooks — ALWAYS user's home location from IP/GPS, never destination
   const {
     lat,
     lng,
@@ -51,6 +85,7 @@ export default function Navigation() {
     currency: homeCurrency,
     flag,
     loading: locLoading,
+    locationSource,
   } = useLocation();
 
   // Temperature: ALWAYS user's home city weather, unit from profile preferences
@@ -80,11 +115,53 @@ export default function Navigation() {
       if (dropRef.current && !dropRef.current.contains(e.target)) {
         setUserDropdown(false);
         setTempPopover(false);
+        setNotifOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Load notifications from localStorage on mount (if authenticated)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([]);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem("travel_notifications");
+      if (stored) {
+        setNotifications(JSON.parse(stored));
+      } else {
+        const initial = getInitialNotifications();
+        localStorage.setItem("travel_notifications", JSON.stringify(initial));
+        setNotifications(initial);
+      }
+    } catch {
+      const initial = getInitialNotifications();
+      setNotifications(initial);
+    }
+  }, [isAuthenticated]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllRead = () => {
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    setNotifications(updated);
+    try {
+      localStorage.setItem("travel_notifications", JSON.stringify(updated));
+    } catch {}
+  };
+
+  const markOneRead = (id) => {
+    const updated = notifications.map((n) =>
+      n.id === id ? { ...n, read: true } : n,
+    );
+    setNotifications(updated);
+    try {
+      localStorage.setItem("travel_notifications", JSON.stringify(updated));
+    } catch {}
+  };
 
   return (
     <>
@@ -204,6 +281,28 @@ export default function Navigation() {
                   <span style={{ fontSize: 16 }}>🌍</span>
                 )}
               </button>
+              {/* Location source indicator dot */}
+              {!locLoading && locationSource && (
+                <span
+                  title={
+                    locationSource === "gps"
+                      ? "🎯 GPS location"
+                      : "📡 IP location"
+                  }
+                  style={{
+                    position: "absolute",
+                    top: 2,
+                    right: 2,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background:
+                      locationSource === "gps" ? "#22C55E" : "#EAB308",
+                    border: "1.5px solid #FFF",
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
               {flagTooltip && !locLoading && (city || country) && (
                 <div
                   style={{
@@ -227,6 +326,11 @@ export default function Navigation() {
                 >
                   {city && <span>📍 {city}</span>}
                   {country && <span>🌍 {country}</span>}
+                  {locationSource && (
+                    <span style={{ fontSize: 11, color: "#9CA3AF" }}>
+                      {locationSource === "gps" ? "🎯 GPS" : "📡 IP"} detected
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -293,6 +397,176 @@ export default function Navigation() {
               )}
             </div>
 
+            {/* Notification Bell — between temperature and user avatar */}
+            {isAuthenticated && (
+              <div style={{ position: "relative" }}>
+                <button
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: "50%",
+                    border: "1px solid var(--border)",
+                    background: "#FFF",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>🔔</span>
+                  {unreadCount > 0 && (
+                    <span
+                      style={{
+                        position: "absolute",
+                        top: -2,
+                        right: -2,
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        background: "#EF4444",
+                        color: "#FFF",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        border: "2px solid #FFF",
+                      }}
+                    >
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+                {notifOpen && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 44,
+                      right: 0,
+                      background: "#FFF",
+                      border: "1px solid var(--border-light)",
+                      borderRadius: 12,
+                      boxShadow: "0 8px 24px rgba(0,0,0,0.1)",
+                      padding: 0,
+                      minWidth: 320,
+                      maxHeight: 400,
+                      overflowY: "auto",
+                      zIndex: 100,
+                    }}
+                  >
+                    {/* Header */}
+                    <div
+                      style={{
+                        padding: "12px 16px",
+                        borderBottom: "1px solid #F3F4F6",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#0A0A0A",
+                        }}
+                      >
+                        🔔 Notifications
+                      </span>
+                      <button
+                        onClick={markAllRead}
+                        style={{
+                          fontSize: 12,
+                          color: "#FF4500",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          fontWeight: 600,
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        Mark all ✓
+                      </button>
+                    </div>
+                    {/* Notification items */}
+                    {notifications.length === 0 ? (
+                      <div
+                        style={{
+                          padding: "24px 16px",
+                          textAlign: "center",
+                          fontSize: 13,
+                          color: "#9CA3AF",
+                        }}
+                      >
+                        No notifications
+                      </div>
+                    ) : (
+                      notifications.map((n) => (
+                        <button
+                          key={n.id}
+                          onClick={() => markOneRead(n.id)}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 10,
+                            width: "100%",
+                            padding: "10px 16px",
+                            border: "none",
+                            borderBottom: "1px solid #F9FAFB",
+                            background: n.read ? "#FFF" : "#FFF7ED",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <span style={{ fontSize: 18, flexShrink: 0 }}>
+                            {NOTIF_ICONS[n.type] || "🔔"}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p
+                              style={{
+                                fontSize: 13,
+                                fontWeight: n.read ? 400 : 600,
+                                color: "#0A0A0A",
+                                margin: 0,
+                                lineHeight: 1.4,
+                              }}
+                            >
+                              {n.message}
+                            </p>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                color: "#9CA3AF",
+                                marginTop: 2,
+                                display: "block",
+                              }}
+                            >
+                              {timeAgo(n.time)}
+                            </span>
+                          </div>
+                          {!n.read && (
+                            <span
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                background: "#FF4500",
+                                flexShrink: 0,
+                                marginTop: 6,
+                              }}
+                            />
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* User dropdown */}
             <div style={{ position: "relative", marginLeft: 8 }}>
               <button
@@ -357,6 +631,31 @@ export default function Navigation() {
                           {user?.email}
                         </p>
                       </div>
+                      {user?.role === "admin" && (
+                        <button
+                          onClick={() => {
+                            router.push("/admin");
+                            setUserDropdown(false);
+                          }}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            width: "100%",
+                            padding: "8px 12px",
+                            border: "none",
+                            background: "transparent",
+                            borderRadius: 8,
+                            cursor: "pointer",
+                            fontSize: 13,
+                            fontWeight: 500,
+                            color: "#374151",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          🛠️ Admin Panel
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           router.push("/dashboard");

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
-import { tripsAPI } from "@/lib/api";
+import { tripsAPI, externalAPI } from "@/lib/api";
 import { useLocation, getCurrencySymbol } from "@/hooks/useLocation";
 import { useWeather } from "@/hooks/useWeather";
 
@@ -585,6 +585,14 @@ export default function DashboardPage() {
   const [unescoLoading, setUnescoLoading] = useState(true);
   const unescoFetchedRef = useRef(false);
 
+  // Food Search
+  const [foodQuery, setFoodQuery] = useState("");
+  const [foodDietary, setFoodDietary] = useState("halal");
+  const [foodRadius, setFoodRadius] = useState("2000");
+  const [foodResults, setFoodResults] = useState([]);
+  const [foodLoading, setFoodLoading] = useState(false);
+  const [foodSearched, setFoodSearched] = useState(false);
+
   // Currency Exchange Rates
   const [rates, setRates] = useState(null);
   const [ratesLoading, setRatesLoading] = useState(true);
@@ -741,6 +749,33 @@ export default function DashboardPage() {
       .catch(() => setTrips([]))
       .finally(() => setLoading(false));
   }, [isAuthenticated]);
+
+  // Food search handler
+  const searchFood = async () => {
+    if (!loc.lat || !loc.lng) return;
+    setFoodLoading(true);
+    setFoodSearched(true);
+    try {
+      const query = foodQuery.trim() || "restaurant";
+      const res = await externalAPI.places(
+        query,
+        loc.lat,
+        loc.lng,
+        "restaurant",
+      );
+      const results = res.data?.data || [];
+      // Filter by dietary preference
+      let filtered = results;
+      if (foodDietary === "halal") {
+        filtered = results.filter((r) => r.dietary?.halal || r.halalStatus);
+        if (filtered.length === 0) filtered = results; // fallback to all if no halal tagged
+      }
+      setFoodResults(filtered.slice(0, 8));
+    } catch {
+      setFoodResults([]);
+    }
+    setFoodLoading(false);
+  };
 
   // ── Auth wall ──────────────────────────────────────────────────────────────
 
@@ -936,6 +971,255 @@ export default function DashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* ── Food Search Widget ──────────────────────────────────────────── */}
+      <div style={{ marginBottom: 40 }}>
+        <h2 style={styles.sectionTitle}>🍽️ Find Halal Food Near You</h2>
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            padding: 24,
+            boxShadow: cardShadow,
+          }}
+        >
+          {/* Search Input */}
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="text"
+              placeholder="Search: biryani, shawarma, pizza..."
+              value={foodQuery}
+              onChange={(e) => setFoodQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && searchFood()}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                border: "1px solid #E5E7EB",
+                borderRadius: 10,
+                fontSize: 15,
+                color: "#0A0A0A",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+
+          {/* Dietary Filter Chips */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            {[
+              { key: "halal", label: "Halal ✓" },
+              { key: "vegan", label: "Vegan" },
+              { key: "vegetarian", label: "Vegetarian" },
+            ].map((d) => (
+              <button
+                key={d.key}
+                onClick={() => setFoodDietary(d.key)}
+                style={{
+                  padding: "6px 16px",
+                  borderRadius: 99,
+                  border:
+                    foodDietary === d.key
+                      ? "2px solid #FF4500"
+                      : "1px solid #E5E7EB",
+                  background: foodDietary === d.key ? "#FFF5F0" : "#fff",
+                  color: foodDietary === d.key ? "#FF4500" : "#374151",
+                  fontWeight: foodDietary === d.key ? 700 : 500,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Radius Chips */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 8,
+              marginBottom: 16,
+            }}
+          >
+            {[
+              { key: "500", label: "500m" },
+              { key: "1000", label: "1km" },
+              { key: "2000", label: "2km" },
+              { key: "5000", label: "5km" },
+            ].map((r) => (
+              <button
+                key={r.key}
+                onClick={() => setFoodRadius(r.key)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: 99,
+                  border:
+                    foodRadius === r.key
+                      ? "2px solid #FF4500"
+                      : "1px solid #E5E7EB",
+                  background: foodRadius === r.key ? "#FFF5F0" : "#fff",
+                  color: foodRadius === r.key ? "#FF4500" : "#374151",
+                  fontWeight: foodRadius === r.key ? 700 : 500,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Search Button */}
+          <button
+            onClick={searchFood}
+            disabled={foodLoading || !loc.lat || !loc.lng}
+            style={{
+              padding: "10px 28px",
+              border: "none",
+              borderRadius: 10,
+              background: "linear-gradient(135deg, #FF4500, #FF6B35)",
+              color: "#fff",
+              fontSize: 15,
+              fontWeight: 700,
+              cursor: foodLoading ? "wait" : "pointer",
+              fontFamily: "inherit",
+              opacity: foodLoading ? 0.7 : 1,
+            }}
+          >
+            {foodLoading ? "Searching…" : "Search Food"}
+          </button>
+
+          {/* Results */}
+          {foodSearched && !foodLoading && (
+            <div style={{ marginTop: 20 }}>
+              {foodResults.length === 0 ? (
+                <p style={{ fontSize: 14, color: "#9CA3AF", margin: 0 }}>
+                  No results found. Try a different search or expand the radius.
+                </p>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(280px, 1fr))",
+                    gap: 16,
+                  }}
+                >
+                  {foodResults.map((place, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: "#F9FAFB",
+                        borderRadius: 12,
+                        padding: 16,
+                        border: "1px solid #F3F4F6",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          marginBottom: 8,
+                        }}
+                      >
+                        <p
+                          style={{
+                            fontSize: 15,
+                            fontWeight: 700,
+                            color: "#0A0A0A",
+                            margin: 0,
+                            flex: 1,
+                          }}
+                        >
+                          {place.name}
+                        </p>
+                        {(place.dietary?.halal || place.halalStatus) && (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: "#10B981",
+                              background: "#ECFDF5",
+                              padding: "3px 10px",
+                              borderRadius: 99,
+                              flexShrink: 0,
+                              marginLeft: 8,
+                            }}
+                          >
+                            ✅ Halal
+                          </span>
+                        )}
+                      </div>
+                      {place.cuisine && (
+                        <p
+                          style={{
+                            fontSize: 12,
+                            color: "#6B7280",
+                            margin: "0 0 6px",
+                          }}
+                        >
+                          🍴 {place.cuisine}
+                        </p>
+                      )}
+                      {place.distanceText && (
+                        <p
+                          style={{
+                            fontSize: 12,
+                            color: "#9CA3AF",
+                            margin: "0 0 10px",
+                          }}
+                        >
+                          📍 {place.distanceText}
+                        </p>
+                      )}
+                      <div style={{ display: "flex", gap: 12 }}>
+                        <a
+                          href={`https://www.google.com/maps/search/${encodeURIComponent(place.name)}+${place.lat},${place.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            fontSize: 12,
+                            color: "#FF4500",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          View on Map ↗
+                        </a>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            fontSize: 12,
+                            color: "#4F46E5",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                          }}
+                        >
+                          Get Directions ↗
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── UNESCO World Heritage Sites ─────────────────────────────────── */}

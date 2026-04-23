@@ -1,0 +1,101 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Backend Conversation Memory Not Cleared on New Trip
+  - **CRITICAL**: This test MUST FAIL on unfixed code — failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior — it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the conversation memory persists after a "new trip" action
+  - **Scoped PBT Approach**: Use `fast-check` to generate random user IDs and conversation histories. For each generated user, seed Redis conversation data via `memoryService.addMessage`, then verify that no `DELETE /api/chat` endpoint exists (route returns 404) and that `getConversation(userId)` still returns the old messages after a simulated "new trip" action
+  - **Test file**: `frontend/src/__tests__/session-context-bleed.property.test.js`
+  - **Test details from Bug Condition in design**:
+    - `isBugCondition(X)` returns true when `X.action = "newTrip" AND X.previousConversationExists = true`
+    - The bug is that `handleNewTrip` calls `reset()` (frontend only) but never calls a backend endpoint to clear `chat:{userId}` in Redis
+    - Since the backend endpoint doesn't exist yet, scope the test to verify that `clearConversation` is NOT called during the new trip flow
+  - **Backend unit test**: Create `backend/tests/session-context-bleed.property.test.js` using a simple test runner (Node assert + fast-check) to verify:
+    - `DELETE /api/chat` route does not exist (returns 404 or method not allowed)
+    - `getConversation(userId)` returns non-empty array after `addMessage` + no clear call (demonstrates persistence)
+  - The test assertions should match the Expected Behavior Properties from design: after fix, `getConversation(userId)` should return `[]` and Redis key `chat:{userId}` should be deleted
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct — it proves the bug exists: no DELETE endpoint, conversation persists)
+  - Document counterexamples found to understand root cause
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 1.1, 1.2, 1.3_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Active Session Conversation History Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - **Test file**: `frontend/src/__tests__/session-context-preservation.property.test.js`
+  - **Observe behavior on UNFIXED code for non-buggy inputs** (cases where `isBugCondition` returns false — i.e., regular chat messages, field extraction, question sequencing):
+    - Observe: `addMessage("user1", "user", "hello")` followed by `getConversation("user1")` returns array containing the message
+    - Observe: `extractFields("trip to Paris for 5 days solo budget")` returns `{ destination: "Paris", duration: "5 days", travelCompanion: "Solo", budget: "Budget" }`
+    - Observe: `getNextQuestionFromState({ destination: "Paris", duration: null, ... })` returns the duration question
+    - Observe: `extractFields("")` returns `{}`
+  - **Write property-based tests using `fast-check`**:
+    - **Field extraction preservation**: For all random strings, `extractFields` produces consistent output (idempotent, no crashes, returns object)
+    - **Question sequence preservation**: For all random partial trip states (with random subsets of fields filled), `getNextQuestionFromState` returns the correct next unfilled field from the sequence `[destination, duration, travelCompanion, vibe, budget]`
+    - **Conversation memory preservation for non-new-trip actions**: For all random user IDs and message contents, `addMessage` followed by `getConversation` preserves the messages (this tests the memory service contract that must remain unchanged)
+  - Property-based testing generates many test cases for stronger guarantees that non-buggy behavior is preserved
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
+
+- [x] 3. Fix for session context bleed on new trip creation
+  - [x] 3.1 Add `clearChat` controller in `backend/controllers/chatController.js`
+    - Import `clearConversation` from `../services/memory/memoryService`
+    - Create async `clearChat` handler: calls `clearConversation(req.user._id.toString())`, returns `{ success: true }`
+    - Requires authenticated user (will use `protect` middleware at route level)
+    - Handle errors via `next(error)` pattern consistent with existing controllers
+    - _Bug_Condition: isBugCondition(input) where input.action = "newTrip" AND redisKeyExists("chat:" + input.userId)_
+    - _Expected_Behavior: clearConversation(userId) is called, Redis key "chat:{userId}" is deleted, response is { success: true }_
+    - _Preservation: Existing `sendMessage` and `generateItinerary` controllers unchanged_
+    - _Requirements: 2.1, 2.3_
+
+  - [x] 3.2 Add `DELETE /` route in `backend/routes/chat.js` with `protect` middleware
+    - Import `protect` from `../middleware/auth` (in addition to existing `optionalAuth`)
+    - Import `clearChat` from `../controllers/chatController` (in addition to existing `sendMessage`)
+    - Add `router.delete('/', protect, clearChat)` — requires authentication unlike the POST route which uses `optionalAuth`
+    - _Bug_Condition: No DELETE route exists currently — requests return 404_
+    - _Expected_Behavior: DELETE /api/chat with valid auth token calls clearChat controller_
+    - _Preservation: Existing POST / route with optionalAuth + sendMessage unchanged_
+    - _Requirements: 2.3_
+
+  - [x] 3.3 Add `clear` method to `chatAPI` in `frontend/src/lib/api.js`
+    - Add `clear: () => api.delete('/api/chat')` to the `chatAPI` object
+    - This enables the frontend to call the new backend endpoint
+    - _Bug_Condition: No chatAPI.clear() method exists currently_
+    - _Expected_Behavior: chatAPI.clear() sends DELETE request to /api/chat_
+    - _Preservation: Existing chatAPI.send() method unchanged_
+    - _Requirements: 2.1, 2.3_
+
+  - [x] 3.4 Update `handleNewTrip` in `frontend/src/app/chat/page.jsx` to call `chatAPI.clear()` and fix timing issue
+    - At the beginning of `handleNewTrip`, call `chatAPI.clear().catch(() => {})` — fire-and-forget so UI reset isn't blocked by network failures
+    - Fix timing issue: set `wasCompleteOnMount.current = true` (not `false`) before the `setTimeout`. This ensures the `isComplete` useEffect guard skips any stale trigger during the 100ms gap. The `setTimeout` callback then sets it to `false` after re-initialization
+    - Inside the `setTimeout` callback, after setting `hasInitialized.current = true` and creating the greeting message, set `wasCompleteOnMount.current = false`
+    - _Bug_Condition: handleNewTrip sets wasCompleteOnMount = false, allowing stale isComplete useEffect to fire during 100ms gap_
+    - _Expected_Behavior: wasCompleteOnMount = true blocks stale generation, then reset to false after re-initialization_
+    - _Preservation: All other handleNewTrip reset logic (reset(), setMessages([]), etc.) unchanged_
+    - _Requirements: 2.1, 2.2, 2.4, 2.5_
+
+  - [ ] 3.5 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Backend Conversation Memory Cleared on New Trip
+    - **IMPORTANT**: Re-run the SAME test from task 1 — do NOT write a new test
+    - The test from task 1 encodes the expected behavior (DELETE endpoint exists, conversation cleared after new trip)
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed — DELETE endpoint returns 200, getConversation returns [])
+    - _Requirements: 2.1, 2.2, 2.3_
+
+  - [ ] 3.6 Verify preservation tests still pass
+    - **Property 2: Preservation** - Active Session Conversation History Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 — do NOT write new tests
+    - Run preservation property tests from step 2
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions — extractFields, getNextQuestionFromState, addMessage/getConversation all work identically)
+    - Confirm all tests still pass after fix (no regressions)
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Run the full test suite: `cd frontend && npx vitest --run`
+  - Ensure all property-based tests pass (both bug condition and preservation)
+  - Ensure no regressions in existing functionality
+  - Ask the user if questions arise
