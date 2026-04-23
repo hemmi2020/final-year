@@ -160,9 +160,16 @@ exports.generateItinerary = async (user, params) => {
         ],
         response_format: { type: 'json_object' },
         max_tokens: 4000,
+        timeout: 60000, // 60s timeout for OpenAI
     });
 
-    const itinerary = JSON.parse(response.choices[0].message.content);
+    let itinerary;
+    try {
+        itinerary = JSON.parse(response.choices[0].message.content);
+    } catch (parseErr) {
+        console.error('[generateItinerary] Failed to parse OpenAI response:', parseErr.message);
+        throw new Error('AI returned invalid response. Please try again.');
+    }
 
     // Build flight and returnFlight from real flight data or AI-generated data
     const firstFlight = flightData && flightData.length > 0 ? flightData[0] : null;

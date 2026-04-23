@@ -64,6 +64,8 @@ exports.generateItinerary = async (req, res, next) => {
             dates,
         });
 
+        console.log('[generate] AI generation complete for:', destination);
+
         // Auto-save as draft trip with snapshots and extended fields
         const trip = await Trip.create({
             user: req.user._id,

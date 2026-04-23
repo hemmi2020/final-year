@@ -67,20 +67,20 @@ function GeneratingPanel({ origin, destination }) {
   ]);
 
   useEffect(() => {
+    // Slow progress: reach ~90% in 45 seconds, then crawl
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        return prev + 1.25;
+        if (prev >= 95) return 95; // Cap at 95%, wait for actual completion
+        if (prev >= 85) return prev + 0.1; // Very slow after 85%
+        if (prev >= 60) return prev + 0.3; // Slow after 60%
+        return prev + 0.5; // Normal speed up to 60%
       });
-    }, 100);
+    }, 200);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    const thresholds = [25, 50, 75, 100];
+    const thresholds = [15, 35, 60, 85];
     setChecklist((prev) =>
       prev.map((item, idx) => ({
         ...item,
@@ -128,7 +128,9 @@ function GeneratingPanel({ origin, destination }) {
             margin: "0 0 32px",
           }}
         >
-          Crafting your perfect itinerary...
+          {progress >= 90
+            ? "Almost there... AI is finalizing your plan ✨"
+            : "Crafting your perfect itinerary..."}
         </p>
 
         {/* Checklist */}
@@ -355,6 +357,9 @@ function ChatContent() {
     setMessages((prev) => [...prev, genMsg]);
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90000); // 90s timeout
+
       const { data } = await tripsAPI.generate({
         destination: ts.destination,
         origin: ts.origin,
@@ -366,6 +371,8 @@ function ChatContent() {
         interests: Array.isArray(ts.vibe) ? ts.vibe : [],
         dietary: ["halal"],
       });
+
+      clearTimeout(timeout);
 
       const trip = data.data?.trip;
       const itinerary = data.data?.itinerary;
@@ -388,12 +395,15 @@ function ChatContent() {
       setMessages((prev) => [...prev, readyMsg]);
     } catch (err) {
       // DON'T reset generationTriggered — prevents infinite retry loop
+      console.log("[triggerGeneration] Error:", err?.message || err);
       setChatStage("greeting");
       const errorMsg = {
         id: Date.now() + 1,
         role: "assistant",
         content:
-          "Sorry, I couldn't generate your itinerary right now. Please try again by clicking + New Trip.",
+          err?.name === "AbortError" || err?.code === "ECONNABORTED"
+            ? "The trip generation is taking too long. Please try again with a simpler destination or click + New Trip."
+            : "Sorry, I couldn't generate your itinerary right now. Please try again by clicking + New Trip.",
       };
       setMessages((prev) => [...prev, errorMsg]);
     }
