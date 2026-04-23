@@ -247,12 +247,18 @@ export default function DestinationsPage() {
       // Restaurants (Overpass call 3)
       try {
         const rest = await externalAPI.places(
-          name,
+          name + " halal",
           loc.lat,
           loc.lng,
           "restaurant",
         );
-        const restaurantData = rest.data.data?.slice(0, 8) || [];
+        const rawData = rest.data.data?.slice(0, 8) || [];
+        // Sort halal-tagged restaurants first
+        const restaurantData = [...rawData].sort((a, b) => {
+          const aHalal = a.dietary?.halal ? 1 : 0;
+          const bHalal = b.dietary?.halal ? 1 : 0;
+          return bHalal - aHalal;
+        });
         setRestaurants(restaurantData);
         setCache(`dest_restaurants_${cityKey}`, restaurantData);
       } catch {}
@@ -704,6 +710,25 @@ export default function DestinationsPage() {
                     {restaurants.length} found
                   </span>
                 </div>
+                {restaurants.length > 0 &&
+                  !restaurants.some((r) => r.dietary?.halal) && (
+                    <div
+                      style={{
+                        background: "#FEF3C7",
+                        border: "1px solid #F59E0B",
+                        borderRadius: 12,
+                        padding: "12px 16px",
+                        marginBottom: 16,
+                        fontSize: 14,
+                        color: "#92400E",
+                        fontWeight: 600,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      ⚠️ No verified halal restaurants found — showing nearby
+                      restaurants. Verify halal status locally.
+                    </div>
+                  )}
                 {restaurants.length > 0 ? (
                   <div
                     style={{
@@ -784,7 +809,7 @@ export default function DestinationsPage() {
                                   fontWeight: 700,
                                 }}
                               >
-                                ☪ Halal
+                                🟢 Halal
                               </span>
                             )}
                             {r.dietary?.vegan && (

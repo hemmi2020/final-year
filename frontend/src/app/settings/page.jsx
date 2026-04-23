@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { usersAPI } from "@/lib/api";
+import api, { usersAPI } from "@/lib/api";
 import LoginModal from "@/components/auth/LoginModal";
 import RegisterModal from "@/components/auth/RegisterModal";
 import PasswordChanger from "@/components/profile/PasswordChanger";
-import { User, Save, Settings, Globe, ArrowLeft } from "lucide-react";
+import { User, Save, Settings, Globe, ArrowLeft, Trash2 } from "lucide-react";
 
 const GENDER_OPTIONS = [
   { value: "male", label: "Male" },
@@ -55,6 +55,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [profile, setProfile] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [settingsForm, setSettingsForm] = useState({
     name: "",
@@ -119,6 +121,17 @@ export default function SettingsPage() {
       updateUser({ preferences: { ...profile?.preferences, ...travelPrefs } });
     } catch {}
     setSavingPrefs(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      await api.delete("/api/users/profile");
+      useAuthStore.getState().logout();
+      router.push("/");
+    } catch {
+      setDeleting(false);
+    }
   };
 
   const toggleArr = (arr, val) =>
@@ -456,6 +469,126 @@ export default function SettingsPage() {
             <PasswordChanger
               isOAuthUser={!profile?.password && !!profile?.googleId}
             />
+          </div>
+
+          {/* Delete Account */}
+          <div
+            style={{
+              background: "#FFFFFF",
+              borderRadius: 18,
+              boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+              padding: "28px 28px 32px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: "#FEE2E2",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#DC2626",
+                }}
+              >
+                <Trash2 size={18} />
+              </div>
+              <h3
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  margin: 0,
+                  color: "#DC2626",
+                }}
+              >
+                Delete Account
+              </h3>
+            </div>
+
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                style={{
+                  padding: "12px 28px",
+                  fontSize: 15,
+                  fontWeight: 700,
+                  background: "transparent",
+                  color: "#DC2626",
+                  border: "2px solid #DC2626",
+                  borderRadius: 12,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <Trash2 size={16} />
+                Delete My Account
+              </button>
+            ) : (
+              <div>
+                <p
+                  style={{
+                    fontSize: 14,
+                    color: "#DC2626",
+                    margin: "0 0 16px",
+                    lineHeight: 1.6,
+                    fontWeight: 600,
+                  }}
+                >
+                  This will permanently delete all your trips, posts, and data.
+                </p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    style={{
+                      padding: "10px 24px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      background: "#F3F4F6",
+                      color: "#6B7280",
+                      border: "none",
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      transition: "background 0.2s",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    style={{
+                      padding: "10px 24px",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      background: "#DC2626",
+                      color: "#FFFFFF",
+                      border: "none",
+                      borderRadius: 12,
+                      cursor: deleting ? "not-allowed" : "pointer",
+                      fontFamily: "inherit",
+                      opacity: deleting ? 0.7 : 1,
+                      transition: "opacity 0.2s",
+                    }}
+                  >
+                    {deleting ? "Deleting..." : "Delete Everything"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

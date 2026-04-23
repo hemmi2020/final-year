@@ -6,6 +6,7 @@ import SmoothScrollProvider from "@/components/providers/SmoothScrollProvider";
 import { ToastProvider } from "@/components/ui/Toast";
 import LoadingBar from "@/components/ui/LoadingBar";
 import ScrollToTop from "@/components/ui/ScrollToTop";
+import CookieConsent from "@/components/ui/CookieConsent";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -58,6 +59,7 @@ export default function RootLayout({ children }) {
             </main>
             <Footer />
             <ScrollToTop />
+            <CookieConsent />
           </SmoothScrollProvider>
         </ToastProvider>
       </body>

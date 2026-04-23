@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Trip = require('../models/Trip');
 
 // GET /api/users/profile
 exports.getProfile = async (req, res, next) => {
@@ -85,6 +86,17 @@ exports.uploadAvatar = async (req, res, next) => {
 
         const user = await User.findByIdAndUpdate(req.user._id, { avatar }, { returnDocument: 'after' });
         res.json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// DELETE /api/users/profile
+exports.deleteAccount = async (req, res, next) => {
+    try {
+        await Trip.deleteMany({ user: req.user._id });
+        await User.findByIdAndDelete(req.user._id);
+        res.json({ success: true, data: { message: 'Account and all associated data deleted successfully' } });
     } catch (error) {
         next(error);
     }
