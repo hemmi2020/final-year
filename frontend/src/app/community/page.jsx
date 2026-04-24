@@ -30,41 +30,130 @@ const SORT_OPTIONS = [
 ];
 
 const CITY_IMGS = {
-  istanbul:
-    "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80&fit=crop",
-  paris:
-    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80&fit=crop",
-  dubai:
-    "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80&fit=crop",
+  // Asia
   tokyo:
-    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600&q=80&fit=crop",
-  london:
-    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=600&q=80&fit=crop",
-  bali: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=600&q=80&fit=crop",
-  rome: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=600&q=80&fit=crop",
-  barcelona:
-    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=600&q=80&fit=crop",
-  "new york":
-    "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&q=80&fit=crop",
+  istanbul:
+    "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&q=80&fit=crop",
+  dubai:
+    "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80&fit=crop",
   bangkok:
-    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&q=80&fit=crop",
-  maldives:
-    "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=600&q=80&fit=crop",
-  marrakech:
-    "https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=800&q=80&fit=crop",
   singapore:
-    "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=800&q=80&fit=crop",
+  bali: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80&fit=crop",
+  "kuala lumpur":
+    "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=800&q=80&fit=crop",
+  seoul:
+    "https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=800&q=80&fit=crop",
+  beijing:
+    "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800&q=80&fit=crop",
+  shanghai:
+    "https://images.unsplash.com/photo-1474181487882-5abf3f0ba6c2?w=800&q=80&fit=crop",
+  "hong kong":
+    "https://images.unsplash.com/photo-1536599018102-9f803c140fc1?w=800&q=80&fit=crop",
+  mumbai:
+    "https://images.unsplash.com/photo-1529253355930-ddbe423a2ac7?w=800&q=80&fit=crop",
+  delhi:
+    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=80&fit=crop",
+  // Pakistan
   karachi:
-    "https://images.unsplash.com/photo-1572688824905-5b0e8c13e8d0?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1572688824905-5b0e8c13e8d0?w=800&q=80&fit=crop",
   lahore:
-    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&q=80&fit=crop",
   islamabad:
-    "https://images.unsplash.com/photo-1603912699214-92627f304eb6?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1603912699214-92627f304eb6?w=800&q=80&fit=crop",
+  // Europe
+  paris:
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80&fit=crop",
+  france:
+    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80&fit=crop",
+  london:
+    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80&fit=crop",
+  england:
+    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80&fit=crop",
+  rome: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80&fit=crop",
+  italy:
+    "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800&q=80&fit=crop",
+  barcelona:
+    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80&fit=crop",
+  spain:
+    "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&q=80&fit=crop",
+  amsterdam:
+    "https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=800&q=80&fit=crop",
+  prague:
+    "https://images.unsplash.com/photo-1519677100203-a0e668c92439?w=800&q=80&fit=crop",
+  vienna:
+    "https://images.unsplash.com/photo-1516550893923-42d28e5677af?w=800&q=80&fit=crop",
+  lisbon:
+    "https://images.unsplash.com/photo-1585208798174-6cedd86e019a?w=800&q=80&fit=crop",
+  berlin:
+    "https://images.unsplash.com/photo-1560969184-10fe8719e047?w=800&q=80&fit=crop",
+  germany:
+    "https://images.unsplash.com/photo-1560969184-10fe8719e047?w=800&q=80&fit=crop",
+  athens:
+    "https://images.unsplash.com/photo-1555993539-1732b0258235?w=800&q=80&fit=crop",
+  greece:
+    "https://images.unsplash.com/photo-1555993539-1732b0258235?w=800&q=80&fit=crop",
+  santorini:
+    "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800&q=80&fit=crop",
+  // Middle East & Africa
   cairo:
-    "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=800&q=80&fit=crop",
+  egypt:
+    "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=800&q=80&fit=crop",
+  marrakech:
+    "https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=800&q=80&fit=crop",
+  morocco:
+    "https://images.unsplash.com/photo-1597212618440-806262de4f6b?w=800&q=80&fit=crop",
+  petra:
+    "https://images.unsplash.com/photo-1579606032821-4e6161c81571?w=800&q=80&fit=crop",
+  jordan:
+    "https://images.unsplash.com/photo-1579606032821-4e6161c81571?w=800&q=80&fit=crop",
+  // Americas
+  "new york":
+    "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80&fit=crop",
+  "los angeles":
+    "https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=800&q=80&fit=crop",
+  "san francisco":
+    "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&q=80&fit=crop",
+  toronto:
+    "https://images.unsplash.com/photo-1517090504332-af2e820e3cea?w=800&q=80&fit=crop",
+  "rio de janeiro":
+    "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?w=800&q=80&fit=crop",
+  "buenos aires":
+    "https://images.unsplash.com/photo-1589909202802-8f4aadce1849?w=800&q=80&fit=crop",
+  cancun:
+    "https://images.unsplash.com/photo-1510097467424-192d713fd8b2?w=800&q=80&fit=crop",
+  mexico:
+    "https://images.unsplash.com/photo-1518638150340-f706e86654de?w=800&q=80&fit=crop",
+  // Oceania
   sydney:
-    "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=600&q=80&fit=crop",
+    "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&q=80&fit=crop",
+  australia:
+    "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=800&q=80&fit=crop",
+  maldives:
+    "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?w=800&q=80&fit=crop",
+  // Turkey
+  turkey:
+    "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&q=80&fit=crop",
+  // UAE
+  "abu dhabi":
+    "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80&fit=crop",
+  uae: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80&fit=crop",
+  // Saudi
+  mecca:
+    "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&q=80&fit=crop",
+  medina:
+    "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&q=80&fit=crop",
+  jeddah:
+    "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=800&q=80&fit=crop",
+  riyadh:
+    "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=800&q=80&fit=crop",
 };
+
+const DEFAULT_TRAVEL_IMG =
+  "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80&fit=crop";
 
 function getCityImage(destination) {
   if (!destination) return null;
@@ -72,7 +161,7 @@ function getCityImage(destination) {
   return (
     CITY_IMGS[d] ||
     Object.entries(CITY_IMGS).find(([k]) => d.includes(k))?.[1] ||
-    null
+    DEFAULT_TRAVEL_IMG
   );
 }
 

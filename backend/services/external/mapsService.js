@@ -364,8 +364,18 @@ exports.findAttractions = async (lat, lng, radius = 10000) => {
             })
             .filter(Boolean);
 
-        if (results.length > 0) setCached(cacheKey, results);
-        return results;
+        // Quality filter — remove garbage results
+        const ATTRACTION_BLACKLIST = ['photoshop', 'workshop', 'studio', 'office', 'aircraft', 'base', 'military', 'army', 'society', 'school', 'college', 'university', 'hospital', 'clinic', 'pharmacy', 'bank', 'atm', 'fuel', 'parking', 'toilet', 'bench', 'bus stop', 'taxi'];
+
+        const filtered = results.filter(r => {
+            const name = (r.name || '').toLowerCase();
+            if (name.length < 3) return false;
+            if (ATTRACTION_BLACKLIST.some(b => name.includes(b))) return false;
+            return true;
+        });
+
+        if (filtered.length > 0) setCached(cacheKey, filtered);
+        return filtered;
     } catch (error) {
         console.warn('Attractions search error:', error.message);
         return [];

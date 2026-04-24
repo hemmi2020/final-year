@@ -126,6 +126,69 @@ export default function PlannerPage() {
         </button>
       </div>
 
+      {/* Popular Destinations */}
+      <div style={{ marginBottom: 32, textAlign: "center" }}>
+        <p
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "var(--text-secondary)",
+            marginBottom: 12,
+          }}
+        >
+          🌍 Popular Destinations
+        </p>
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+            justifyContent: "center",
+          }}
+        >
+          {[
+            "Istanbul",
+            "Dubai",
+            "London",
+            "Paris",
+            "Bangkok",
+            "Bali",
+            "Tokyo",
+            "Rome",
+            "Maldives",
+            "Lahore",
+          ].map((city) => (
+            <button
+              key={city}
+              onClick={() => handleQuickAction(`Plan a trip to ${city}`)}
+              style={{
+                padding: "8px 20px",
+                borderRadius: 50,
+                border: "1.5px solid var(--border)",
+                background: "#FFF",
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#FF4500";
+                e.currentTarget.style.color = "#FF4500";
+                e.currentTarget.style.background = "#FFF5F0";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.color = "inherit";
+                e.currentTarget.style.background = "#FFF";
+              }}
+            >
+              {city}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div
         style={{
           display: "flex",
